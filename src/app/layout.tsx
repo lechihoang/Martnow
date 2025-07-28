@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Container from "../components/Container";
@@ -27,10 +29,14 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          <Container>{children}</Container>
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+          <div className="flex flex-col min-h-screen">
+            <Header />
+            <main className="flex-1">
+              <Container>{children}</Container>
+            </main>
+            <Footer />
+          </div>
         </body>
       </html>
     </ClerkProvider>
