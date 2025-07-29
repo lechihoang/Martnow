@@ -27,4 +27,10 @@ export class Product {
 
   @Column({ type: 'boolean', default: true })
   isAvailable: boolean;
+  
+  @Column({ type: 'int', default: 0 })
+  stock: number;
+
+  @Column({ type: 'int', default: 0 })
+  discount: number;
 }
