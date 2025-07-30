@@ -3,7 +3,7 @@ export const headerData = [
   { title: "Sản phẩm", href: "/shop" },
   { title: "Giới thiệu", href: "/introduction" },
   { title: "Blog", href: "/blog" },
-  { title: "Khuyến Mãi Nổi Bật", href: "/deal" },
+  // { title: "Khuyến Mãi Nổi Bật", href: "/deal" },
   //   { title: "Contact", href: "/contact" },
 ];
 export const quickLinksData = [

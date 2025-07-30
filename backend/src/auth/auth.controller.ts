@@ -23,8 +23,14 @@ export class AuthController {
       email: string;
       role: string;
       password: string;
+      // Có thể nhận thêm các trường cho seller/buyer nếu cần
+      shopName?: string;
+      shopAddress?: string;
+      shopPhone?: string;
+      description?: string;
     },
   ) {
+    // Gọi service để tạo user và buyer/seller
     return this.authService.register(registerDto);
   }
 

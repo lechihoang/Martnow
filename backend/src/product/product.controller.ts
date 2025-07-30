@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Post, Body } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../entity/product.entity';
@@ -9,6 +9,12 @@ export class ProductController {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
   ) {}
+
+  @Post()
+  async createProduct(@Body() productData: Partial<Product>) {
+    const product = this.productRepository.create(productData);
+    return await this.productRepository.save(product);
+  }
 
   @Get()
   async getProductsByCategory(@Query('categoryId') categoryId: number) {

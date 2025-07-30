@@ -1,12 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryColumn, OneToOne, JoinColumn, Column } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity()
 export class Buyer {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryColumn()
+  id: number; // user id
 
   @OneToOne(() => User)
-  @JoinColumn()
+  @JoinColumn({ name: 'id' })
   user: User;
+
+  @Column({ type: 'varchar', length: 100 })
+  name: string;
 }
