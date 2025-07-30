@@ -1,9 +1,9 @@
 import React from 'react'
 import Link from "next/link";
 
-const SignUp = () => {
+const SignIn = () => {
   return (
-    <div className="w-full text-sm capitalize font-semibold text-lightColor whitespace-nowrap">
+    <div className="text-sm capitalize font-semibold text-lightColor whitespace-nowrap">
         <Link
           href={"/register"}
           className={`hover:text-shop_light_green hoverEffect relative group `}
@@ -20,4 +20,4 @@ const SignUp = () => {
   )
 }
 
-export default SignUp
+export default SignIn

@@ -12,10 +12,17 @@ async function bootstrap() {
     new FastifyAdapter(),
   );
   
+
   await app.register(fastifyCookie, {
     secret: 'my_cookie_secret', // Optional encryption
   });
 
-  await app.listen(3000);
+  // Enable CORS for frontend
+  app.enableCors({
+    origin: 'http://localhost:3000', // Đổi nếu frontend chạy ở domain khác
+    credentials: true,
+  });
+
+  await app.listen(3001);
 }
 bootstrap();

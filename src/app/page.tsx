@@ -2,6 +2,8 @@
 import HomeBanner from "../components/HomeBanner";
 import ProductCard from "../components/ProductCard";
 import Container from "../components/Container";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 import type { Product, Seller, Category } from "../types/entities";
 
 export default function Home() {
@@ -44,13 +46,15 @@ export default function Home() {
   };
   return (
     <div>
+      <Header />
+      
       <HomeBanner />
       <Container className="flex flex-col lg:px-0 my-10">
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 mt-10">
             <ProductCard product={sampleProduct} />
         </div>
       </Container>
-      
+      <Footer />
     </div>
   );
 }

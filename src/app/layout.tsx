@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "react-hot-toast";
 import Container from "../components/Container";
 // ...existing code...
 
@@ -27,16 +26,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-      <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-          <div className="flex flex-col min-h-screen">
-            <Header />
-            <main className="flex-1">
-              <Container>{children}</Container>
-            </main>
-            <Footer />
-          </div>
-        </body>
-      </html>
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Toaster />
+        <div className="flex flex-col min-h-screen">
+          <main className="flex-1">
+            <Container>{children}</Container>
+          </main>
+        </div>
+      </body>
+    </html>
   );
 }
