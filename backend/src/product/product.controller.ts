@@ -17,12 +17,30 @@ export class ProductController {
   }
 
   @Get()
-  async getProductsByCategory(@Query('categoryId') categoryId: number) {
-    if (!categoryId) return [];
-    return this.productRepository.find({
-      where: { category: { id: categoryId } },
-      relations: ['category', 'seller'],
-    });
+  async getProducts(
+    @Query('categoryId') categoryId?: number,
+    @Query('type') type?: string,
+    @Query('minPrice') minPrice?: number,
+    @Query('maxPrice') maxPrice?: number,
+  ) {
+    const query = this.productRepository.createQueryBuilder('product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.seller', 'seller');
+
+    if (categoryId) {
+      query.andWhere('category.id = :categoryId', { categoryId });
+    }
+    if (type) {
+      query.andWhere('product.type = :type', { type });
+    }
+    if (minPrice !== undefined) {
+      query.andWhere('product.price >= :minPrice', { minPrice });
+    }
+    if (maxPrice !== undefined) {
+      query.andWhere('product.price <= :maxPrice', { maxPrice });
+    }
+
+    return query.getMany();
   }
 
   @Get('top-discount')

@@ -12,8 +12,10 @@ export class AuthService {
 
   async validateUser(username: string, password: string): Promise<any> {
     const user = await this.usersService.findOne(username);
-    if (user && await bcrypt.compare(password, user.password)) {      
-      return { id: user.id, username: user.username };
+    if (user && await bcrypt.compare(password, user.password)) {
+      // Trả về toàn bộ user (ẩn password)
+      const { password, ...userInfo } = user;
+      return userInfo;
     }
     throw new UnauthorizedException('Invalid credentials');
   }
@@ -31,7 +33,18 @@ export class AuthService {
       path: '/',
     });
 
-    return { accessToken };
+    // Trả về cả accessToken và user info (ẩn password)
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        // avatar: user.avatar, // nếu có trường avatar
+      },
+    };
   }
 
   async logout(response: any) {

@@ -7,6 +7,8 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import Link from "next/link";
 
 const loginSchema = z.object({
@@ -15,8 +17,10 @@ const loginSchema = z.object({
   remember: z.boolean().optional(),
 });
 
+
 export default function LoginForm() {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -29,14 +33,24 @@ export default function LoginForm() {
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("http://localhost:3001/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
-      // Xử lý thành công/thất bại sẽ bổ sung sau
+      if (res.ok) {
+        const result = await res.json();
+        if (result?.user) {
+          localStorage.setItem("user", JSON.stringify(result.user));
+        }
+        toast.success("Đăng nhập thành công!");
+        window.location.href = "/";
+      } else {
+        const result = await res.json();
+        toast.error(result?.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
+      }
     } catch (error) {
-      // handle error
+      toast.error("Có lỗi xảy ra. Vui lòng thử lại sau.");
     } finally {
       setLoading(false);
     }
