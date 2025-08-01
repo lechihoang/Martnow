@@ -2,17 +2,36 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entity/user.entity';
+import { Buyer } from '../entity/buyer.entity';
+import { Seller } from '../entity/seller.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Buyer)
+    private buyerRepository: Repository<Buyer>,
+    @InjectRepository(Seller)
+    private sellerRepository: Repository<Seller>,
   ) {}
 
   async createUser(name: string, username: string, email: string, role: string, password: string): Promise<User> {
+    // Tạo user
     const user = this.userRepository.create({ name, username, email, role, password });
-    return this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+
+    // Tạo buyer hoặc seller tương ứng
+    if (role === 'buyer') {
+      const buyer = this.buyerRepository.create({ userId: savedUser.id, name: savedUser.name });
+      await this.buyerRepository.save(buyer);
+    } else if (role === 'seller') {
+      // Truyền userId và name, các trường khác bổ sung sau
+      const seller = this.sellerRepository.create({ userId: savedUser.id, name: savedUser.name });
+      await this.sellerRepository.save(seller);
+    }
+
+    return savedUser;
   }
 
   async findAll(): Promise<User[]> {

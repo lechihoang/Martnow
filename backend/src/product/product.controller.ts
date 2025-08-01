@@ -1,7 +1,9 @@
-import { Controller, Get, Query, Post, Body } from '@nestjs/common';
+import { Controller, Get, Query, Post, Body, Param, Patch, Delete } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../entity/product.entity';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @Controller('products')
 export class ProductController {
@@ -11,9 +13,34 @@ export class ProductController {
   ) {}
 
   @Post()
-  async createProduct(@Body() productData: Partial<Product>) {
-    const product = this.productRepository.create(productData);
+  async createProduct(@Body() createProductDto: CreateProductDto) {
+    const product = this.productRepository.create(createProductDto);
     return await this.productRepository.save(product);
+  }
+  @Get(':id')
+  async getProduct(@Param('id') id: number) {
+    return this.productRepository.findOne({
+      where: { id },
+      relations: ['category', 'seller'],
+    });
+  }
+
+  @Patch(':id')
+  async updateProduct(
+    @Param('id') id: number,
+    @Body() updateProductDto: UpdateProductDto,
+  ) {
+    await this.productRepository.update(id, updateProductDto);
+    return this.productRepository.findOne({
+      where: { id },
+      relations: ['category', 'seller'],
+    });
+  }
+
+  @Delete(':id')
+  async deleteProduct(@Param('id') id: number) {
+    await this.productRepository.delete(id);
+    return { message: 'Product deleted' };
   }
 
   @Get()

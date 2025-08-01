@@ -1,13 +1,20 @@
-import { Entity, PrimaryColumn, OneToOne, JoinColumn, Column } from 'typeorm';
+
+
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity()
 export class Buyer {
-  @PrimaryColumn()
-  id: number; // user id
+
+
+  @PrimaryGeneratedColumn()
+  id: number; // id duy nhất của bảng Buyer
+
+  @Column({ unique: true })
+  userId: number; // liên kết với id của bảng User, duy nhất
 
   @OneToOne(() => User)
-  @JoinColumn({ name: 'id' })
+  @JoinColumn({ name: 'userId' })
   user: User;
 
   @Column({ type: 'varchar', length: 100 })

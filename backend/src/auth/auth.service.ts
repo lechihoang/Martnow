@@ -26,16 +26,25 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
+    // Set accessToken vào httpOnly cookie
+    response.setCookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 60 * 60, // 1h
+    });
+    // Set refreshToken vào httpOnly cookie
     response.setCookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
       path: '/',
+      maxAge: 7 * 24 * 60 * 60, // 7d
     });
 
-    // Trả về cả accessToken và user info (ẩn password)
+    // Chỉ trả về user info (ẩn password)
     return {
-      accessToken,
       user: {
         id: user.id,
         name: user.name,
@@ -48,7 +57,8 @@ export class AuthService {
   }
 
   async logout(response: any) {
-    response.clearCookie('refreshToken');
+    response.clearCookie('accessToken', { path: '/' });
+    response.clearCookie('refreshToken', { path: '/' });
     return { message: 'Logout successful' };
   }
 
