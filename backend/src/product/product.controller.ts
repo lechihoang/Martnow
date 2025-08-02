@@ -1,9 +1,13 @@
-import { Controller, Get, Query, Post, Body, Param, Patch, Delete } from '@nestjs/common';
+import { Controller, Get, Query, Post, Body, Param, Patch, Delete, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../entity/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../auth/roles.enum';
 
 @Controller('products')
 export class ProductController {
@@ -12,12 +16,18 @@ export class ProductController {
     private readonly productRepository: Repository<Product>,
   ) {}
 
+  // Chỉ seller mới có thể tạo sản phẩm
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SELLER)
   async createProduct(@Body() createProductDto: CreateProductDto) {
     const product = this.productRepository.create(createProductDto);
     return await this.productRepository.save(product);
   }
+  // Cả buyer và seller đều có thể xem sản phẩm
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.BUYER, UserRole.SELLER)
   async getProduct(@Param('id') id: number) {
     return this.productRepository.findOne({
       where: { id },
@@ -25,7 +35,10 @@ export class ProductController {
     });
   }
 
+  // Chỉ seller mới có thể cập nhật sản phẩm
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SELLER)
   async updateProduct(
     @Param('id') id: number,
     @Body() updateProductDto: UpdateProductDto,
