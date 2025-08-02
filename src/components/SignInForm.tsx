@@ -36,6 +36,7 @@ export default function LoginForm() {
       const res = await fetch("http://localhost:3001/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // ✅ Thêm để nhận cookies
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
       if (res.ok) {

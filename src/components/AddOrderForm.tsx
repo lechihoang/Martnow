@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import type { Product } from '../types/entities';
-type ResultType = { error?: string } | null;
 
 const AddProductForm = () => {
   const [form, setForm] = useState<
@@ -13,7 +13,6 @@ const AddProductForm = () => {
     price: 0,
   });
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<ResultType>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -26,14 +25,22 @@ const AddProductForm = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setResult(null);
+    
+    // Debug: Kiểm tra user hiện tại
+    const currentUser = localStorage.getItem('user');
+    console.log('Current user:', currentUser ? JSON.parse(currentUser) : 'No user found');
+    
     // Parse categories from input string
     const categoryNames = (form.categoriesInput || '').split(',').map(v => v.trim()).filter(Boolean);
     const categories = categoryNames.map(name => ({ name }));
+    
     try {
       const res = await fetch('http://localhost:3001/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
+        credentials: 'include', // Để gửi cookie authentication
         body: JSON.stringify({
           name: form.name,
           description: form.description,
@@ -41,12 +48,37 @@ const AddProductForm = () => {
           price: form.price,
         }),
       });
-      const data = await res.json();
-      setResult(data);
+      
+      if (res.ok) {
+        const data = await res.json();
+        toast.success('Đã thêm sản phẩm thành công!');
+        // Reset form sau khi thành công
+        setForm({
+          name: '',
+          description: '',
+          categoriesInput: '',
+          price: 0,
+        });
+      } else {
+        // Xử lý các mã lỗi cụ thể
+        if (res.status === 403) {
+          toast.error('Chỉ người bán mới có thể thêm sản phẩm');
+        } else if (res.status === 401) {
+          toast.error('Vui lòng đăng nhập để thêm sản phẩm.');
+        } else {
+          try {
+            const errorData = await res.json();
+            toast.error(errorData.message || `Lỗi ${res.status}: Không thể thêm sản phẩm`);
+          } catch (parseError) {
+            toast.error(`Lỗi ${res.status}: Không thể thêm sản phẩm`);
+          }
+        }
+      }
     } catch (err) {
-      setResult({ error: 'Có lỗi xảy ra!' });
+      toast.error('Có lỗi xảy ra! Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -63,11 +95,6 @@ const AddProductForm = () => {
       />
       <input name="price" type="number" min={0} value={form.price} onChange={handleChange} placeholder="Giá bán" className="mb-2 w-full p-2 border rounded" />
       <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-2 rounded mt-2">{loading ? 'Đang gửi...' : 'Thêm sản phẩm'}</button>
-      {result && (
-        <div className="mt-4 text-sm text-gray-700">
-          {result.error ? result.error : 'Đã thêm sản phẩm!'}
-        </div>
-      )}
     </form>
   );
 };

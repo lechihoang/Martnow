@@ -1,0 +1,140 @@
+"use client";
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import ProductDetail from '@/components/ProductDetail';
+import type { Product } from '@/types/entities';
+
+export default function ProductPage() {
+  const params = useParams();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const productId = params?.id;
+        if (!productId) {
+          throw new Error('ID sản phẩm không hợp lệ');
+        }
+        
+        const response = await fetch(`http://localhost:3001/products/${productId}`, {
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Không thể tải thông tin sản phẩm');
+        }
+        
+        const data = await response.json();
+        setProduct(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (params?.id) {
+      fetchProduct();
+    }
+  }, [params?.id]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 animate-pulse">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6">
+            {/* Image skeleton */}
+            <div className="space-y-4">
+              <div className="h-80 bg-gray-200 rounded-lg"></div>
+              <div className="grid grid-cols-4 gap-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="aspect-square bg-gray-200 rounded-md"></div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Content skeleton */}
+            <div className="space-y-6">
+              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+              <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-20 bg-gray-200 rounded"></div>
+              <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-12 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Lỗi</h1>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-600 mb-4">
+            Không tìm thấy sản phẩm
+          </h1>
+          <p className="text-gray-500">
+            Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      {/* Breadcrumb */}
+      <nav className="mb-6 text-sm">
+        <ol className="flex items-center space-x-2 text-gray-500">
+          <li><a href="/" className="hover:text-blue-600">Trang chủ</a></li>
+          <li>›</li>
+          <li><a href="/shop" className="hover:text-blue-600">Sản phẩm</a></li>
+          <li>›</li>
+          {product.category && (
+            <>
+              <li>
+                <a href={`/category/${product.category.id}`} className="hover:text-blue-600">
+                  {product.category.name}
+                </a>
+              </li>
+              <li>›</li>
+            </>
+          )}
+          <li className="text-gray-900 font-medium">{product.name}</li>
+        </ol>
+      </nav>
+
+      {/* Product Detail */}
+      <ProductDetail product={product} />
+      
+      {/* Related Products Section - Placeholder */}
+      <div className="mt-16">
+        <h2 className="text-2xl font-bold mb-6">Sản phẩm liên quan</h2>
+        <div className="text-gray-500 text-center py-8">
+          Sản phẩm liên quan sẽ được hiển thị ở đây
+        </div>
+      </div>
+    </div>
+  );
+}
