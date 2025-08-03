@@ -5,10 +5,8 @@ import { Product } from './product.entity';
 
 @Entity()
 export class Seller {
-
   @PrimaryGeneratedColumn()
   id: number; // id duy nhất của bảng Seller
-
 
   @Column({ unique: true })
   userId: number; // liên kết với id của bảng User, duy nhất
@@ -16,10 +14,6 @@ export class Seller {
   @OneToOne(() => User)
   @JoinColumn({ name: 'userId' })
   user: User;
-
-
-  @Column({ type: 'varchar', length: 100 })
-  name: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   shopName: string;

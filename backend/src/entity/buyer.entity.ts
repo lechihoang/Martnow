@@ -5,8 +5,6 @@ import { User } from './user.entity';
 
 @Entity()
 export class Buyer {
-
-
   @PrimaryGeneratedColumn()
   id: number; // id duy nhất của bảng Buyer
 
@@ -16,7 +14,4 @@ export class Buyer {
   @OneToOne(() => User)
   @JoinColumn({ name: 'userId' })
   user: User;
-
-  @Column({ type: 'varchar', length: 100 })
-  name: string;
 }

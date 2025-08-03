@@ -13,6 +13,7 @@ export interface Address {
 
 export interface Buyer {
   id: number;
+  userId: number;
   user: User;
 }
 
@@ -44,12 +45,14 @@ export interface Order {
 
 export interface Product {
   id: number;
+  sellerId: number;
   seller: Seller;
+  categoryId: number;
   category: Category;
   name: string;
   description: string;
   price: number;
-  imageUrl: string;
+  imageUrl?: string;
   isAvailable: boolean;
   stock: number;
   discount: number;
@@ -66,6 +69,7 @@ export interface Review {
 
 export interface Seller {
   id: number;
+  userId: number;
   user: User;
   shopName: string;
   shopAddress: string;
@@ -81,4 +85,23 @@ export interface User {
   email: string;
   role: string;
   password: string;
+  avatar?: string;
+}
+
+export interface Stats {
+  totalOrders: number;
+  totalRevenue: number;
+  totalProducts: number;
+  pendingOrders: number;
+}
+
+export interface SellerStats {
+  id: number;
+  sellerId: number;
+  seller: Seller;
+  totalOrders: number;
+  totalRevenue: number;
+  totalProducts: number;
+  pendingOrders: number;
+  updatedAt: Date;
 }
