@@ -6,9 +6,10 @@ import { Seller } from '@/types/entities';
 interface SellerInfoProps {
   seller: Seller;
   onUpdate: (updatedSeller: Partial<Seller>) => void;
+  readOnly?: boolean;
 }
 
-const SellerInfo: React.FC<SellerInfoProps> = ({ seller, onUpdate }) => {
+const SellerInfo: React.FC<SellerInfoProps> = ({ seller, onUpdate, readOnly = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     shopName: seller.shopName || '',
@@ -39,15 +40,17 @@ const SellerInfo: React.FC<SellerInfoProps> = ({ seller, onUpdate }) => {
         <h3 className="text-lg font-medium text-gray-900">
           {seller.shopName || 'Chưa có tên cửa hàng'}
         </h3>
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className="px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-        >
-          {isEditing ? 'Hủy' : 'Chỉnh sửa'}
-        </button>
+        {!readOnly && (
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className="px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            {isEditing ? 'Hủy' : 'Chỉnh sửa'}
+          </button>
+        )}
       </div>
 
-      {isEditing ? (
+      {isEditing && !readOnly ? (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

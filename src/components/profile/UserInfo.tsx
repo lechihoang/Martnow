@@ -6,9 +6,10 @@ import { User } from '@/types/entities';
 interface UserInfoProps {
   user: User;
   onUpdate: (updatedUser: Partial<User>) => void;
+  readOnly?: boolean;
 }
 
-const UserInfo: React.FC<UserInfoProps> = ({ user, onUpdate }) => {
+const UserInfo: React.FC<UserInfoProps> = ({ user, onUpdate, readOnly = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user.name,
@@ -43,15 +44,17 @@ const UserInfo: React.FC<UserInfoProps> = ({ user, onUpdate }) => {
           <h3 className="text-lg font-medium text-gray-900">{user.name}</h3>
           <p className="text-gray-500">@{user.username}</p>
         </div>
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className="ml-auto px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-        >
-          {isEditing ? 'Hủy' : 'Chỉnh sửa'}
-        </button>
+        {!readOnly && (
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className="ml-auto px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            {isEditing ? 'Hủy' : 'Chỉnh sửa'}
+          </button>
+        )}
       </div>
 
-      {isEditing ? (
+      {isEditing && !readOnly ? (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

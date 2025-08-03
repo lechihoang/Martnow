@@ -24,14 +24,16 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
 
   const getMenuItems = () => {
     const commonItems = [
-      { href: "/profile", label: "Thông tin cá nhân", icon: "👤" },
-      { href: "/profile#orders", label: "Đơn hàng", icon: "📦" }
+      { href: `/profile/${user.id}`, label: "Thông tin cá nhân", icon: "👤" },
+      { href: `/profile/${user.id}/orders`, label: "Đơn hàng", icon: "📦" }
     ];
 
     if (user.role === 'seller') {
       return [
         ...commonItems,
-        { href: "/manage-products", label: "Quản lý sản phẩm", icon: "🛍️" },
+        { href: `/profile/${user.id}/products`, label: "Quản lý sản phẩm", icon: "🛍️" },
+        { href: `/profile/${user.id}/order-management`, label: "Quản lý đơn hàng", icon: "📋" },
+        { href: `/profile/${user.id}/analytics`, label: "Thống kê", icon: "📊" },
         { href: "/add", label: "Thêm sản phẩm", icon: "➕" }
       ];
     }
