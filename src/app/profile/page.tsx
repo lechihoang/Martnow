@@ -8,9 +8,11 @@ import OrderHistory from '@/components/profile/OrderHistory';
 import SellerProducts from '@/components/profile/SellerProducts';
 import SellerStats from '@/components/profile/SellerStats';
 import { User, Seller, Order, Product, Stats } from '@/types/entities';
+import useUser from '@/hooks/useUser';
 
 const ProfilePage: React.FC = () => {
   const router = useRouter();
+  const userData = useUser(); // Sử dụng hook useUser
   const [user, setUser] = useState<User | null>(null);
   const [seller, setSeller] = useState<Seller | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -24,18 +26,23 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (userData === null) {
+      // User hook vẫn đang loading
+      return;
+    }
+    
+    if (userData === undefined || !userData) {
+      // Không có user data, chuyển về login
+      router.push('/login');
+      return;
+    }
+
+    // Có user data, load profile
     fetchUserData();
-  }, []);
+  }, [userData, router]);
 
   const fetchUserData = async () => {
     try {
-      // Lấy thông tin user từ API
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
       // Import mock data
       const {
         mockUser,
@@ -45,9 +52,11 @@ const ProfilePage: React.FC = () => {
         mockOrders
       } = await import('@/lib/mockData');
 
-      setUser(mockUser);
+      // Sử dụng dữ liệu từ useUser hook hoặc mock data
+      const currentUser = userData || mockUser;
+      setUser(currentUser);
 
-      if (mockUser.role === 'seller') {
+      if (currentUser.role === 'seller') {
         setSeller(mockSeller);
         setProducts(mockProducts);
         setStats(mockStats);

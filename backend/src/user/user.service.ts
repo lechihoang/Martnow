@@ -23,11 +23,11 @@ export class UserService {
 
     // Tạo buyer hoặc seller tương ứng
     if (role === 'buyer') {
-      const buyer = this.buyerRepository.create({ userId: savedUser.id, name: savedUser.name });
+      const buyer = this.buyerRepository.create({ userId: savedUser.id });
       await this.buyerRepository.save(buyer);
     } else if (role === 'seller') {
-      // Truyền userId và name, các trường khác bổ sung sau
-      const seller = this.sellerRepository.create({ userId: savedUser.id, name: savedUser.name });
+      // Chỉ truyền userId, các trường khác có thể bổ sung sau
+      const seller = this.sellerRepository.create({ userId: savedUser.id });
       await this.sellerRepository.save(seller);
     }
 

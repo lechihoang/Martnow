@@ -36,11 +36,11 @@ export class AuthController {
 
   @Post('login')
   async login(
-    @Body() loginDto: { username: string; password: string },
+    @Body() loginDto: { email: string; password: string }, // Đổi từ username sang email
     @Res({ passthrough: true }) response: Response,
   ) {
-    const user = await this.authService.validateUser(
-      loginDto.username,
+    const user = await this.authService.validateUserByEmail( // Sử dụng method mới
+      loginDto.email,
       loginDto.password,
     );
     return this.authService.login(user, response);

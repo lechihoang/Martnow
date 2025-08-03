@@ -5,9 +5,11 @@ import Container from '@/components/Container';
 import SellerProducts from '@/components/profile/SellerProducts';
 import SellerStats from '@/components/profile/SellerStats';
 import { Product, Stats } from '@/types/entities';
+import useUser from '@/hooks/useUser';
 
 const ManageProductsPage: React.FC = () => {
   const router = useRouter();
+  const userData = useUser(); // Sử dụng hook useUser
   const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalOrders: 0,
@@ -18,18 +20,29 @@ const ManageProductsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (userData === null) {
+      // User hook vẫn đang loading
+      return;
+    }
+    
+    if (userData === undefined || !userData) {
+      // Không có user data, chuyển về login
+      router.push('/login');
+      return;
+    }
+
+    // Kiểm tra quyền seller
+    if (userData.role !== 'seller') {
+      router.push('/');
+      return;
+    }
+
+    // Có user data và là seller, load products
     fetchData();
-  }, []);
+  }, [userData, router]);
 
   const fetchData = async () => {
     try {
-      // Kiểm tra quyền truy cập - chỉ seller mới được vào trang này
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
       // Import mock data
       const { mockProducts, mockStats } = await import('@/lib/mockData');
 

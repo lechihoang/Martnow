@@ -4,11 +4,13 @@ import { useRouter, useParams } from 'next/navigation';
 import ProfileLayout from '@/components/profile/ProfileLayout';
 import ProfileCard from '@/components/profile/ProfileCard';
 import { Order, User } from '@/types/entities';
+import useUser from '@/hooks/useUser';
 
 const OrderManagementPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const userId = params?.id as string;
+  const userData = useUser(); // Sử dụng hook useUser
   
   const [orders, setOrders] = useState<Order[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -16,22 +18,29 @@ const OrderManagementPage: React.FC = () => {
   const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
+    if (userData === null) {
+      // User hook vẫn đang loading
+      return;
+    }
+    
+    if (userData === undefined || !userData) {
+      // Không có user data, chuyển về login
+      router.push('/login');
+      return;
+    }
+
+    // Có user data, load order management
     fetchData();
-  }, [userId]);
+  }, [userData, userId, router]);
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
       const { mockUser, mockOrders } = await import('@/lib/mockData');
-      setCurrentUser(mockUser);
+      const currentUserData = userData || mockUser;
+      setCurrentUser(currentUserData);
 
       // Kiểm tra quyền truy cập - chỉ seller và chính chủ tài khoản
-      if (mockUser.role !== 'seller' || mockUser.id.toString() !== userId) {
+      if (currentUserData.role !== 'seller' || currentUserData.id.toString() !== userId) {
         router.push('/');
         return;
       }

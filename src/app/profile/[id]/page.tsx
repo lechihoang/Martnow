@@ -5,11 +5,13 @@ import ProfileLayout from '@/components/profile/ProfileLayout';
 import UserInfo from '@/components/profile/UserInfo';
 import SellerInfo from '@/components/profile/SellerInfo';
 import { User, Seller } from '@/types/entities';
+import useUser from '@/hooks/useUser';
 
 const ProfilePage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const userId = params?.id as string;
+  const userData = useUser(); // Sử dụng hook useUser
   
   if (!userId) {
     router.push('/');
@@ -23,30 +25,36 @@ const ProfilePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (userData === null) {
+      // User hook vẫn đang loading
+      return;
+    }
+    
+    if (userData === undefined || !userData) {
+      // Không có user data, chuyển về login
+      router.push('/login');
+      return;
+    }
+
+    // Có user data, load profile
     fetchUserData();
-  }, [userId]);
+  }, [userData, userId, router]);
 
   const fetchUserData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Lấy thông tin user hiện tại từ token/localStorage
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
-      // Giả lập lấy current user
+      // Sử dụng dữ liệu từ useUser hook
       const { mockUser } = await import('@/lib/mockData');
-      setCurrentUser(mockUser);
+      const currentUserData = userData || mockUser;
+      setCurrentUser(currentUserData);
 
       // Nếu xem profile của chính mình
-      if (userId === mockUser.id.toString()) {
-        setUser(mockUser);
+      if (userId === currentUserData.id.toString()) {
+        setUser(currentUserData);
         
-        if (mockUser.role === 'seller') {
+        if (currentUserData.role === 'seller') {
           const { mockSeller } = await import('@/lib/mockData');
           setSeller(mockSeller);
         }
@@ -72,6 +80,9 @@ const ProfilePage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Tính toán isOwnProfile ngay sau khi có currentUser
+  const isOwnProfile = currentUser?.id.toString() === userId;
 
   const handleUpdateUser = async (updatedUser: Partial<User>) => {
     try {
@@ -139,8 +150,6 @@ const ProfilePage: React.FC = () => {
       </ProfileLayout>
     );
   }
-
-  const isOwnProfile = currentUser?.id.toString() === userId;
 
   return (
     <ProfileLayout 
