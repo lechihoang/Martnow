@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Seller } from './seller.entity';
 import { Category } from './category.entity';
 
@@ -7,10 +7,18 @@ export class Product {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column()
+  sellerId: number;
+
   @ManyToOne(() => Seller, (seller) => seller.products)
+  @JoinColumn({ name: 'sellerId' })
   seller: Seller;
 
+  @Column()
+  categoryId: number;
+
   @ManyToOne(() => Category, (category) => category.products)
+  @JoinColumn({ name: 'categoryId' })
   category: Category;
 
   @Column({ type: 'varchar', length: 255 })

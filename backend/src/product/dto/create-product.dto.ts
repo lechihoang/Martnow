@@ -16,6 +16,9 @@ export class CreateProductDto {
   imageUrl?: string;
 
   @IsNumber()
+  sellerId: number;
+
+  @IsNumber()
   categoryId: number;
 
   @IsBoolean()
