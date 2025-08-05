@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SellerStatsService } from './seller-stats.service';
-import { SellerStats } from '../entity/seller-stats.entity';
-import { Order } from '../entity/order.entity';
-import { Product } from '../entity/product.entity';
+import { SellerStats } from '../user/entities/seller-stats.entity';
+import { Order } from '../order/entities/order.entity';
+import { Product } from '../product/entities/product.entity';
 
 @Module({
   imports: [

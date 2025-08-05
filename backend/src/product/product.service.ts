@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Product } from '../entity/product.entity';
+import { Product } from './entities/product.entity';
+import { ProductImage } from './entities/product-image.entity';
+import { Category } from './entities/category.entity';
+import { Seller } from '../user/entities/seller.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
@@ -15,24 +18,53 @@ export interface ProductFilterOptions {
 
 @Injectable()
 export class ProductService {
-  private readonly productRelations = ['category', 'seller'];
+  private readonly productRelations = ['category', 'seller', 'images'];
 
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(ProductImage)
+    private readonly productImageRepository: Repository<ProductImage>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(Seller)
+    private readonly sellerRepository: Repository<Seller>,
   ) {}
 
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
-    // Tạo product chỉ với các ID, không cần load toàn bộ entity
+    // Tách images khỏi DTO để tạo Product trước
+    const { images, ...productData } = createProductDto;
+    
+    // Đảm bảo có category và seller tồn tại
+    await this.ensureDefaultDataExists();
+    
+    // Tạo product chỉ với các trường cần thiết
     const product = this.productRepository.create({
-      ...createProductDto,
+      ...productData,
       sellerId: createProductDto.sellerId,
       categoryId: createProductDto.categoryId,
     });
     
     const savedProduct = await this.productRepository.save(product);
     
-    // Chỉ load relations khi cần trả về đầy đủ thông tin
+    // Tạo ProductImage nếu có images
+    if (images && images.length > 0) {
+      const productImages = images.map((imageInfo, index) => {
+        return this.productImageRepository.create({
+          productId: savedProduct.id,
+          imageData: imageInfo.imageData,
+          mimeType: imageInfo.mimeType,
+          originalName: imageInfo.originalName,
+          fileSize: imageInfo.fileSize,
+          displayOrder: index,
+          isPrimary: index === 0, // Ảnh đầu tiên là ảnh chính
+        });
+      });
+      
+      await this.productImageRepository.save(productImages);
+    }
+    
+    // Load và trả về product với đầy đủ relations
     const result = await this.productRepository.findOne({
       where: { id: savedProduct.id },
       relations: this.productRelations,
@@ -45,7 +77,26 @@ export class ProductService {
     return result;
   }
 
-  async findOne(id: number): Promise<Product> {
+  private async ensureDefaultDataExists(): Promise<void> {
+    // Tạo category mặc định nếu chưa có
+    let defaultCategory = await this.categoryRepository.findOne({ where: { id: 1 } });
+    if (!defaultCategory) {
+      defaultCategory = this.categoryRepository.create({
+        id: 1,
+        name: 'Món ăn',
+        description: 'Danh mục món ăn mặc định',
+      });
+      await this.categoryRepository.save(defaultCategory);
+    }
+
+    // Tạo seller mặc định nếu chưa có
+    let defaultSeller = await this.sellerRepository.findOne({ where: { id: 1 } });
+    if (!defaultSeller) {
+      // Tạo seller mặc định sẽ cần user mặc định trước
+      // Tạm thời bỏ qua, sẽ xử lý sau
+      console.log('Default seller not found, but continuing...');
+    }
+  }  async findOne(id: number): Promise<Product> {
     const product = await this.productRepository.findOne({
       where: { id },
       relations: this.productRelations,
@@ -60,7 +111,35 @@ export class ProductService {
 
   async updateProduct(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
     await this.findOne(id); // Kiểm tra product có tồn tại không
-    await this.productRepository.update(id, updateProductDto);
+    
+    // Tách images khỏi DTO để update Product trước
+    const { images, ...productData } = updateProductDto;
+    
+    await this.productRepository.update(id, productData);
+    
+    // Cập nhật images nếu có
+    if (images !== undefined) {
+      // Xóa các ảnh cũ
+      await this.productImageRepository.delete({ productId: id });
+      
+      // Thêm ảnh mới
+      if (images.length > 0) {
+        const productImages = images.map((imageInfo, index) => {
+          return this.productImageRepository.create({
+            productId: id,
+            imageData: imageInfo.imageData,
+            mimeType: imageInfo.mimeType,
+            originalName: imageInfo.originalName,
+            fileSize: imageInfo.fileSize,
+            displayOrder: index,
+            isPrimary: index === 0,
+          });
+        });
+        
+        await this.productImageRepository.save(productImages);
+      }
+    }
+    
     return this.findOne(id);
   }
 

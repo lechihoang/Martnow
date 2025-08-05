@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
+import { UserRole } from './roles.enum';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -90,7 +91,7 @@ export class AuthService {
       registerDto.name,
       registerDto.username,
       registerDto.email,
-      registerDto.role,
+      registerDto.role as UserRole,
       hashedPassword
     );
   }

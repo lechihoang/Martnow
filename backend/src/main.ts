@@ -11,7 +11,6 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
   );
-  
 
   await app.register(fastifyCookie, {
     secret: 'my_cookie_secret', // Optional encryption

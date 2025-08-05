@@ -1,8 +1,8 @@
 import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Order } from '../entity/order.entity';
-import { Buyer } from '../entity/buyer.entity';
+import { Order } from './entities/order.entity';
+import { Buyer } from '../user/entities/buyer.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';

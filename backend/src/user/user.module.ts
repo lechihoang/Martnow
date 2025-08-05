@@ -1,13 +1,19 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '../entity/user.entity';
-import { Buyer } from '../entity/buyer.entity';
-import { Seller } from '../entity/seller.entity';
+import { User } from './entities/user.entity';
+import { Buyer } from './entities/buyer.entity';
+import { Seller } from './entities/seller.entity';
+import { Review } from '../review/entities/review.entity';
+import { Order } from '../order/entities/order.entity';
+import { OrderItem } from '../order/entities/order-item.entity';
 import { UserService } from './user.service';
+import { UserActivityService } from './user-activity.service';
+import { UserActivityController } from './user-activity.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Buyer, Seller])],
-  providers: [UserService],
-  exports: [UserService],
+  imports: [TypeOrmModule.forFeature([User, Buyer, Seller, Review, Order, OrderItem])],
+  providers: [UserService, UserActivityService],
+  controllers: [UserActivityController],
+  exports: [UserService, UserActivityService],
 })
 export class UserModule {}

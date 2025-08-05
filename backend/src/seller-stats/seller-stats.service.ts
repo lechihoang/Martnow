@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SellerStats } from '../entity/seller-stats.entity';
-import { Order } from '../entity/order.entity';
-import { Product } from '../entity/product.entity';
-import { SellerStatsDto } from '../entity/dto/seller-stats.dto';
+import { SellerStats } from '../user/entities/seller-stats.entity';
+import { Order } from '../order/entities/order.entity';
+import { Product } from '../product/entities/product.entity';
+import { SellerStatsDto } from '../user/dto/seller-stats.dto';
 
 @Injectable()
 export class SellerStatsService {

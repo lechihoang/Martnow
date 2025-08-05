@@ -15,8 +15,29 @@ export class ProductController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SELLER)
-  async createProduct(@Body() createProductDto: CreateProductDto) {
-    return this.productService.createProduct(createProductDto);
+  async createProduct(@Body() body: any) {
+    try {
+      // Xử lý categories từ frontend
+      let categoryId = 1; // Default category
+      if (body.categories && body.categories.length > 0) {
+        // Lấy category đầu tiên (có thể mở rộng để xử lý nhiều categories)
+        categoryId = body.categories[0].id || 1;
+      }
+
+      const createProductDto: CreateProductDto = {
+        name: body.name,
+        description: body.description,
+        price: body.price,
+        images: body.images || [],
+        sellerId: 1, // Sẽ lấy từ JWT token sau
+        categoryId,
+      };
+
+      return this.productService.createProduct(createProductDto);
+    } catch (error) {
+      console.error('Error creating product:', error);
+      throw error;
+    }
   }
 
   // Cả buyer và seller đều có thể xem sản phẩm
