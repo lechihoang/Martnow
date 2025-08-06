@@ -18,7 +18,7 @@ export interface ProductFilterOptions {
 
 @Injectable()
 export class ProductService {
-  private readonly productRelations = ['category', 'seller', 'images'];
+  private readonly productRelations = ['category', 'seller', 'seller.user', 'images'];
 
   constructor(
     @InjectRepository(Product)
@@ -154,7 +154,9 @@ export class ProductService {
     
     const query = this.productRepository.createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.seller', 'seller');
+      .leftJoinAndSelect('product.seller', 'seller')
+      .leftJoinAndSelect('seller.user', 'user')
+      .leftJoinAndSelect('product.images', 'images');
 
     this.applyFilters(query, { categoryId, type, minPrice, maxPrice });
 
@@ -162,11 +164,14 @@ export class ProductService {
   }
 
   async findTopDiscountProducts(limit: number = 10): Promise<Product[]> {
-    return this.productRepository.find({
-      order: { discount: 'DESC' },
-      take: limit,
-      relations: this.productRelations,
-    });
+    return this.productRepository.createQueryBuilder('product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.seller', 'seller')
+      .leftJoinAndSelect('seller.user', 'user')
+      .leftJoinAndSelect('product.images', 'images')
+      .orderBy('product.discount', 'DESC')
+      .take(limit)
+      .getMany();
   }
 
   // Kiểm tra xem product có thuộc về seller không
@@ -177,17 +182,21 @@ export class ProductService {
     return !!product;
   }
 
-  // Lấy tất cả products của một seller (không cần relations để tối ưu)
+  // Lấy tất cả products của một seller
   async findProductsBySeller(sellerId: number, withRelations: boolean = false): Promise<Product[]> {
-    const options: any = {
-      where: { sellerId },
-    };
-
     if (withRelations) {
-      options.relations = this.productRelations;
+      return this.productRepository.createQueryBuilder('product')
+        .leftJoinAndSelect('product.category', 'category')
+        .leftJoinAndSelect('product.seller', 'seller')
+        .leftJoinAndSelect('seller.user', 'user')
+        .leftJoinAndSelect('product.images', 'images')
+        .where('product.sellerId = :sellerId', { sellerId })
+        .getMany();
     }
 
-    return this.productRepository.find(options);
+    return this.productRepository.find({
+      where: { sellerId },
+    });
   }
 
   private applyFilters(query: any, filters: ProductFilterOptions): void {

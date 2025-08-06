@@ -5,7 +5,7 @@ import { User } from './user.entity';
 import { Product } from '../../product/entities/product.entity';
 import { SellerStats } from './seller-stats.entity';
 
-@Entity('sellers')
+@Entity('seller')
 export class Seller extends BaseEntity { // id duy nhất của bảng Seller
 
   @Column({ unique: true })

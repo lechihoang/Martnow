@@ -9,7 +9,13 @@ import {
   UpdateSellerDto,
   UserReviewsDto,
   BuyerOrdersDto,
-  SellerOrdersDto
+  SellerOrdersDto,
+  ProductResponseDto,
+  CreateProductDto,
+  UpdateProductDto,
+  OrderResponseDto,
+  CreateOrderDto,
+  UploadResponseDto
 } from '../types/dtos';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -18,23 +24,28 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 export const userApi = {
   // Get user profile with buyer/seller info
   async getProfile(userId: number): Promise<UserResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/user-activity/user/${userId}/profile`);
+    const response = await fetch(`${API_BASE_URL}/user-activity/user/${userId}/profile`, {
+      credentials: 'include',
+    });
     if (!response.ok) throw new Error('Failed to fetch user profile');
     return response.json();
   },
 
   // Get user reviews
   async getUserReviews(userId: number): Promise<UserReviewsDto> {
-    const response = await fetch(`${API_BASE_URL}/user-activity/user/${userId}/reviews`);
+    const response = await fetch(`${API_BASE_URL}/user-activity/user/${userId}/reviews`, {
+      credentials: 'include',
+    });
     if (!response.ok) throw new Error('Failed to fetch user reviews');
     return response.json();
   },
 
-  // Create user
+  // Create user (likely not needed as auth/register handles this)
   async createUser(userData: CreateUserDto): Promise<UserResponseDto> {
     const response = await fetch(`${API_BASE_URL}/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(userData),
     });
     if (!response.ok) throw new Error('Failed to create user');
@@ -46,6 +57,7 @@ export const userApi = {
     const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(userData),
     });
     if (!response.ok) throw new Error('Failed to update user');
@@ -57,7 +69,9 @@ export const userApi = {
 export const buyerApi = {
   // Get buyer orders
   async getBuyerOrders(buyerId: number): Promise<BuyerOrdersDto> {
-    const response = await fetch(`${API_BASE_URL}/user-activity/buyer/${buyerId}/orders`);
+    const response = await fetch(`${API_BASE_URL}/user-activity/buyer/${buyerId}/orders`, {
+      credentials: 'include',
+    });
     if (!response.ok) throw new Error('Failed to fetch buyer orders');
     return response.json();
   },
@@ -67,6 +81,7 @@ export const buyerApi = {
     const response = await fetch(`${API_BASE_URL}/buyers`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(buyerData),
     });
     if (!response.ok) throw new Error('Failed to create buyer');
@@ -75,7 +90,9 @@ export const buyerApi = {
 
   // Get buyer profile
   async getBuyer(buyerId: number): Promise<BuyerResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/buyers/${buyerId}`);
+    const response = await fetch(`${API_BASE_URL}/buyers/${buyerId}`, {
+      credentials: 'include',
+    });
     if (!response.ok) throw new Error('Failed to fetch buyer');
     return response.json();
   },
@@ -85,7 +102,9 @@ export const buyerApi = {
 export const sellerApi = {
   // Get seller orders
   async getSellerOrders(sellerId: number): Promise<SellerOrdersDto> {
-    const response = await fetch(`${API_BASE_URL}/user-activity/seller/${sellerId}/orders`);
+    const response = await fetch(`${API_BASE_URL}/user-activity/seller/${sellerId}/orders`, {
+      credentials: 'include',
+    });
     if (!response.ok) throw new Error('Failed to fetch seller orders');
     return response.json();
   },
@@ -95,6 +114,7 @@ export const sellerApi = {
     const response = await fetch(`${API_BASE_URL}/sellers`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(sellerData),
     });
     if (!response.ok) throw new Error('Failed to create seller');
@@ -106,6 +126,7 @@ export const sellerApi = {
     const response = await fetch(`${API_BASE_URL}/sellers/${sellerId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(sellerData),
     });
     if (!response.ok) throw new Error('Failed to update seller');
@@ -114,37 +135,175 @@ export const sellerApi = {
 
   // Get seller profile
   async getSeller(sellerId: number): Promise<SellerResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/sellers/${sellerId}`);
+    const response = await fetch(`${API_BASE_URL}/sellers/${sellerId}`, {
+      credentials: 'include',
+    });
     if (!response.ok) throw new Error('Failed to fetch seller');
+    return response.json();
+  },
+
+  // Get seller profile by user ID
+  async getSellerByUserId(userId: number): Promise<SellerResponseDto> {
+    const response = await fetch(`${API_BASE_URL}/sellers/by-user/${userId}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch seller by user ID');
     return response.json();
   },
 };
 
 // Authentication helpers
 export const authApi = {
-  async login(username: string, password: string): Promise<{ user: UserResponseDto; token: string }> {
+  async login(email: string, password: string): Promise<{ user: UserResponseDto }> {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      credentials: 'include', // Include cookies for httpOnly authentication
+      body: JSON.stringify({ email, password }),
     });
     if (!response.ok) throw new Error('Login failed');
     return response.json();
   },
 
-  async register(userData: CreateUserDto): Promise<{ user: UserResponseDto; token: string }> {
+  async register(userData: CreateUserDto): Promise<UserResponseDto> {
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(userData),
     });
     if (!response.ok) throw new Error('Registration failed');
     return response.json();
   },
+
+  async logout(): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Logout failed');
+    return response.json();
+  },
+
+  async getProfile(): Promise<UserResponseDto> {
+    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to get profile');
+    return response.json();
+  },
 };
 
-// Helper function to get authorization headers
-export const getAuthHeaders = (token?: string) => {
-  const authToken = token || localStorage.getItem('auth_token');
-  return authToken ? { Authorization: `Bearer ${authToken}` } : {};
+// Product API (can be added when product controller is implemented)
+export const productApi = {
+  // Get all products
+  async getProducts(): Promise<ProductResponseDto[]> {
+    const response = await fetch(`${API_BASE_URL}/products`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch products');
+    return response.json();
+  },
+
+  // Get top discount products
+  async getTopDiscountProducts(): Promise<ProductResponseDto[]> {
+    const response = await fetch(`${API_BASE_URL}/products/top-discount`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch top discount products');
+    return response.json();
+  },
+
+  // Get product by ID
+  async getProduct(productId: number): Promise<ProductResponseDto> {
+    const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch product');
+    return response.json();
+  },
+
+  // Get products by seller
+  async getProductsBySeller(sellerId: number): Promise<ProductResponseDto[]> {
+    const response = await fetch(`${API_BASE_URL}/products/seller/${sellerId}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch seller products');
+    return response.json();
+  },
+
+  // Create product
+  async createProduct(productData: CreateProductDto): Promise<ProductResponseDto> {
+    const response = await fetch(`${API_BASE_URL}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(productData),
+    });
+    if (!response.ok) throw new Error('Failed to create product');
+    return response.json();
+  },
+
+  // Update product
+  async updateProduct(productId: number, productData: UpdateProductDto): Promise<ProductResponseDto> {
+    const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(productData),
+    });
+    if (!response.ok) throw new Error('Failed to update product');
+    return response.json();
+  },
+
+  // Delete product
+  async deleteProduct(productId: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to delete product');
+  },
+};
+
+// Order API  
+export const orderApi = {
+  // Get all orders
+  async getOrders(): Promise<OrderResponseDto[]> {
+    const response = await fetch(`${API_BASE_URL}/orders`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch orders');
+    return response.json();
+  },
+
+  // Create order
+  async createOrder(orderData: CreateOrderDto): Promise<OrderResponseDto> {
+    const response = await fetch(`${API_BASE_URL}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(orderData),
+    });
+    if (!response.ok) throw new Error('Failed to create order');
+    return response.json();
+  },
+};
+
+// Upload API
+export const uploadApi = {
+  // Upload file
+  async uploadFile(file: File): Promise<UploadResponseDto> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch(`${API_BASE_URL}/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+    if (!response.ok) throw new Error('Failed to upload file');
+    return response.json();
+  },
 };

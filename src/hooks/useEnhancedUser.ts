@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
   UserResponseDto, 
-  BuyerResponseDto, 
-  SellerResponseDto,
   UserReviewsDto,
   BuyerOrdersDto,
   SellerOrdersDto
@@ -31,8 +29,10 @@ export const useUserProfile = (userId?: number) => {
   };
 
   useEffect(() => {
-    fetchUser();
-  }, [userId]);
+    if (userId) {
+      fetchUser();
+    }
+  }, [userId]); // Remove fetchUser from dependency
 
   return { user, loading, error, refetch: fetchUser };
 };
@@ -86,8 +86,10 @@ export const useBuyerOrders = (buyerId?: number) => {
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, [buyerId]);
+    if (buyerId) {
+      fetchOrders();
+    }
+  }, [buyerId]); // Remove fetchOrders from dependency
 
   return { orders, loading, error, refetch: fetchOrders };
 };
@@ -113,8 +115,10 @@ export const useSellerOrders = (sellerId?: number) => {
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, [sellerId]);
+    if (sellerId) {
+      fetchOrders();
+    }
+  }, [sellerId]); // Remove fetchOrders from dependency
 
   return { orders, loading, error, refetch: fetchOrders };
 };

@@ -16,6 +16,12 @@ export enum OrderStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum ProductStatus {
+  AVAILABLE = 'available',
+  OUT_OF_STOCK = 'out_of_stock',
+  DISCONTINUED = 'discontinued',
+}
+
 // Base interface for all entities
 export interface BaseEntity {
   id: number;
@@ -65,6 +71,9 @@ export interface SellerStats extends BaseEntity {
   averageRating: number;
   totalReviews: number;
 }
+
+// Alias for compatibility with existing code
+export type Stats = Pick<SellerStats, 'totalOrders' | 'totalRevenue' | 'totalProducts' | 'pendingOrders' | 'completedOrders' | 'averageRating' | 'totalReviews'>;
 
 export interface Address extends BaseEntity {
   userId: number;

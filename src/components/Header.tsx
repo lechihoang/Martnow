@@ -12,14 +12,17 @@ import useUser from '@/hooks/useUser';
 
 
 const Header = () => {
-  const user = useUser();
+  const { user, loading } = useUser();
+  
   return (
     <header className="sticky top-0 z-50 py-5 bg-white/70 backdrop-blur-md">
       <Container className="flex items-center justify-between text-lightColor">
         <Logo />
         <HeaderMenu />
         <div className="flex items-center">
-          {user ? (
+          {loading ? (
+            <div className="px-4 py-2 text-sm">Loading...</div>
+          ) : user ? (
             <UserMenu user={user} />
           ) : (
             <>

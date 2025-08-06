@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -8,6 +7,7 @@ import { UserModule } from './user/user.module';
 import { ProductModule } from './product/product.module';
 import { OrderModule } from './order/order.module';
 import { AuthModule } from './auth/auth.module';
+import { SellerModule } from './seller/seller.module';
 import { SellerStatsModule } from './seller-stats/seller-stats.module';
 import { Product } from './product/entities/product.entity';
 import { Seller } from './user/entities/seller.entity';
@@ -43,6 +43,7 @@ import { ProductImage } from './product/entities/product-image.entity';
     ProductModule,
     OrderModule,
     AuthModule,
+    SellerModule,
     SellerStatsModule,
   ],
   controllers: [AppController],

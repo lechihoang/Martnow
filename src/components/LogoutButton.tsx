@@ -1,23 +1,24 @@
 "use client";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import useUser from "@/hooks/useUser";
 
 export default function LogoutButton() {
   const router = useRouter();
+  const { logout } = useUser();
 
   const handleLogout = async () => {
-    // Gọi API backend để logout (xóa cookie refreshToken)
-    await fetch("http://localhost:3001/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    });
-    // Xóa user và accessToken ở localStorage
-    localStorage.removeItem("user");
-    localStorage.removeItem("accessToken");
-    toast.success("Đã đăng xuất!");
-    router.push("/");
-    // Reload lại trang để cập nhật UI
-    window.location.reload();
+    try {
+      await logout();
+      toast.success("Đã đăng xuất!");
+      router.push("/");
+    } catch (error) {
+      toast.error("Có lỗi xảy ra khi đăng xuất");
+      // Fallback: force logout locally
+      localStorage.removeItem("user");
+      router.push("/");
+      window.location.reload();
+    }
   };
 
   return (

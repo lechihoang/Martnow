@@ -1,6 +1,5 @@
 import React from 'react';
 import { useEnhancedUser, useUserManagement } from '../hooks/useEnhancedUser';
-import { UserRole, OrderStatus } from '../types/entities';
 
 interface UserProfilePageProps {
   userId: number;

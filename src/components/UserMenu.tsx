@@ -1,10 +1,10 @@
 "use client";
 import React, { useState, useRef, useEffect } from 'react';
 import LogoutButton from './LogoutButton';
-import { User } from '@/types/entities';
+import { UserResponseDto } from '@/types/dtos';
 
 interface UserMenuProps {
-  user: User;
+  user: UserResponseDto;
 }
 
 const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
@@ -25,6 +25,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
   const getMenuItems = () => {
     const commonItems = [
       { href: `/profile/${user.id}`, label: "Thông tin cá nhân", icon: "👤" },
+      { href: "/settings", label: "Cài đặt tài khoản", icon: "⚙️" },
       { href: `/profile/${user.id}/orders`, label: "Đơn hàng", icon: "📦" }
     ];
 

@@ -4,7 +4,8 @@ import { useRouter, useParams } from 'next/navigation';
 import ProfileLayout from '@/components/profile/ProfileLayout';
 import SellerStats from '@/components/profile/SellerStats';
 import ProfileCard from '@/components/profile/ProfileCard';
-import { Stats, User, Order } from '@/types/entities';
+import { Stats, Order, OrderStatus } from '@/types/entities';
+import { UserResponseDto } from '@/types/dtos';
 import useUser from '@/hooks/useUser';
 
 const AnalyticsPage: React.FC = () => {
@@ -17,9 +18,12 @@ const AnalyticsPage: React.FC = () => {
     totalOrders: 0,
     totalRevenue: 0,
     totalProducts: 0,
-    pendingOrders: 0
+    pendingOrders: 0,
+    completedOrders: 0,
+    averageRating: 0,
+    totalReviews: 0
   });
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserResponseDto | null>(null);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +33,7 @@ const AnalyticsPage: React.FC = () => {
       return;
     }
     
-    if (userData === undefined || !userData) {
+    if (userData === undefined || !userData.user) {
       // Không có user data, chuyển về login
       router.push('/login');
       return;
@@ -42,7 +46,7 @@ const AnalyticsPage: React.FC = () => {
   const fetchData = async () => {
     try {
       const { mockUser, mockStats, mockOrders } = await import('@/lib/mockData');
-      const currentUserData = userData || mockUser;
+      const currentUserData = userData.user || mockUser;
       setCurrentUser(currentUserData);
 
       // Kiểm tra quyền truy cập - chỉ seller và chính chủ tài khoản
@@ -165,14 +169,14 @@ const AnalyticsPage: React.FC = () => {
                         {formatPrice(order.totalPrice)}
                       </div>
                       <div className={`text-xs px-2 py-1 rounded-full ${
-                        order.status === 'delivered' 
+                        order.status === OrderStatus.COMPLETED 
                           ? 'bg-green-100 text-green-800'
-                          : order.status === 'pending'
+                          : order.status === OrderStatus.PENDING
                           ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-blue-100 text-blue-800'
                       }`}>
-                        {order.status === 'delivered' ? 'Đã giao' : 
-                         order.status === 'pending' ? 'Chờ xử lý' : 'Đang xử lý'}
+                        {order.status === OrderStatus.COMPLETED ? 'Đã giao' : 
+                         order.status === OrderStatus.PENDING ? 'Chờ xử lý' : 'Đang xử lý'}
                       </div>
                     </div>
                   </div>

@@ -15,7 +15,10 @@ const ManageProductsPage: React.FC = () => {
     totalOrders: 0,
     totalRevenue: 0,
     totalProducts: 0,
-    pendingOrders: 0
+    pendingOrders: 0,
+    completedOrders: 0,
+    averageRating: 0,
+    totalReviews: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -32,7 +35,7 @@ const ManageProductsPage: React.FC = () => {
     }
 
     // Kiểm tra quyền seller
-    if (userData.role !== 'seller') {
+    if (userData.user?.role !== 'seller') {
       router.push('/');
       return;
     }
@@ -68,7 +71,7 @@ const ManageProductsPage: React.FC = () => {
         setProducts(products.filter(p => p.id !== productId));
         
         // Cập nhật lại stats
-        setStats(prev => ({
+        setStats((prev: Stats) => ({
           ...prev,
           totalProducts: prev.totalProducts - 1
         }));

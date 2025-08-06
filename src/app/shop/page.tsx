@@ -1,170 +1,106 @@
 
-import type { Product, Seller, Category } from "@/types/entities";
+'use client';
+
+import { useEffect, useState } from "react";
+import type { Product } from "@/types/entities";
+import { ProductResponseDto } from "@/types/dtos";
+import { UserRole } from "@/types/entities";
+import { productApi } from "@/lib/api";
 import ProductGrid from "@/components/ProductGrid";
 
-const sampleSeller: Seller = {
-  id: 1,
-  user: {
-    id: 1,
-    name: "Người bán demo",
-    username: "seller1",
-    email: "seller1@email.com",
-    role: "seller",
-    password: "",
-  },
-  shopName: "Tiệm bánh demo",
-  shopAddress: "123 Đường Demo",
-  shopPhone: "0123456789",
-  description: "Shop bán bánh demo",
-  products: [],
+// Hàm chuyển đổi ProductResponseDto thành Product
+const mapProductResponseToProduct = (productDto: ProductResponseDto): Product => {
+  return {
+    id: productDto.id,
+    name: productDto.name,
+    description: productDto.description || "",
+    price: productDto.price,
+    imageUrl: productDto.imageUrl || "/images/banhmi.jpeg",
+    isAvailable: productDto.isAvailable,
+    stock: productDto.stock,
+    discount: productDto.discount,
+    createdAt: productDto.createdAt,
+    updatedAt: productDto.updatedAt,
+    sellerId: productDto.sellerId,
+    categoryId: productDto.categoryId,
+    seller: {
+      id: productDto.seller.id,
+      userId: productDto.seller.id,
+      user: {
+        id: productDto.seller.id,
+        name: productDto.seller.user.name,
+        username: productDto.seller.user.username,
+        email: "",
+        role: UserRole.SELLER,
+        password: "",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        reviews: [],
+      },
+      shopName: productDto.seller.shopName || "",
+      shopAddress: productDto.seller.shopAddress || "",
+      shopPhone: "",
+      description: "",
+      products: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    category: {
+      id: productDto.category.id,
+      name: productDto.category.name,
+      description: productDto.category.description || "",
+      products: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    images: [],
+    reviews: [],
+    orderItems: [],
+  };
 };
 
-const sampleCategory: Category = {
-  id: 1,
-  name: "Bánh mì",
-  description: "Các loại bánh mì",
-  products: [],
-};
+const ShopPage = () => {
+  const [products, setProducts] = useState<(Product & { discount?: number })[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const sampleProducts: (Product & { discount?: number })[] = [
-  {
-    id: 1,
-    name: "Bánh mì đặc biệt",
-    description: "Bánh mì thơm ngon, giòn rụm.",
-    price: 25000,
-    imageUrl: "/images/banhmi.jpeg",
-    isAvailable: true,
-    stock: 0,
-    seller: sampleSeller,
-    category: sampleCategory,
-    discount: 10,
-  },
-    {
-      id: 2,
-      name: "Bánh mì thịt",
-      description: "Bánh mì kẹp thịt truyền thống.",
-      price: 20000,
-      imageUrl: "/images/banhmi.jpeg",
-      isAvailable: true,
-      stock: 10,
-      seller: sampleSeller,
-      category: sampleCategory,
-      discount: 5,
-    },
-    {
-      id: 3,
-      name: "Bánh mì trứng",
-      description: "Bánh mì kẹp trứng chiên.",
-      price: 18000,
-      imageUrl: "/images/banhmi.jpeg",
-      isAvailable: true,
-      stock: 8,
-      seller: sampleSeller,
-      category: sampleCategory,
-      discount: 0,
-    },
-    {
-      id: 4,
-      name: "Bánh mì chả lụa",
-      description: "Bánh mì kẹp chả lụa thơm ngon.",
-      price: 22000,
-      imageUrl: "/images/banhmi.jpeg",
-      isAvailable: true,
-      stock: 12,
-      seller: sampleSeller,
-      category: sampleCategory,
-      discount: 7,
-    },
-    {
-      id: 5,
-      name: "Bánh mì pate",
-      description: "Bánh mì pate béo ngậy.",
-      price: 21000,
-      imageUrl: "/images/banhmi.jpeg",
-      isAvailable: true,
-      stock: 15,
-      seller: sampleSeller,
-      category: sampleCategory,
-      discount: 0,
-    },
-    {
-      id: 6,
-      name: "Bánh mì xíu mại",
-      description: "Bánh mì kẹp xíu mại nóng hổi.",
-      price: 23000,
-      imageUrl: "/images/banhmi.jpeg",
-      isAvailable: true,
-      stock: 9,
-      seller: sampleSeller,
-      category: sampleCategory,
-      discount: 8,
-    },
-    {
-      id: 7,
-      name: "Bánh mì gà xé",
-      description: "Bánh mì kẹp gà xé cay.",
-      price: 24000,
-      imageUrl: "/images/banhmi.jpeg",
-      isAvailable: true,
-      stock: 7,
-      seller: sampleSeller,
-      category: sampleCategory,
-      discount: 0,
-    },
-    {
-      id: 8,
-      name: "Bánh mì cá hộp",
-      description: "Bánh mì kẹp cá hộp đậm đà.",
-      price: 26000,
-      imageUrl: "/images/banhmi.jpeg",
-      isAvailable: true,
-      stock: 6,
-      seller: sampleSeller,
-      category: sampleCategory,
-      discount: 12,
-    },
-    {
-      id: 9,
-      name: "Bánh mì bò nướng",
-      description: "Bánh mì kẹp bò nướng thơm lừng.",
-      price: 28000,
-      imageUrl: "/images/banhmi.jpeg",
-      isAvailable: true,
-      stock: 5,
-      seller: sampleSeller,
-      category: sampleCategory,
-      discount: 0,
-    },
-    {
-      id: 10,
-      name: "Bánh mì phô mai",
-      description: "Bánh mì kẹp phô mai béo ngậy.",
-      price: 27000,
-      imageUrl: "/images/banhmi.jpeg",
-      isAvailable: true,
-      stock: 11,
-      seller: sampleSeller,
-      category: sampleCategory,
-      discount: 6,
-    },
-    {
-      id: 11,
-      name: "Bánh mì chay",
-      description: "Bánh mì kẹp rau củ chay.",
-      price: 19000,
-      imageUrl: "/images/banhmi.jpeg",
-      isAvailable: true,
-      stock: 13,
-      seller: sampleSeller,
-      category: sampleCategory,
-      discount: 0,
-    },
-  ];
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const productDtos = await productApi.getProducts();
+        const mappedProducts = productDtos.map(mapProductResponseToProduct);
+        setProducts(mappedProducts);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError('Không thể tải danh sách sản phẩm');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-const page = () => {
+    fetchProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-lg">Đang tải sản phẩm...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-lg text-red-500">{error}</div>
+      </div>
+    );
+  }
+
   return (
-    <ProductGrid products={sampleProducts} />
-  )
+    <ProductGrid products={products} />
+  );
 }
 
-export default page
+export default ShopPage;

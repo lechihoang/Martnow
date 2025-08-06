@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import ProductDetail from '@/components/ProductDetail';
 import type { Product } from '@/types/entities';
@@ -107,9 +108,9 @@ export default function ProductPage() {
       {/* Breadcrumb */}
       <nav className="mb-6 text-sm">
         <ol className="flex items-center space-x-2 text-gray-500">
-          <li><a href="/" className="hover:text-blue-600">Trang chủ</a></li>
+          <li><Link href="/" className="hover:text-blue-600">Trang chủ</Link></li>
           <li>›</li>
-          <li><a href="/shop" className="hover:text-blue-600">Sản phẩm</a></li>
+          <li><Link href="/shop" className="hover:text-blue-600">Sản phẩm</Link></li>
           <li>›</li>
           {product.category && (
             <>

@@ -10,7 +10,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
-
+import useUser from "@/hooks/useUser";
+import { UserRole } from "@/types/entities";
 
 const registerSchema = z
   .object({
@@ -26,10 +27,10 @@ const registerSchema = z
     path: ["confirmPassword"],
   });
 
-
 export default function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { register } = useUser();
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -46,23 +47,17 @@ export default function RegisterForm() {
     setLoading(true);
     const { confirmPassword, ...submitData } = data;
     try {
-      const res = await fetch("http://localhost:3001/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(submitData),
+      await register({
+        ...submitData,
+        role: submitData.role as UserRole,
       });
-      if (res.ok) {
-        toast.success("Đăng ký thành công! Đang chuyển hướng...");
-        form.reset();
-        setTimeout(() => {
-          router.push("/login");
-        }, 1200);
-      } else {
-        const result = await res.json();
-        toast.error(result.message || "Đăng ký thất bại. Vui lòng thử lại.");
-      }
+      toast.success("Đăng ký thành công! Đang chuyển hướng...");
+      form.reset();
+      setTimeout(() => {
+        router.push("/login");
+      }, 1200);
     } catch (error) {
-      toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
+      toast.error(error instanceof Error ? error.message : "Đăng ký thất bại!");
     } finally {
       setLoading(false);
     }
