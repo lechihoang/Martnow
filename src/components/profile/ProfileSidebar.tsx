@@ -41,7 +41,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ userRole, userId, isOwn
       description: 'Quản lý danh sách sản phẩm'
     },
     {
-      href: `/profile/${userId}/order-management`,
+      href: `/manage-orders`,
       label: 'Quản lý đơn hàng',
       icon: '📋',
       description: 'Xử lý và theo dõi đơn hàng'

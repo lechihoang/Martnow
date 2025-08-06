@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import ProductDetail from '@/components/ProductDetail';
 import type { Product } from '@/types/entities';
+import { productApi } from '@/lib/api';
 
 export default function ProductPage() {
   const params = useParams();
@@ -20,16 +21,8 @@ export default function ProductPage() {
           throw new Error('ID sản phẩm không hợp lệ');
         }
         
-        const response = await fetch(`http://localhost:3001/products/${productId}`, {
-          credentials: 'include'
-        });
-        
-        if (!response.ok) {
-          throw new Error('Không thể tải thông tin sản phẩm');
-        }
-        
-        const data = await response.json();
-        setProduct(data);
+        const data = await productApi.getProduct(Number(productId));
+        setProduct(data as unknown as Product);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
       } finally {

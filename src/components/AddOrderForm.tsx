@@ -1,20 +1,47 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import type { Product } from '../types/entities';
+import { productApi } from '../lib/api';
+
+interface Category {
+  id: number;
+  name: string;
+  description: string;
+}
 
 const AddProductForm = () => {
   const [form, setForm] = useState<
-    Partial<Product> & { categoriesInput?: string }
+    Partial<Product> & { categoryId?: number }
   >({
     name: '',
     description: '',
-    categoriesInput: '',
+    categoryId: undefined,
     price: 0,
+    stock: 0,
   });
   const [loading, setLoading] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  // Load categories khi component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoriesData = await productApi.getCategories();
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        toast.error('Không thể tải danh sách danh mục');
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -92,12 +119,14 @@ const AddProductForm = () => {
     setLoading(true);
     
     try {
+      // Kiểm tra validation
+      if (!form.categoryId) {
+        toast.error('Vui lòng chọn danh mục sản phẩm');
+        return;
+      }
+
       // Chuyển đổi ảnh thành base64 trực tiếp
       const imageBase64Array = await convertImagesToBase64();
-      
-      // Parse categories from input string
-      const categoryNames = (form.categoriesInput || '').split(',').map(v => v.trim()).filter(Boolean);
-      const categories = categoryNames.map(name => ({ name }));
       
       const res = await fetch('http://localhost:3001/products', {
         method: 'POST',
@@ -108,8 +137,9 @@ const AddProductForm = () => {
         body: JSON.stringify({
           name: form.name,
           description: form.description,
-          categories,
+          categoryId: form.categoryId, // Gửi categoryId thay vì categories
           price: form.price,
+          stock: form.stock, // Thêm số lượng
           images: imageBase64Array, // Gửi base64 data URLs
         }),
       });
@@ -121,8 +151,9 @@ const AddProductForm = () => {
         setForm({
           name: '',
           description: '',
-          categoriesInput: '',
+          categoryId: undefined,
           price: 0,
+          stock: 0,
         });
         setSelectedImages([]);
         setImagePreviews([]);
@@ -151,16 +182,101 @@ const AddProductForm = () => {
   return (
     <form onSubmit={handleSubmit} className="max-w-md mx-auto p-4 border rounded bg-white shadow">
       <h2 className="text-xl font-bold mb-4">Thêm sản phẩm mới</h2>
-      <input name="name" value={form.name} onChange={handleChange} placeholder="Tên sản phẩm" className="mb-2 w-full p-2 border rounded" />
-      <textarea name="description" value={form.description} onChange={handleChange} placeholder="Mô tả sản phẩm" className="mb-2 w-full p-2 border rounded" />
-      <input
-        name="categoriesInput"
-        value={form.categoriesInput || ''}
-        onChange={handleChange}
-        placeholder="Nhập các danh mục, cách nhau bởi dấu phẩy"
-        className="mb-2 w-full p-2 border rounded"
-      />
-      <input name="price" type="number" min={0} value={form.price} onChange={handleChange} placeholder="Giá bán" className="mb-2 w-full p-2 border rounded" />
+      
+      {/* Tên sản phẩm */}
+      <div className="mb-2">
+        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+          Tên sản phẩm *
+        </label>
+        <input 
+          id="name"
+          name="name" 
+          value={form.name} 
+          onChange={handleChange} 
+          placeholder="Nhập tên sản phẩm" 
+          className="w-full p-2 border rounded"
+          required 
+        />
+      </div>
+
+      {/* Mô tả sản phẩm */}
+      <div className="mb-2">
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+          Mô tả sản phẩm
+        </label>
+        <textarea 
+          id="description"
+          name="description" 
+          value={form.description} 
+          onChange={handleChange} 
+          placeholder="Nhập mô tả chi tiết về sản phẩm" 
+          className="w-full p-2 border rounded" 
+          rows={3}
+        />
+      </div>
+      
+      {/* Dropdown chọn danh mục */}
+      <div className="mb-2">
+        <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">
+          Danh mục sản phẩm *
+        </label>
+        {loadingCategories ? (
+          <div className="w-full p-2 border rounded bg-gray-100">Đang tải danh mục...</div>
+        ) : (
+          <select
+            id="categoryId"
+            name="categoryId"
+            value={form.categoryId || ''}
+            onChange={(e) => setForm({ ...form, categoryId: Number(e.target.value) || undefined })}
+            className="w-full p-2 border rounded"
+            required
+          >
+            <option value="">-- Chọn danh mục --</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name} - {category.description}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+      
+      {/* Giá bán */}
+      <div className="mb-2">
+        <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+          Giá bán (VNĐ) *
+        </label>
+        <input 
+          id="price"
+          name="price" 
+          type="number" 
+          min={0} 
+          step="1000"
+          value={form.price} 
+          onChange={handleChange} 
+          placeholder="Nhập giá bán sản phẩm" 
+          className="w-full p-2 border rounded"
+          required 
+        />
+      </div>
+      
+      {/* Số lượng trong kho */}
+      <div className="mb-2">
+        <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-1">
+          Số lượng trong kho *
+        </label>
+        <input 
+          id="stock"
+          name="stock" 
+          type="number" 
+          min={0} 
+          value={form.stock} 
+          onChange={handleChange} 
+          placeholder="Nhập số lượng sản phẩm có sẵn" 
+          className="w-full p-2 border rounded"
+          required 
+        />
+      </div>
       
       {/* Input upload ảnh */}
       <div className="mb-4">

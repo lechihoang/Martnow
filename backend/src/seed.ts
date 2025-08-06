@@ -192,7 +192,7 @@ async function seed() {
           imageUrl: `/images/products/product-${i + 1}.jpg`,
           isAvailable: true,
           stock: data.stock,
-          discount: Math.random() > 0.7 ? Math.floor(Math.random() * 20) + 5 : 0 // 30% chance of discount
+          discount: Math.random() > 0.7 ? Math.floor(Math.random() * 20) + 5 : undefined // 30% chance of discount, undefined if no discount
         });
         
         await productRepository.save(product);

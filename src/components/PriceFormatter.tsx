@@ -6,11 +6,22 @@ interface Props {
 }
 
 const PriceFormatter = ({ amount, className }: Props) => {
-  const formattedPrice = new Number(amount).toLocaleString("en-US", {
-    currency: "USD",
-    style: "currency",
-    minimumFractionDigits: 2,
-  });
+  // Không hiển thị gì nếu amount không có giá trị
+  if (amount === undefined || amount === null) {
+    return null;
+  }
+
+  // Format tiền tệ VND
+  const formattedPrice = new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
+
+  // Debug log
+  console.log('PriceFormatter:', { amount, formattedPrice });
+
   return (
     <span
       className={twMerge("text-sm font-semibold text-darkColor", className)}

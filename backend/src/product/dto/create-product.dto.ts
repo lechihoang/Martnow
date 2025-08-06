@@ -74,7 +74,11 @@ export class ProductResponseDto {
   };
   images: {
     id: number;
-    imageUrl: string;
+    imageData: string;
+    mimeType: string;
+    originalName: string;
+    isPrimary: boolean;
+    displayOrder: number;
   }[];
   reviews: {
     id: number;
@@ -123,8 +127,16 @@ export class ProductResponseDto {
 
     this.images = product.images?.map((img: any) => ({
       id: img.id,
-      imageUrl: img.imageUrl,
+      imageData: img.imageData,
+      mimeType: img.mimeType,
+      originalName: img.originalName,
+      isPrimary: img.isPrimary,
+      displayOrder: img.displayOrder,
     })) || [];
+
+    // Set imageUrl từ ảnh primary hoặc ảnh đầu tiên
+    const primaryImage = this.images.find(img => img.isPrimary) || this.images[0];
+    this.imageUrl = primaryImage ? primaryImage.imageData : undefined;
 
     this.reviews = product.reviews?.map((review: any) => ({
       id: review.id,

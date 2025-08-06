@@ -5,7 +5,7 @@ import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/product-image.entity';
 import { Category } from './entities/category.entity';
 import { Seller } from '../user/entities/seller.entity';
-import { CreateProductDto } from './dto/create-product.dto';
+import { CreateProductDto, ProductResponseDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 export interface ProductFilterOptions {
@@ -31,7 +31,23 @@ export class ProductService {
     private readonly sellerRepository: Repository<Seller>,
   ) {}
 
-  async createProduct(createProductDto: CreateProductDto): Promise<Product> {
+  async getCategories(): Promise<Category[]> {
+    return this.categoryRepository.find();
+  }
+
+  async getSellerIdByUserId(userId: number): Promise<number> {
+    const seller = await this.sellerRepository.findOne({ 
+      where: { userId: userId } 
+    });
+    
+    if (!seller) {
+      throw new NotFoundException(`Seller not found for user ID ${userId}`);
+    }
+    
+    return seller.id;
+  }
+
+  async createProduct(createProductDto: CreateProductDto): Promise<ProductResponseDto> {
     // Tách images khỏi DTO để tạo Product trước
     const { images, ...productData } = createProductDto;
     
@@ -74,7 +90,7 @@ export class ProductService {
       throw new NotFoundException(`Product with ID ${savedProduct.id} not found after creation`);
     }
     
-    return result;
+    return new ProductResponseDto(result);
   }
 
   private async ensureDefaultDataExists(): Promise<void> {
@@ -96,7 +112,7 @@ export class ProductService {
       // Tạm thời bỏ qua, sẽ xử lý sau
       console.log('Default seller not found, but continuing...');
     }
-  }  async findOne(id: number): Promise<Product> {
+  }  async findOne(id: number): Promise<ProductResponseDto> {
     const product = await this.productRepository.findOne({
       where: { id },
       relations: this.productRelations,
@@ -106,11 +122,16 @@ export class ProductService {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
-    return product;
+    return new ProductResponseDto(product);
   }
 
-  async updateProduct(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
-    await this.findOne(id); // Kiểm tra product có tồn tại không
+  async updateProduct(id: number, updateProductDto: UpdateProductDto, sellerId?: number): Promise<ProductResponseDto> {
+    const product = await this.findOne(id); // Kiểm tra product có tồn tại không
+    
+    // Kiểm tra quyền sở hữu nếu sellerId được cung cấp
+    if (sellerId !== undefined && product.sellerId !== sellerId) {
+      throw new NotFoundException(`Product with ID ${id} not found or you don't have permission to update it`);
+    }
     
     // Tách images khỏi DTO để update Product trước
     const { images, ...productData } = updateProductDto;
@@ -140,16 +161,28 @@ export class ProductService {
       }
     }
     
-    return this.findOne(id);
+    // Lấy product mới và trả về ProductResponseDto
+    const updatedProduct = await this.productRepository.findOne({
+      where: { id },
+      relations: this.productRelations,
+    });
+    
+    return new ProductResponseDto(updatedProduct!);
   }
 
-  async deleteProduct(id: number): Promise<{ message: string }> {
-    await this.findOne(id); // Kiểm tra product có tồn tại không
+  async deleteProduct(id: number, sellerId?: number): Promise<{ message: string }> {
+    const product = await this.findOne(id); // Kiểm tra product có tồn tại không
+    
+    // Kiểm tra quyền sở hữu nếu sellerId được cung cấp
+    if (sellerId !== undefined && product.sellerId !== sellerId) {
+      throw new NotFoundException(`Product with ID ${id} not found or you don't have permission to delete it`);
+    }
+    
     await this.productRepository.delete(id);
     return { message: 'Product deleted successfully' };
   }
 
-  async findAll(filters: ProductFilterOptions = {}): Promise<Product[]> {
+  async findAll(filters: ProductFilterOptions = {}): Promise<ProductResponseDto[]> {
     const { categoryId, type, minPrice, maxPrice } = filters;
     
     const query = this.productRepository.createQueryBuilder('product')
@@ -160,11 +193,12 @@ export class ProductService {
 
     this.applyFilters(query, { categoryId, type, minPrice, maxPrice });
 
-    return query.getMany();
+    const products = await query.getMany();
+    return products.map(product => new ProductResponseDto(product));
   }
 
-  async findTopDiscountProducts(limit: number = 10): Promise<Product[]> {
-    return this.productRepository.createQueryBuilder('product')
+  async findTopDiscountProducts(limit: number = 10): Promise<ProductResponseDto[]> {
+    const products = await this.productRepository.createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.seller', 'seller')
       .leftJoinAndSelect('seller.user', 'user')
@@ -172,6 +206,8 @@ export class ProductService {
       .orderBy('product.discount', 'DESC')
       .take(limit)
       .getMany();
+    
+    return products.map(product => new ProductResponseDto(product));
   }
 
   // Kiểm tra xem product có thuộc về seller không

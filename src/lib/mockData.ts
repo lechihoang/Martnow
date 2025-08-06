@@ -47,7 +47,12 @@ export const mockProduct: Product = {
   imageUrl: '/images/banhmi.jpeg',
   isAvailable: true,
   stock: 50,
-  discount: 10
+  discount: 10,
+  images: [],
+  reviews: [],
+  orderItems: [],
+  createdAt: new Date(),
+  updatedAt: new Date()
 };
 
 export const mockAddress: Address = {
@@ -104,7 +109,12 @@ export const mockProducts: Product[] = [
     imageUrl: '/images/banhmi.jpeg',
     isAvailable: true,
     stock: 30,
-    discount: 0
+    images: [],
+    reviews: [],
+    orderItems: [],
+    createdAt: new Date(),
+    updatedAt: new Date()
+    // Không có discount - sẽ là undefined
   }
 ];
 

@@ -6,31 +6,35 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../auth/roles.enum';
+import { CurrentUser } from '../auth/current-user.decorator';
 
 @Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
+  // Lấy danh sách categories
+  @Get('categories')
+  async getCategories() {
+    return this.productService.getCategories();
+  }
+
   // Chỉ seller mới có thể tạo sản phẩm
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SELLER)
-  async createProduct(@Body() body: any) {
+  async createProduct(@Body() body: any, @CurrentUser() user: any) {
     try {
-      // Xử lý categories từ frontend
-      let categoryId = 1; // Default category
-      if (body.categories && body.categories.length > 0) {
-        // Lấy category đầu tiên (có thể mở rộng để xử lý nhiều categories)
-        categoryId = body.categories[0].id || 1;
-      }
-
+      // Lấy sellerId từ user hiện tại
+      const sellerId = await this.productService.getSellerIdByUserId(user.userId);
+      
       const createProductDto: CreateProductDto = {
         name: body.name,
         description: body.description,
         price: body.price,
+        stock: body.stock || 0, // Thêm stock với default là 0
         images: body.images || [],
-        sellerId: 1, // Sẽ lấy từ JWT token sau
-        categoryId,
+        sellerId: sellerId,
+        categoryId: body.categoryId,
       };
 
       return this.productService.createProduct(createProductDto);
@@ -47,8 +51,6 @@ export class ProductController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.BUYER, UserRole.SELLER)
   async getProduct(@Param('id') id: number) {
     return this.productService.findOne(id);
   }
@@ -79,14 +81,19 @@ export class ProductController {
   async updateProduct(
     @Param('id') id: number,
     @Body() updateProductDto: UpdateProductDto,
+    @CurrentUser() user: any,
   ) {
-    return this.productService.updateProduct(id, updateProductDto);
+    // Lấy sellerId từ user hiện tại
+    const sellerId = await this.productService.getSellerIdByUserId(user.userId);
+    return this.productService.updateProduct(id, updateProductDto, sellerId);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SELLER)
-  async deleteProduct(@Param('id') id: number) {
-    return this.productService.deleteProduct(id);
+  async deleteProduct(@Param('id') id: number, @CurrentUser() user: any) {
+    // Lấy sellerId từ user hiện tại
+    const sellerId = await this.productService.getSellerIdByUserId(user.userId);
+    return this.productService.deleteProduct(id, sellerId);
   }
 }

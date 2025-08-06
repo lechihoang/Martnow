@@ -197,6 +197,15 @@ export const authApi = {
 
 // Product API (can be added when product controller is implemented)
 export const productApi = {
+  // Get categories
+  async getCategories(): Promise<{ id: number; name: string; description: string; }[]> {
+    const response = await fetch(`${API_BASE_URL}/products/categories`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch categories');
+    return response.json();
+  },
+
   // Get all products
   async getProducts(): Promise<ProductResponseDto[]> {
     const response = await fetch(`${API_BASE_URL}/products`, {

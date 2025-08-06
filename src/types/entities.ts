@@ -106,7 +106,7 @@ export interface Product extends BaseEntity {
   images: ProductImage[];
   isAvailable: boolean;
   stock: number;
-  discount: number;
+  discount?: number; // Cho phép undefined/null
   reviews: Review[];
   orderItems: OrderItem[];
 }

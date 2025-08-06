@@ -33,7 +33,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
       return [
         ...commonItems,
         { href: `/profile/${user.id}/products`, label: "Quản lý sản phẩm", icon: "🛍️" },
-        { href: `/profile/${user.id}/order-management`, label: "Quản lý đơn hàng", icon: "📋" },
+        { href: `/manage-orders`, label: "Quản lý đơn hàng", icon: "📋" },
         { href: `/profile/${user.id}/analytics`, label: "Thống kê", icon: "📊" },
         { href: "/add", label: "Thêm sản phẩm", icon: "➕" }
       ];
