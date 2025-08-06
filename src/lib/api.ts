@@ -15,7 +15,10 @@ import {
   UpdateProductDto,
   OrderResponseDto,
   CreateOrderDto,
-  UploadResponseDto
+  UploadResponseDto,
+  CreateReviewDto,
+  UpdateReviewDto,
+  ReviewResponseDto,
 } from '../types/dtos';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -314,5 +317,63 @@ export const uploadApi = {
     });
     if (!response.ok) throw new Error('Failed to upload file');
     return response.json();
+  },
+};
+
+// Review API
+export const reviewApi = {
+  // Get product reviews
+  async getProductReviews(productId: number): Promise<ReviewResponseDto[]> {
+    const response = await fetch(`${API_BASE_URL}/reviews/product/${productId}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch product reviews');
+    return response.json();
+  },
+
+  // Get product rating stats
+  async getProductRatingStats(productId: number): Promise<{
+    averageRating: number;
+    totalReviews: number;
+    ratingDistribution: { [key: number]: number };
+  }> {
+    const response = await fetch(`${API_BASE_URL}/reviews/product/${productId}/stats`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch product rating stats');
+    return response.json();
+  },
+
+  // Create review
+  async createReview(reviewData: Omit<CreateReviewDto, 'buyerId'>): Promise<ReviewResponseDto> {
+    const response = await fetch(`${API_BASE_URL}/reviews`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(reviewData),
+    });
+    if (!response.ok) throw new Error('Failed to create review');
+    return response.json();
+  },
+
+  // Update review
+  async updateReview(reviewId: number, reviewData: UpdateReviewDto): Promise<ReviewResponseDto> {
+    const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(reviewData),
+    });
+    if (!response.ok) throw new Error('Failed to update review');
+    return response.json();
+  },
+
+  // Delete review
+  async deleteReview(reviewId: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to delete review');
   },
 };

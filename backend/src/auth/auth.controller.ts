@@ -9,34 +9,21 @@ import {
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { Response } from 'express';
+import { RegisterDto, LoginDto } from './dto/auth.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  async register(
-    @Body()
-    registerDto: {
-      name: string;
-      username: string;
-      email: string;
-      role: string;
-      password: string;
-      // Có thể nhận thêm các trường cho seller/buyer nếu cần
-      shopName?: string;
-      shopAddress?: string;
-      shopPhone?: string;
-      description?: string;
-    },
-  ) {
+  async register(@Body() registerDto: RegisterDto) {
     // Gọi service để tạo user và buyer/seller
     return this.authService.register(registerDto);
   }
 
   @Post('login')
   async login(
-    @Body() loginDto: { email: string; password: string }, // Đổi từ username sang email
+    @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
     const user = await this.authService.validateUserByEmail( // Sử dụng method mới
@@ -53,7 +40,8 @@ export class AuthController {
 
   @Post('profile')
   @UseGuards(JwtAuthGuard)
-  getProfile(@Request() req) {
-    return req.user;
+  async getProfile(@Request() req) {
+    // Trả về user đầy đủ với relations
+    return this.authService.getProfile(req.user.userId);
   }
 }

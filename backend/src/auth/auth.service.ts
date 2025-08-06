@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { UserRole } from './roles.enum';
+import { RegisterDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -42,32 +43,47 @@ export class AuthService {
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
     // Set accessToken vào httpOnly cookie
-    response.setCookie('accessToken', accessToken, {
+    response.cookie('accessToken', accessToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
+      secure: false, // Development mode, set true for production
+      sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60, // 1h
+      maxAge: 60 * 60 * 1000, // 1h in milliseconds
     });
     // Set refreshToken vào httpOnly cookie
-    response.setCookie('refreshToken', refreshToken, {
+    response.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
+      secure: false, // Development mode, set true for production
+      sameSite: 'lax',
       path: '/',
-      maxAge: 7 * 24 * 60 * 60, // 7d
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7d in milliseconds
     });
 
-    // Chỉ trả về user info (ẩn password)
+    // Trả về user info đầy đủ để frontend có thể cập nhật state ngay
+    const fullUser = await this.usersService.findByIdWithRelations(user.id);
+    if (!fullUser) {
+      throw new UnauthorizedException('User not found');
+    }
+    
+    // Tạo response object chỉ với thông tin cần thiết
+    const userResponse: any = {
+      id: fullUser.id,
+      name: fullUser.name,
+      username: fullUser.username,
+      email: fullUser.email,
+      role: fullUser.role,
+      avatar: fullUser.avatar,
+    };
+
+    // Thêm buyer hoặc seller info tùy theo role
+    if (fullUser.role === UserRole.BUYER && fullUser.buyer) {
+      userResponse.buyer = fullUser.buyer;
+    } else if (fullUser.role === UserRole.SELLER && fullUser.seller) {
+      userResponse.seller = fullUser.seller;
+    }
+    
     return {
-      user: {
-        id: user.id,
-        name: user.name,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        // avatar: user.avatar, // nếu có trường avatar
-      },
+      user: userResponse,
     };
   }
 
@@ -77,7 +93,7 @@ export class AuthService {
     return { message: 'Logout successful' };
   }
 
-  async register(registerDto: { name: string; username: string; email: string; role: string; password: string }) {
+  async register(registerDto: RegisterDto) {
     const existingUserByUsername = await this.usersService.findOne(registerDto.username);
     const existingUserByEmail = await this.usersService.findByEmail?.(registerDto.email);
     if (existingUserByUsername) {
@@ -87,12 +103,46 @@ export class AuthService {
       throw new UnauthorizedException('Email already exists');
     }
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-    return this.usersService.createUser(
-      registerDto.name,
-      registerDto.username,
-      registerDto.email,
-      registerDto.role as UserRole,
-      hashedPassword
-    );
+    
+    // Tạo CreateUserDto từ RegisterDto
+    const createUserDto = {
+      name: registerDto.name,
+      username: registerDto.username,
+      email: registerDto.email,
+      role: registerDto.role,
+      password: hashedPassword,
+      avatar: registerDto.avatar,
+    };
+    
+    return this.usersService.createUser(createUserDto);
+  }
+
+  async getProfile(userId: number) {
+    const user = await this.usersService.findByIdWithRelations(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    
+    // Trả về user info không có password
+    const { password, ...userInfo } = user;
+    
+    // Tạo response object chỉ với thông tin cần thiết
+    const userResponse: any = {
+      id: userInfo.id,
+      name: userInfo.name,
+      username: userInfo.username,
+      email: userInfo.email,
+      role: userInfo.role,
+      avatar: userInfo.avatar,
+    };
+
+    // Thêm buyer hoặc seller info tùy theo role
+    if (userInfo.role === UserRole.BUYER && userInfo.buyer) {
+      userResponse.buyer = userInfo.buyer;
+    } else if (userInfo.role === UserRole.SELLER && userInfo.seller) {
+      userResponse.seller = userInfo.seller;
+    }
+
+    return userResponse;
   }
 }

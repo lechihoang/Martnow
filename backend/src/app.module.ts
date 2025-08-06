@@ -9,6 +9,7 @@ import { OrderModule } from './order/order.module';
 import { AuthModule } from './auth/auth.module';
 import { SellerModule } from './seller/seller.module';
 import { SellerStatsModule } from './seller-stats/seller-stats.module';
+import { ReviewModule } from './review/review.module';
 import { Product } from './product/entities/product.entity';
 import { Seller } from './user/entities/seller.entity';
 import { Category } from './product/entities/category.entity';
@@ -45,6 +46,7 @@ import { ProductImage } from './product/entities/product-image.entity';
     AuthModule,
     SellerModule,
     SellerStatsModule,
+    ReviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],

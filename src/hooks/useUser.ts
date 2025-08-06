@@ -46,6 +46,12 @@ function useUser() {
       if (response.user) {
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
+        
+        // Dispatch custom event để các component khác biết user đã login
+        window.dispatchEvent(new CustomEvent('userStateChanged', { 
+          detail: { user: response.user, action: 'login' } 
+        }));
+        
         return response.user;
       }
     } catch (err) {
@@ -64,6 +70,11 @@ function useUser() {
     } finally {
       localStorage.removeItem('user');
       setUser(null);
+      
+      // Dispatch custom event để các component khác biết user đã logout
+      window.dispatchEvent(new CustomEvent('userStateChanged', { 
+        detail: { user: null, action: 'logout' } 
+      }));
     }
   };
 
@@ -82,6 +93,12 @@ function useUser() {
       if (response) {
         localStorage.setItem('user', JSON.stringify(response));
         setUser(response);
+        
+        // Dispatch custom event để các component khác biết user đã register
+        window.dispatchEvent(new CustomEvent('userStateChanged', { 
+          detail: { user: response, action: 'register' } 
+        }));
+        
         return response;
       }
     } catch (err) {
@@ -112,6 +129,24 @@ function useUser() {
       
       // Then verify with server
       fetchUser();
+
+      // Listen for user state changes
+      const handleUserStateChange = (event: CustomEvent) => {
+        const { user: newUser, action } = event.detail;
+        if (action === 'login' || action === 'register') {
+          setUser(newUser);
+          setLoading(false);
+        } else if (action === 'logout') {
+          setUser(null);
+          setLoading(false);
+        }
+      };
+
+      window.addEventListener('userStateChanged', handleUserStateChange as EventListener);
+
+      return () => {
+        window.removeEventListener('userStateChanged', handleUserStateChange as EventListener);
+      };
     }
   }, []);
 

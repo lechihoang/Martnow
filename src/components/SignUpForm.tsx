@@ -51,11 +51,12 @@ export default function RegisterForm() {
         ...submitData,
         role: submitData.role as UserRole,
       });
-      toast.success("Đăng ký thành công! Đang chuyển hướng...");
+      toast.success("Đăng ký thành công!");
       form.reset();
+      // Không cần redirect, user đã được login và Header sẽ tự động cập nhật
       setTimeout(() => {
-        router.push("/login");
-      }, 1200);
+        router.push("/");
+      }, 1000);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Đăng ký thất bại!");
     } finally {

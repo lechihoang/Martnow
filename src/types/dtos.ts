@@ -342,3 +342,46 @@ export interface SellerStatsDto {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Review DTOs
+export interface CreateReviewDto {
+  userId: number;
+  buyerId: number;
+  productId: number;
+  rating: number;
+  comment?: string;
+}
+
+export interface UpdateReviewDto {
+  rating?: number;
+  comment?: string;
+}
+
+export interface ReviewResponseDto {
+  id: number;
+  userId: number;
+  buyerId: number;
+  productId: number;
+  rating: number;
+  comment?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  user: {
+    id: number;
+    name: string;
+    username: string;
+    avatar?: string;
+  };
+  buyer: {
+    id: number;
+  };
+  product: {
+    id: number;
+    name: string;
+    imageUrl?: string;
+    seller: {
+      id: number;
+      shopName?: string;
+    };
+  };
+}
