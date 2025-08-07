@@ -26,7 +26,7 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const user = await this.authService.validateUserByEmail( // Sử dụng method mới
+    const user = await this.authService.validateUser( // Sử dụng method đã cập nhật
       loginDto.email,
       loginDto.password,
     );

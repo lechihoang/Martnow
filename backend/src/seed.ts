@@ -9,6 +9,7 @@ import { Buyer } from './user/entities/buyer.entity';
 import { SellerStats } from './user/entities/seller-stats.entity';
 import { UserRole } from './auth/roles.enum';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 
 // Categories data từ frontend
 const categories = [
@@ -87,11 +88,12 @@ async function seed() {
     let buyerUser;
     
     if (!existingBuyerUser) {
+      const hashedPassword = await bcrypt.hash('password123', 10);
       buyerUser = userRepository.create({
         name: 'Nguyễn Văn An',
         username: 'buyer_an',
         email: 'buyer@foodee.com',
-        password: 'password123', // Note: In production, hash this password
+        password: hashedPassword,
         role: UserRole.BUYER,
         avatar: '/images/avatars/buyer-avatar.jpg'
       });
@@ -120,11 +122,12 @@ async function seed() {
     let sellerUser;
     
     if (!existingSellerUser) {
+      const hashedPassword = await bcrypt.hash('password123', 10);
       sellerUser = userRepository.create({
         name: 'Trần Thị Bình',
         username: 'seller_binh',
         email: 'seller@foodee.com',
-        password: 'password123', // Note: In production, hash this password
+        password: hashedPassword,
         role: UserRole.SELLER,
         avatar: '/images/avatars/seller-avatar.jpg'
       });

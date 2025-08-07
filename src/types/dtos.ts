@@ -32,7 +32,19 @@ export interface UserResponseDto {
     id: number;
     createdAt: Date;
   };
+  buyer?: {
+    id: number;
+    createdAt: Date;
+  };
   sellerInfo?: {
+    id: number;
+    shopName?: string;
+    shopAddress?: string;
+    shopPhone?: string;
+    description?: string;
+    createdAt: Date;
+  };
+  seller?: {
     id: number;
     shopName?: string;
     shopAddress?: string;

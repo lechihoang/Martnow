@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import ProductImage from "./ProductImage";
 import ProductInfo from "./ProductInfo";
 import AddToCartButton from "./AddToCartButton";
+import ProductReviewSection from "./ProductReviewSection";
 import type { Product } from "../types/entities";
 
 interface ProductDetailProps {
@@ -23,7 +24,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
         {/* Image Section */}
         <div className="space-y-4">
           <ProductImage
-            src={product.imageUrl}
+            src={product.imageUrl || '/default.jpg'}
             alt={product.name}
             isAvailable={product.isAvailable}
             size="large"
@@ -39,7 +40,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 className="aspect-square bg-gray-100 rounded-md border-2 border-transparent hover:border-blue-500 cursor-pointer transition-colors"
               >
                 <ProductImage
-                  src={product.imageUrl}
+                  src={product.imageUrl || '/default.jpg'}
                   alt={`${product.name} view ${index}`}
                   isAvailable={product.isAvailable}
                   size="small"
@@ -117,6 +118,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Product Reviews Section */}
+      <div className="border-t border-gray-200">
+        <ProductReviewSection productId={product.id} />
       </div>
     </div>
   );

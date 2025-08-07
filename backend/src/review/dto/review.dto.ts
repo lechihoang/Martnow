@@ -2,12 +2,6 @@ import { IsNumber, IsString, IsOptional, Min, Max } from 'class-validator';
 
 export class CreateReviewDto {
   @IsNumber()
-  userId: number;
-
-  @IsNumber()
-  buyerId: number;
-
-  @IsNumber()
   productId: number;
 
   @IsNumber()
@@ -70,24 +64,26 @@ export class ReviewResponseDto {
     this.createdAt = review.createdAt;
     this.updatedAt = review.updatedAt;
 
+    // Defensive checks for buyer and user
     this.user = {
-      id: review.user.id,
-      name: review.user.name,
-      username: review.user.username,
-      avatar: review.user.avatar,
+      id: review.buyer?.user?.id || 0,
+      name: review.buyer?.user?.name || '',
+      username: review.buyer?.user?.username || '',
+      avatar: review.buyer?.user?.avatar,
     };
 
     this.buyer = {
-      id: review.buyer.id,
+      id: review.buyer?.id || 0,
     };
 
+    // Defensive checks for product and seller
     this.product = {
-      id: review.product.id,
-      name: review.product.name,
-      imageUrl: review.product.imageUrl,
+      id: review.product?.id || 0,
+      name: review.product?.name || '',
+      imageUrl: review.product?.imageUrl,
       seller: {
-        id: review.product.seller.id,
-        shopName: review.product.seller.shopName,
+        id: review.product?.seller?.id || 0,
+        shopName: review.product?.seller?.shopName,
       },
     };
   }

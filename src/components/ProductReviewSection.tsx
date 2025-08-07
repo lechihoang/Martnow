@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { reviewApi } from '@/lib/api';
 import { ReviewResponseDto } from '@/types/dtos';
+import { UserRole } from '@/types/entities';
 import ReviewForm from './ReviewForm';
 import ReviewList from './ReviewList';
 import ProductRatingStats from './ProductRatingStats';
@@ -43,6 +45,8 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
       setReviews(reviewsData);
     } catch (error) {
       console.error('Error fetching reviews:', error);
+      // Set empty array instead of keeping loading state
+      setReviews([]);
     }
   };
 
@@ -64,6 +68,7 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
       if (editingReview) {
         // Update existing review
         await reviewApi.updateReview(editingReview.id, reviewData);
+        toast.success('Cập nhật đánh giá thành công!');
       } else {
         // Create new review
         await reviewApi.createReview({
@@ -72,6 +77,7 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
           comment: reviewData.comment,
           userId: userData.user?.id || 0,
         });
+        toast.success('Gửi đánh giá thành công!');
       }
       
       // Refresh data
@@ -81,10 +87,16 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
       setShowReviewForm(false);
       setEditingReview(null);
       
-      alert(editingReview ? 'Cập nhật đánh giá thành công!' : 'Gửi đánh giá thành công!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting review:', error);
-      alert('Có lỗi xảy ra. Vui lòng thử lại.');
+      
+      // Handle specific error for duplicate review
+      if (error?.response?.status === 400 && 
+          error?.response?.data?.message?.includes('đã đánh giá')) {
+        toast.error('Bạn đã đánh giá sản phẩm này rồi! Bạn có thể chỉnh sửa đánh giá hiện có.');
+      } else {
+        toast.error('Có lỗi xảy ra. Vui lòng thử lại.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -103,10 +115,10 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
     try {
       await reviewApi.deleteReview(reviewId);
       await Promise.all([fetchReviews(), fetchRatingStats()]);
-      alert('Xóa đánh giá thành công!');
+      toast.success('Xóa đánh giá thành công!');
     } catch (error) {
       console.error('Error deleting review:', error);
-      alert('Có lỗi xảy ra khi xóa đánh giá.');
+      toast.error('Có lỗi xảy ra khi xóa đánh giá.');
     }
   };
 
@@ -115,9 +127,21 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
     setEditingReview(null);
   };
 
-  const canReview = userData.user?.role === 'buyer' && !userData.loading;
-  const currentBuyerId = userData.user?.buyerInfo?.id;
+  const canReview = userData.user?.role === UserRole.BUYER && !userData.loading;
+  const currentBuyerId = userData.user?.buyerInfo?.id || userData.user?.buyer?.id;
   const hasUserReviewed = currentBuyerId && reviews.some(review => review.buyer.id === currentBuyerId);
+
+  console.log('Review debugging:', {
+    userRole: userData.user?.role,
+    expectedRole: UserRole.BUYER,
+    canReview,
+    userLoggedIn: !!userData.user,
+    loading: userData.loading,
+    currentBuyerId,
+    userBuyerInfo: userData.user?.buyerInfo,
+    reviews: reviews.map(r => ({ id: r.id, buyerId: r.buyer.id })),
+    hasUserReviewed
+  });
 
   if (loading) {
     return (
@@ -149,6 +173,20 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
           >
             Viết đánh giá
           </button>
+        )}
+
+        {!userData.user && !userData.loading && (
+          <div className="text-sm text-gray-600">
+            <a href="/login" className="text-blue-600 hover:text-blue-700">
+              Đăng nhập
+            </a> để viết đánh giá
+          </div>
+        )}
+
+        {userData.user && userData.user.role !== UserRole.BUYER && (
+          <div className="text-sm text-gray-600">
+            Chỉ khách hàng mới có thể viết đánh giá
+          </div>
         )}
       </div>
 

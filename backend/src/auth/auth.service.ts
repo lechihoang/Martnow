@@ -2,7 +2,8 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { UserRole } from './roles.enum';
-import { RegisterDto } from './dto/auth.dto';
+import { RegisterDto, AuthUserResponseDto, LoginResponseDto, LogoutResponseDto } from './dto/auth.dto';
+import { CreateUserDto } from '../user/dto/user.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -12,8 +13,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async validateUser(username: string, password: string): Promise<any> {
-    const user = await this.usersService.findOne(username);
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.usersService.findByEmail(email);
     if (user && await bcrypt.compare(password, user.password)) {
       // Trả về toàn bộ user (ẩn password)
       const { password, ...userInfo } = user;
@@ -22,17 +23,7 @@ export class AuthService {
     throw new UnauthorizedException('Invalid credentials');
   }
 
-  async validateUserByEmail(email: string, password: string): Promise<any> {
-    const user = await this.usersService.findByEmail(email);
-    if (user && await bcrypt.compare(password, user.password)) {
-      // Trả về toàn bộ user (ẩn password)
-      const { password: userPassword, ...userInfo } = user;
-      return userInfo;
-    }
-    throw new UnauthorizedException('Invalid credentials');
-  }
-
-  async login(user: any, response: any) {
+  async login(user: any, response: any): Promise<LoginResponseDto> {
     const payload = { 
       username: user.username, 
       sub: user.id,
@@ -65,47 +56,26 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
     
-    // Tạo response object chỉ với thông tin cần thiết
-    const userResponse: any = {
-      id: fullUser.id,
-      name: fullUser.name,
-      username: fullUser.username,
-      email: fullUser.email,
-      role: fullUser.role,
-      avatar: fullUser.avatar,
-    };
-
-    // Thêm buyer hoặc seller info tùy theo role
-    if (fullUser.role === UserRole.BUYER && fullUser.buyer) {
-      userResponse.buyer = fullUser.buyer;
-    } else if (fullUser.role === UserRole.SELLER && fullUser.seller) {
-      userResponse.seller = fullUser.seller;
-    }
-    
     return {
-      user: userResponse,
+      user: this.buildAuthUserResponse(fullUser),
     };
   }
 
-  async logout(response: any) {
+  async logout(response: any): Promise<LogoutResponseDto> {
     response.clearCookie('accessToken', { path: '/' });
     response.clearCookie('refreshToken', { path: '/' });
     return { message: 'Logout successful' };
   }
 
   async register(registerDto: RegisterDto) {
-    const existingUserByUsername = await this.usersService.findOne(registerDto.username);
     const existingUserByEmail = await this.usersService.findByEmail?.(registerDto.email);
-    if (existingUserByUsername) {
-      throw new UnauthorizedException('Username already exists');
-    }
     if (existingUserByEmail) {
       throw new UnauthorizedException('Email already exists');
     }
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
     
     // Tạo CreateUserDto từ RegisterDto
-    const createUserDto = {
+    const createUserDto: CreateUserDto = {
       name: registerDto.name,
       username: registerDto.username,
       email: registerDto.email,
@@ -117,30 +87,41 @@ export class AuthService {
     return this.usersService.createUser(createUserDto);
   }
 
-  async getProfile(userId: number) {
+  async getProfile(userId: number): Promise<AuthUserResponseDto> {
     const user = await this.usersService.findByIdWithRelations(userId);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
     
-    // Trả về user info không có password
-    const { password, ...userInfo } = user;
-    
-    // Tạo response object chỉ với thông tin cần thiết
-    const userResponse: any = {
-      id: userInfo.id,
-      name: userInfo.name,
-      username: userInfo.username,
-      email: userInfo.email,
-      role: userInfo.role,
-      avatar: userInfo.avatar,
+    return this.buildAuthUserResponse(user);
+  }
+
+  // Helper method để build AuthUserResponseDto
+  private buildAuthUserResponse(user: any): AuthUserResponseDto {
+    const userResponse: AuthUserResponseDto = {
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar,
     };
 
     // Thêm buyer hoặc seller info tùy theo role
-    if (userInfo.role === UserRole.BUYER && userInfo.buyer) {
-      userResponse.buyer = userInfo.buyer;
-    } else if (userInfo.role === UserRole.SELLER && userInfo.seller) {
-      userResponse.seller = userInfo.seller;
+    if (user.role === UserRole.BUYER && user.buyer) {
+      userResponse.buyer = {
+        id: user.buyer.id,
+        createdAt: user.buyer.createdAt,
+      };
+    } else if (user.role === UserRole.SELLER && user.seller) {
+      userResponse.seller = {
+        id: user.seller.id,
+        shopName: user.seller.shopName,
+        shopAddress: user.seller.shopAddress,
+        shopPhone: user.seller.shopPhone,
+        description: user.seller.description,
+        createdAt: user.seller.createdAt,
+      };
     }
 
     return userResponse;

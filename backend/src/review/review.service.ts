@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Review } from './entities/review.entity';
@@ -17,7 +17,16 @@ export class ReviewService {
     private buyerRepository: Repository<Buyer>,
   ) {}
 
-  async createReview(createReviewDto: CreateReviewDto): Promise<ReviewResponseDto> {
+  async createReview(createReviewDto: CreateReviewDto, userId: number): Promise<ReviewResponseDto> {
+    // Tìm buyer từ userId
+    const buyer = await this.buyerRepository.findOne({
+      where: { userId: userId },
+      relations: ['user']
+    });
+    if (!buyer) {
+      throw new NotFoundException('Không tìm thấy thông tin buyer');
+    }
+
     // Kiểm tra product có tồn tại
     const product = await this.productRepository.findOne({
       where: { id: createReviewDto.productId }
@@ -26,20 +35,11 @@ export class ReviewService {
       throw new NotFoundException('Sản phẩm không tồn tại');
     }
 
-    // Kiểm tra buyer có tồn tại
-    const buyer = await this.buyerRepository.findOne({
-      where: { id: createReviewDto.buyerId },
-      relations: ['user']
-    });
-    if (!buyer) {
-      throw new NotFoundException('Buyer không tồn tại');
-    }
-
     // Kiểm tra buyer đã review sản phẩm này chưa
     const existingReview = await this.reviewRepository.findOne({
       where: {
         productId: createReviewDto.productId,
-        buyerId: createReviewDto.buyerId
+        buyerId: buyer.id
       }
     });
     if (existingReview) {
@@ -49,7 +49,8 @@ export class ReviewService {
     // Tạo review mới
     const review = this.reviewRepository.create({
       ...createReviewDto,
-      userId: buyer.userId
+      userId: buyer.userId,
+      buyerId: buyer.id
     });
 
     const savedReview = await this.reviewRepository.save(review);
@@ -57,7 +58,7 @@ export class ReviewService {
     // Lấy review với relations để trả về
     const reviewWithRelations = await this.reviewRepository.findOne({
       where: { id: savedReview.id },
-      relations: ['buyer', 'buyer.user', 'product']
+      relations: ['buyer', 'buyer.user', 'product', 'product.seller']
     });
 
     return new ReviewResponseDto(reviewWithRelations);
@@ -66,21 +67,26 @@ export class ReviewService {
   async getProductReviews(productId: number): Promise<ReviewResponseDto[]> {
     const reviews = await this.reviewRepository.find({
       where: { productId },
-      relations: ['buyer', 'buyer.user', 'product'],
+      relations: ['buyer', 'buyer.user', 'product', 'product.seller'],
       order: { createdAt: 'DESC' }
     });
 
     return reviews.map(review => new ReviewResponseDto(review));
   }
 
-  async updateReview(id: number, updateReviewDto: UpdateReviewDto, buyerId: number): Promise<ReviewResponseDto> {
+  async updateReview(id: number, updateReviewDto: UpdateReviewDto, userId: number): Promise<ReviewResponseDto> {
     const review = await this.reviewRepository.findOne({
-      where: { id, buyerId },
-      relations: ['buyer', 'buyer.user', 'product']
+      where: { id, userId },
+      relations: ['buyer', 'buyer.user', 'product', 'product.seller']
     });
 
     if (!review) {
-      throw new NotFoundException('Review không tồn tại hoặc bạn không có quyền chỉnh sửa');
+      throw new NotFoundException(`Review not found or unauthorized`);
+    }
+
+    // Verify ownership by checking userId through buyer relation
+    if (review.buyer.userId !== userId) {
+      throw new UnauthorizedException('You can only update your own reviews');
     }
 
     // Update fields
@@ -95,13 +101,19 @@ export class ReviewService {
     return new ReviewResponseDto(updatedReview);
   }
 
-  async deleteReview(id: number, buyerId: number): Promise<void> {
+  async deleteReview(id: number, userId: number): Promise<void> {
     const review = await this.reviewRepository.findOne({
-      where: { id, buyerId }
+      where: { id },
+      relations: ['buyer']
     });
 
     if (!review) {
-      throw new NotFoundException('Review không tồn tại hoặc bạn không có quyền xóa');
+      throw new NotFoundException('Review không tồn tại');
+    }
+
+    // Verify ownership by checking userId through buyer relation
+    if (review.buyer.userId !== userId) {
+      throw new UnauthorizedException('Bạn chỉ có thể xóa review của chính mình');
     }
 
     await this.reviewRepository.remove(review);

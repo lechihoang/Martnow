@@ -1,4 +1,4 @@
-import { User, Seller, Order, Product, Stats, Buyer, Category, OrderItem, Address } from '@/types/entities';
+import { User, Seller, Order, Product, Stats, Buyer, Category, OrderItem, Address, UserRole, OrderStatus } from '@/types/entities';
 
 // Mock data cho development
 export const mockUser: User = {
@@ -6,23 +6,23 @@ export const mockUser: User = {
   name: 'Nguyễn Văn A',
   username: 'nguyenvana',
   email: 'nguyenvana@example.com',
-  role: 'seller',
+  role: UserRole.SELLER,
   password: '', // Không hiển thị password
   avatar: '/default-avatar.jpg'
-};
+} as User;
 
 export const mockBuyer: Buyer = {
   id: 1,
   userId: 1,
   user: mockUser
-};
+} as Buyer;
 
 export const mockCategory: Category = {
   id: 1,
   name: 'Bánh mì',
   description: 'Các loại bánh mì',
   products: []
-};
+} as unknown as Category;
 
 export const mockSeller: Seller = {
   id: 1,
@@ -33,7 +33,7 @@ export const mockSeller: Seller = {
   shopPhone: '0901234567',
   description: 'Chuyên bán bánh mì thơm ngon, giá cả phải chăng',
   products: []
-};
+} as unknown as Seller;
 
 export const mockProduct: Product = {
   id: 1,
@@ -64,7 +64,7 @@ export const mockAddress: Address = {
   ward: 'Phường Bến Nghé',
   phone: '0901234567',
   isDefault: true
-};
+} as unknown as Address;
 
 export const mockOrderItem: OrderItem = {
   id: 1,
@@ -72,18 +72,18 @@ export const mockOrderItem: OrderItem = {
   product: mockProduct,
   quantity: 3,
   price: 25000
-};
+} as unknown as OrderItem;
 
 export const mockOrder: Order = {
   id: 1,
   buyer: mockBuyer,
   address: mockAddress,
   totalPrice: 75000,
-  status: 'delivered',
+  status: OrderStatus.COMPLETED,
   createdAt: new Date('2024-01-15T10:30:00Z'),
   updatedAt: new Date('2024-01-15T10:30:00Z'),
   items: [mockOrderItem]
-};
+} as unknown as Order;
 
 // Gán order vào orderItem
 mockOrderItem.order = mockOrder;
@@ -92,8 +92,11 @@ export const mockStats: Stats = {
   totalOrders: 156,
   totalRevenue: 3500000,
   totalProducts: 5,
-  pendingOrders: 8
-};
+  pendingOrders: 8,
+  completedOrders: 148,
+  averageRating: 4.5,
+  totalReviews: 89
+} as unknown as Stats;
 
 export const mockProducts: Product[] = [
   mockProduct,

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Post, Body, Param, Patch, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Post, Body, Param, Patch, Delete, UseGuards, Request } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductService } from './product.service';
@@ -6,7 +6,6 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../auth/roles.enum';
-import { CurrentUser } from '../auth/current-user.decorator';
 
 @Controller('products')
 export class ProductController {
@@ -22,10 +21,10 @@ export class ProductController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SELLER)
-  async createProduct(@Body() body: any, @CurrentUser() user: any) {
+  async createProduct(@Body() body: any, @Request() req: any) {
     try {
       // Lấy sellerId từ user hiện tại
-      const sellerId = await this.productService.getSellerIdByUserId(user.userId);
+      const sellerId = await this.productService.getSellerIdByUserId(req.user.userId);
       
       const createProductDto: CreateProductDto = {
         name: body.name,
@@ -81,19 +80,19 @@ export class ProductController {
   async updateProduct(
     @Param('id') id: number,
     @Body() updateProductDto: UpdateProductDto,
-    @CurrentUser() user: any,
+    @Request() req: any,
   ) {
     // Lấy sellerId từ user hiện tại
-    const sellerId = await this.productService.getSellerIdByUserId(user.userId);
+    const sellerId = await this.productService.getSellerIdByUserId(req.user.userId);
     return this.productService.updateProduct(id, updateProductDto, sellerId);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SELLER)
-  async deleteProduct(@Param('id') id: number, @CurrentUser() user: any) {
+  async deleteProduct(@Param('id') id: number, @Request() req: any) {
     // Lấy sellerId từ user hiện tại
-    const sellerId = await this.productService.getSellerIdByUserId(user.userId);
+    const sellerId = await this.productService.getSellerIdByUserId(req.user.userId);
     return this.productService.deleteProduct(id, sellerId);
   }
 }

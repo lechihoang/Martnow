@@ -327,7 +327,15 @@ export const reviewApi = {
     const response = await fetch(`${API_BASE_URL}/reviews/product/${productId}`, {
       credentials: 'include',
     });
-    if (!response.ok) throw new Error('Failed to fetch product reviews');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      throw new Error(`Failed to fetch product reviews: ${response.status} ${response.statusText}`);
+    }
     return response.json();
   },
 
@@ -352,7 +360,36 @@ export const reviewApi = {
       credentials: 'include',
       body: JSON.stringify(reviewData),
     });
-    if (!response.ok) throw new Error('Failed to create review');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Create Review API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      
+      // Try to parse error response as JSON to get the message
+      let errorMessage = `Failed to create review: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (parseError) {
+        // If can't parse as JSON, use the text as is
+        if (errorText) {
+          errorMessage = errorText;
+        }
+      }
+      
+      // Create a proper error object with response details for handling in UI
+      const error = new Error(errorMessage);
+      (error as any).response = {
+        status: response.status,
+        data: { message: errorMessage }
+      };
+      throw error;
+    }
     return response.json();
   },
 

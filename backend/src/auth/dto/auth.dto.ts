@@ -46,3 +46,33 @@ export class LoginDto {
   @IsString()
   password: string;
 }
+
+// Response DTOs
+export class AuthUserResponseDto {
+  id: number;
+  name: string;
+  username: string;
+  email: string;
+  role: UserRole;
+  avatar?: string;
+  buyer?: {
+    id: number;
+    createdAt: Date;
+  };
+  seller?: {
+    id: number;
+    shopName?: string;
+    shopAddress?: string;
+    shopPhone?: string;
+    description?: string;
+    createdAt: Date;
+  };
+}
+
+export class LoginResponseDto {
+  user: AuthUserResponseDto;
+}
+
+export class LogoutResponseDto {
+  message: string;
+}

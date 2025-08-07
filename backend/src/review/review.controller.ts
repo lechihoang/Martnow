@@ -26,15 +26,10 @@ export class ReviewController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.BUYER)
   async createReview(@Body() createReviewDto: CreateReviewDto, @Request() req) {
-    // Lấy buyerId từ user hiện tại
-    const buyerId = req.user.buyerId; // Cần add buyerId vào JWT payload
+    // Lấy userId từ JWT payload
+    const userId = req.user.userId;
     
-    const reviewData = {
-      ...createReviewDto,
-      buyerId
-    };
-
-    return this.reviewService.createReview(reviewData);
+    return this.reviewService.createReview(createReviewDto, userId);
   }
 
   // Lấy tất cả reviews của một sản phẩm
@@ -58,8 +53,8 @@ export class ReviewController {
     @Body() updateReviewDto: UpdateReviewDto,
     @Request() req
   ) {
-    const buyerId = req.user.buyerId;
-    return this.reviewService.updateReview(id, updateReviewDto, buyerId);
+    const userId = req.user.userId;
+    return this.reviewService.updateReview(id, updateReviewDto, userId);
   }
 
   // Xóa review - chỉ chủ review mới được xóa
@@ -67,8 +62,8 @@ export class ReviewController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.BUYER)
   async deleteReview(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    const buyerId = req.user.buyerId;
-    await this.reviewService.deleteReview(id, buyerId);
+    const userId = req.user.userId;
+    await this.reviewService.deleteReview(id, userId);
     return { message: 'Xóa đánh giá thành công' };
   }
 }
