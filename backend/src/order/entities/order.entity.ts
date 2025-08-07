@@ -31,4 +31,8 @@ export class Order extends BaseEntity {
 
   @OneToMany(() => OrderItem, (item) => item.order)
   items: OrderItem[];
+
+  // Payment relationship  
+  @OneToMany('Payment', 'order')
+  payments: any[];
 }
