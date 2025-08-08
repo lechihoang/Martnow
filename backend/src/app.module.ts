@@ -10,7 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { SellerModule } from './seller/seller.module';
 import { SellerStatsModule } from './seller-stats/seller-stats.module';
 import { ReviewModule } from './review/review.module';
-import { PaymentModule } from './payment/payment.module';
+import { FavoriteModule } from './favorite/favorite.module';
 import { Product } from './product/entities/product.entity';
 import { Seller } from './user/entities/seller.entity';
 import { Category } from './product/entities/category.entity';
@@ -22,7 +22,7 @@ import { OrderItem } from './order/entities/order-item.entity';
 import { Review } from './review/entities/review.entity';
 import { SellerStats } from './user/entities/seller-stats.entity';
 import { ProductImage } from './product/entities/product-image.entity';
-import { Payment } from './payment/entities/payment.entity';
+import { Favorite } from './user/entities/favorite.entity';
 
 @Module({
   imports: [
@@ -37,7 +37,7 @@ import { Payment } from './payment/entities/payment.entity';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [Product, Seller, Category, User, Buyer, Address, Order, OrderItem, Review, SellerStats, ProductImage, Payment],
+        entities: [Product, Seller, Category, User, Buyer, Address, Order, OrderItem, Review, SellerStats, ProductImage, Favorite],
         synchronize: true, // chỉ dùng cho dev, không nên dùng cho production
         ssl: config.get('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
       }),
@@ -49,7 +49,7 @@ import { Payment } from './payment/entities/payment.entity';
     SellerModule,
     SellerStatsModule,
     ReviewModule,
-    PaymentModule,
+    FavoriteModule,
   ],
   controllers: [AppController],
   providers: [AppService],

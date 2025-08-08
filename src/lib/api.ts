@@ -414,3 +414,62 @@ export const reviewApi = {
     if (!response.ok) throw new Error('Failed to delete review');
   },
 };
+
+// Favorites API
+export const favoritesApi = {
+  // Get user's favorite products
+  async getFavorites(): Promise<ProductResponseDto[]> {
+    const response = await fetch(`${API_BASE_URL}/favorites`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch favorites');
+    const data = await response.json();
+    return data.data || []; // API trả về { message, data }
+  },
+
+  // Add product to favorites
+  async addToFavorites(productId: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/favorites/${productId}`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to add to favorites');
+  },
+
+  // Remove product from favorites
+  async removeFromFavorites(productId: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/favorites/${productId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to remove from favorites');
+  },
+
+  // Check if product is favorite
+  async isFavorite(productId: number): Promise<boolean> {
+    const response = await fetch(`${API_BASE_URL}/favorites/check/${productId}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) return false;
+    const data = await response.json();
+    return data.isFavorite;
+  },
+
+  // Get favorite status for multiple products
+  async getFavoriteStatus(productIds: number[]): Promise<Record<number, boolean>> {
+    try {
+      const promises = productIds.map(id => this.isFavorite(id));
+      const results = await Promise.all(promises);
+      
+      const favoriteStatus: Record<number, boolean> = {};
+      productIds.forEach((id, index) => {
+        favoriteStatus[id] = results[index];
+      });
+      
+      return favoriteStatus;
+    } catch (error) {
+      console.error('Error fetching favorite status:', error);
+      return {};
+    }
+  },
+};

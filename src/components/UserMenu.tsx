@@ -39,6 +39,14 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
       ];
     }
 
+    // Thêm link yêu thích cho buyer
+    if (user.buyer) {
+      return [
+        ...commonItems,
+        { href: "/favorites", label: "Sản phẩm yêu thích", icon: "❤️" }
+      ];
+    }
+
     return commonItems;
   };
 

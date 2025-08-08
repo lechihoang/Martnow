@@ -5,6 +5,7 @@ import { Category } from './category.entity';
 import { ProductImage } from './product-image.entity';
 import { Review } from '../../review/entities/review.entity';
 import { OrderItem } from '../../order/entities/order-item.entity';
+import { Favorite } from '../../user/entities/favorite.entity';
 
 @Entity()
 export class Product extends BaseEntity {
@@ -53,4 +54,8 @@ export class Product extends BaseEntity {
   // Tất cả order items cho sản phẩm này
   @OneToMany(() => OrderItem, (orderItem) => orderItem.product)
   orderItems: OrderItem[];
+
+  // Tất cả lượt yêu thích cho sản phẩm này
+  @OneToMany(() => Favorite, (favorite) => favorite.product)
+  favorites: Favorite[];
 }

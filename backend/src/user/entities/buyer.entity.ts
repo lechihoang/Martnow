@@ -5,6 +5,7 @@ import { User } from './user.entity';
 import { Order } from '../../order/entities/order.entity';
 import { Review } from '../../review/entities/review.entity';
 import { Address } from '../../address/entities/address.entity';
+import { Favorite } from './favorite.entity';
 
 @Entity()
 export class Buyer extends BaseEntity {
@@ -26,4 +27,8 @@ export class Buyer extends BaseEntity {
   // Tất cả địa chỉ của buyer
   @OneToMany(() => Address, (address) => address.buyer)
   addresses: Address[];
+
+  // Tất cả sản phẩm yêu thích của buyer
+  @OneToMany(() => Favorite, (favorite) => favorite.buyer)
+  favorites: Favorite[];
 }

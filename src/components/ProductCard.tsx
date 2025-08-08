@@ -5,16 +5,31 @@ import PriceView from "./PriceView";
 import Title from "./Title";
 import type { Product } from "../types/entities";
 import AddToCartButton from "./AddToCartButton";
+import FavoriteButton from "./FavoriteButton";
 
 interface ProductCardProps {
   product: Product;
+  isFavorite?: boolean;
+  onFavoriteChange?: (productId: number, isFavorite: boolean) => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, isFavorite, onFavoriteChange }) => {
+  // Debug log for image URL
+  console.log('ProductCard - Product ID:', product.id, 'ImageURL:', product.imageUrl);
+  
   return (
     <div className="text-sm border-[1px] rounded-md border-darkBlue/20 group bg-white">
       <div className="relative group overflow-hidden bg-shop_light_bg">
-      <Link href={`/product/${product.id}`}>
+        {/* Favorite Button */}
+        <div className="absolute top-2 right-2 z-10">
+          <FavoriteButton 
+            productId={product.id} 
+            initialIsFavorite={isFavorite}
+            onFavoriteChange={onFavoriteChange}
+            className="bg-white/80 backdrop-blur-sm" 
+          />
+        </div>
+        <Link href={`/product/${product.id}`}>
         <Image
           src={product.imageUrl || '/default.jpg'}
           alt={product.name}
