@@ -120,9 +120,9 @@ export const MoMoPayment: React.FC<MoMoPaymentProps> = ({
       const response = await fetch('/api/payment/momo/create', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           orderId,
           amount,
@@ -242,9 +242,9 @@ export const CODPayment: React.FC<CODPaymentProps> = ({
       const response = await fetch('/api/payment/cod/create', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           orderId,
           amount,

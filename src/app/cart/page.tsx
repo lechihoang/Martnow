@@ -5,12 +5,15 @@ import { useRouter } from 'next/navigation';
 import Container from '@/components/Container';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
+import useUser from '@/hooks/useUser';
+import { UserRole } from '@/types/entities';
 import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
 import PaymentButton from '@/components/PaymentButton';
 import { useState } from 'react';
 
 const CartPage: React.FC = () => {
   const router = useRouter();
+  const { user } = useUser();
   const { items, removeFromCart, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCart();
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
@@ -50,18 +53,32 @@ const CartPage: React.FC = () => {
         note: 'Đơn hàng từ giỏ hàng'
       };
 
-      const response = await fetch('http://localhost:3001/order', {
+      console.log('User:', user);
+      console.log('User role:', user?.role);
+      
+      if (!user) {
+        throw new Error('Vui lòng đăng nhập để tạo đơn hàng');
+      }
+
+      if (user.role !== UserRole.BUYER) {
+        throw new Error('Chỉ buyer mới có thể tạo đơn hàng');
+      }
+      
+      const response = await fetch('http://localhost:3001/orders', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
+          // Không gửi Authorization header - chỉ dựa vào cookies
         },
-        credentials: 'include',
+        credentials: 'include', // Cookies sẽ được gửi tự động
         body: JSON.stringify(orderData)
       });
 
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
         const errorData = await response.json();
+        console.log('Error response:', errorData);
         throw new Error(errorData.message || 'Không thể tạo đơn hàng');
       }
 

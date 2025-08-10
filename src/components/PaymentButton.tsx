@@ -31,8 +31,7 @@ export function PaymentButton({
       const response = await fetch(`http://localhost:3001/payment/create/${orderId}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Hoặc từ cookie
+          'Content-Type': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -42,10 +41,16 @@ export function PaymentButton({
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.log('Payment error response:', errorData);
+        console.log('Response status:', response.status);
         throw new Error(errorData.message || 'Có lỗi xảy ra khi tạo thanh toán');
       }
 
-      const { paymentUrl } = await response.json();
+      const response_data = await response.json();
+      console.log('Payment response data:', response_data);
+      
+      const { paymentUrl } = response_data.data; // Access paymentUrl from data property
+      console.log('Payment URL:', paymentUrl);
       
       // Chuyển hướng đến VNPay
       window.location.href = paymentUrl;

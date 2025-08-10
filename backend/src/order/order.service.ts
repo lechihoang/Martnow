@@ -2,25 +2,80 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
+import { OrderItem } from './entities/order-item.entity';
 import { CreateOrderDto } from './dto/order.dto';
+import { Buyer } from '../user/entities/buyer.entity';
+import { Product } from '../product/entities/product.entity';
 
 @Injectable()
 export class OrderService {
   constructor(
     @InjectRepository(Order)
     private orderRepository: Repository<Order>,
+    @InjectRepository(Buyer)
+    private buyerRepository: Repository<Buyer>,
+    @InjectRepository(OrderItem)
+    private orderItemRepository: Repository<OrderItem>,
+    @InjectRepository(Product)
+    private productRepository: Repository<Product>,
   ) {}
 
+  async createFromUserId(createOrderDto: CreateOrderDto, userId: number): Promise<Order> {
+    // Tìm buyer từ userId
+    const buyer = await this.buyerRepository.findOne({
+      where: { userId: userId }
+    });
+
+    if (!buyer) {
+      throw new NotFoundException('Buyer not found for this user');
+    }
+
+    return this.create(createOrderDto, buyer.id);
+  }
+
   async create(createOrderDto: CreateOrderDto, buyerId: number): Promise<Order> {
+    // Tính tổng tiền từ items trước khi tạo order
+    let totalPrice = 0;
+    
+    for (const item of createOrderDto.items) {
+      // Lấy thông tin product để tính giá
+      const product = await this.productRepository.findOne({
+        where: { id: item.productId }
+      });
+      
+      if (!product) {
+        throw new NotFoundException(`Product with ID ${item.productId} not found`);
+      }
+      
+      totalPrice += product.price * item.quantity;
+    }
+
     const order = this.orderRepository.create({
       buyerId,
       addressId: createOrderDto.addressId,
       note: createOrderDto.note,
-      totalPrice: 0, // Sẽ tính từ items
+      totalPrice: totalPrice, // Tính từ items
       status: 'pending', // Mặc định chờ thanh toán
     });
 
     const savedOrder = await this.orderRepository.save(order);
+
+    // Tạo order items
+    for (const item of createOrderDto.items) {
+      const product = await this.productRepository.findOne({ where: { id: item.productId } });
+      if (!product) {
+        throw new NotFoundException(`Product with ID ${item.productId} not found`);
+      }
+      
+      const orderItem = this.orderItemRepository.create({
+        orderId: savedOrder.id,
+        productId: item.productId,
+        quantity: item.quantity,
+        price: product.price,
+      });
+      await this.orderItemRepository.save(orderItem);
+    }
+
     return savedOrder;
   }
 

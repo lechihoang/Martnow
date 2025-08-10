@@ -3,9 +3,6 @@ import { OrderStatus } from '../../common/enums';
 
 export class CreateOrderDto {
   @IsNumber()
-  buyerId: number;
-
-  @IsNumber()
   @IsOptional()
   addressId?: number;
 

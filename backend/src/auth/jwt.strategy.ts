@@ -8,10 +8,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        ExtractJwt.fromAuthHeaderAsBearerToken(), // Fallback cho API calls
         (request) => {
-          // Extract từ cookies (primary method)
-          return request?.cookies?.accessToken;
+          const authHeader = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
+          const cookieToken = request?.cookies?.accessToken;
+          return authHeader || cookieToken;
         }
       ]),
       ignoreExpiration: false,
@@ -20,10 +20,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    return { 
+    const user = { 
       userId: payload.sub, 
       username: payload.username,
-      role: payload.role 
+      role: payload.role
     };
+    return user;
   }
 }

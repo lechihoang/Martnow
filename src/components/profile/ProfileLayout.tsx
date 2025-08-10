@@ -1,7 +1,6 @@
 "use client";
 import React from 'react';
 import Container from '@/components/Container';
-import ProfileSidebar from '@/components/profile/ProfileSidebar';
 
 interface ProfileLayoutProps {
   children: React.ReactNode;
@@ -19,20 +18,9 @@ const ProfileLayout: React.FC<ProfileLayoutProps> = ({
   return (
     <Container>
       <div className="py-8">
-        <div className="flex gap-8">
-          {/* Sidebar */}
-          <div className="hidden md:block">
-            <ProfileSidebar 
-              userRole={userRole} 
-              userId={userId} 
-              isOwnProfile={isOwnProfile}
-            />
-          </div>
-          
-          {/* Main Content */}
-          <div className="flex-1 min-w-0">
-            {children}
-          </div>
+        {/* Main Content - Full Width */}
+        <div className="w-full">
+          {children}
         </div>
       </div>
     </Container>

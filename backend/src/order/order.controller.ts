@@ -17,9 +17,9 @@ export class OrderController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.BUYER)
   async createOrder(@Body() createOrderDto: CreateOrderDto, @Req() req: any) {
-    // Lấy buyerId từ JWT token
-    const buyerId = req.user.buyerId; // Assuming JWT contains buyerId
-    return this.orderService.create(createOrderDto, buyerId);
+    // Lấy userId từ JWT token
+    const userId = req.user.userId;
+    return this.orderService.createFromUserId(createOrderDto, userId);
   }
 
   // 🎯 API để track orders chờ thanh toán

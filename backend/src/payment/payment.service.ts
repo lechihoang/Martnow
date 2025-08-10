@@ -22,15 +22,22 @@ export class PaymentService {
     // Lấy thông tin order
     const order = await this.orderRepository.findOne({
       where: { id: orderId },
-      relations: ['buyer', 'buyer.user', 'orderItems', 'orderItems.product'],
+      relations: ['buyer', 'buyer.user', 'items', 'items.product'],
     });
 
     if (!order) {
       throw new Error('Order not found');
     }
 
-    // Tính tổng tiền (VNPay yêu cầu đơn vị VND)
+    // Tính tổng tiền (VNPay nhận VND trực tiếp, không cần nhân 100)
     const amount = Math.round(order.totalPrice);
+    
+    console.log('Payment Debug:', {
+      orderId,
+      originalAmount: order.totalPrice,
+      convertedAmount: amount,
+      description: `${order.totalPrice} VND -> ${amount} VND (không nhân 100)`
+    });
 
     // Tạo transaction reference (unique)
     const txnRef = `ORDER_${orderId}_${Date.now()}`;

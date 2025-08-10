@@ -72,9 +72,7 @@ export const PaymentStatus: React.FC<PaymentStatusProps> = ({
         : `/api/payment/order/${orderId}/status`;
         
       const response = await fetch(endpoint, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
+        credentials: 'include'
       });
 
       const result = await response.json();

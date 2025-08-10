@@ -55,11 +55,10 @@ export function OrderSummary({
         note: 'Đơn hàng từ website'
       };
 
-      const response = await fetch(`http://localhost:3001/order`, {
+      const response = await fetch(`http://localhost:3001/orders`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify(orderData)

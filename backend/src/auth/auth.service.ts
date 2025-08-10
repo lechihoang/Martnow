@@ -27,7 +27,7 @@ export class AuthService {
     const payload = { 
       username: user.username, 
       sub: user.id,
-      role: user.role 
+      role: user.role
     };
 
     const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
@@ -50,14 +50,9 @@ export class AuthService {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7d in milliseconds
     });
 
-    // Trả về user info đầy đủ để frontend có thể cập nhật state ngay
-    const fullUser = await this.usersService.findByIdWithRelations(user.id);
-    if (!fullUser) {
-      throw new UnauthorizedException('User not found');
-    }
-    
+    // Return user info  
     return {
-      user: this.buildAuthUserResponse(fullUser),
+      user: await this.buildAuthUserResponse(user),
     };
   }
 
@@ -97,30 +92,37 @@ export class AuthService {
   }
 
   // Helper method để build AuthUserResponseDto
-  private buildAuthUserResponse(user: any): AuthUserResponseDto {
+  private async buildAuthUserResponse(user: any): Promise<AuthUserResponseDto> {
+    // Lấy full user với relations nếu cần
+    const fullUser = await this.usersService.findByIdWithRelations(user.id);
+    
+    if (!fullUser) {
+      throw new UnauthorizedException('User not found');
+    }
+    
     const userResponse: AuthUserResponseDto = {
-      id: user.id,
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      avatar: user.avatar,
+      id: fullUser.id,
+      name: fullUser.name,
+      username: fullUser.username,
+      email: fullUser.email,
+      role: fullUser.role,
+      avatar: fullUser.avatar,
     };
 
     // Thêm buyer hoặc seller info tùy theo role
-    if (user.role === UserRole.BUYER && user.buyer) {
+    if (fullUser.role === UserRole.BUYER && fullUser.buyer) {
       userResponse.buyer = {
-        id: user.buyer.id,
-        createdAt: user.buyer.createdAt,
+        id: fullUser.buyer.id,
+        createdAt: fullUser.buyer.createdAt,
       };
-    } else if (user.role === UserRole.SELLER && user.seller) {
+    } else if (fullUser.role === UserRole.SELLER && fullUser.seller) {
       userResponse.seller = {
-        id: user.seller.id,
-        shopName: user.seller.shopName,
-        shopAddress: user.seller.shopAddress,
-        shopPhone: user.seller.shopPhone,
-        description: user.seller.description,
-        createdAt: user.seller.createdAt,
+        id: fullUser.seller.id,
+        shopName: fullUser.seller.shopName,
+        shopAddress: fullUser.seller.shopAddress,
+        shopPhone: fullUser.seller.shopPhone,
+        description: fullUser.seller.description,
+        createdAt: fullUser.seller.createdAt,
       };
     }
 
