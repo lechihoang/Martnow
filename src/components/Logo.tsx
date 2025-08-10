@@ -4,7 +4,6 @@ import React from "react";
 
 const Logo = ({
   className,
-  spanDesign,
 }: {
   className?: string;
   spanDesign?: string;

@@ -145,7 +145,7 @@ const AddProductForm = () => {
       });
       
       if (res.ok) {
-        const data = await res.json();
+        await res.json();
         toast.success('Đã thêm sản phẩm thành công!');
         // Reset form sau khi thành công
         setForm({
@@ -167,12 +167,12 @@ const AddProductForm = () => {
           try {
             const errorData = await res.json();
             toast.error(errorData.message || `Lỗi ${res.status}: Không thể thêm sản phẩm`);
-          } catch (parseError) {
+          } catch {
             toast.error(`Lỗi ${res.status}: Không thể thêm sản phẩm`);
           }
         }
       }
-    } catch (err) {
+    } catch {
       toast.error('Có lỗi xảy ra! Vui lòng thử lại.');
     } finally {
       setLoading(false);

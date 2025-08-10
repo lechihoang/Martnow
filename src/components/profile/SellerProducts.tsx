@@ -78,7 +78,7 @@ const SellerProducts: React.FC<SellerProductsProps> = ({
                   <span className="text-gray-500">Tồn kho:</span>
                   <span className="font-medium">{product.stock}</span>
                 </div>
-                {product.discount > 0 && (
+                {product.discount && product.discount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Giảm giá:</span>
                     <span className="font-medium text-red-600">{product.discount}%</span>

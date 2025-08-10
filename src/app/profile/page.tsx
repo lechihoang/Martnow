@@ -21,7 +21,10 @@ const ProfilePage: React.FC = () => {
     totalOrders: 0,
     totalRevenue: 0,
     totalProducts: 0,
-    pendingOrders: 0
+    pendingOrders: 0,
+    completedOrders: 0,
+    averageRating: 0,
+    totalReviews: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -53,8 +56,20 @@ const ProfilePage: React.FC = () => {
       } = await import('@/lib/mockData');
 
       // Sử dụng dữ liệu từ useUser hook hoặc mock data
-      const currentUser = userData || mockUser;
-      setUser(currentUser);
+      const currentUser = userData.user || mockUser;
+      
+      // Convert to User entity if needed
+      const userEntity: User = {
+        ...currentUser,
+        password: '',
+        reviews: [],
+        createdAt: currentUser.createdAt || new Date(),
+        updatedAt: currentUser.updatedAt || new Date(),
+        buyer: undefined,
+        seller: undefined,
+      };
+      
+      setUser(userEntity);
 
       if (currentUser.role === 'seller') {
         setSeller(mockSeller);

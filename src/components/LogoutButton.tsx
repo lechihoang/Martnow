@@ -12,7 +12,7 @@ export default function LogoutButton() {
       await logout();
       toast.success("Đã đăng xuất!");
       router.push("/");
-    } catch (error) {
+    } catch {
       toast.error("Có lỗi xảy ra khi đăng xuất");
       // Fallback: force logout locally
       localStorage.removeItem("user");

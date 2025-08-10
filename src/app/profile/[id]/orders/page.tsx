@@ -5,7 +5,7 @@ import ProfileLayout from '@/components/profile/ProfileLayout';
 import OrderHistory from '@/components/profile/OrderHistory';
 import { Order, User, OrderStatus, UserRole } from '@/types/entities';
 import { sellerApi } from '@/lib/api';
-import { SellerOrdersDto } from '@/types/dtos';
+import { SellerOrdersDto, UserResponseDto } from '@/types/dtos';
 import useUser from '@/hooks/useUser';
 
 const OrdersPage: React.FC = () => {
@@ -51,6 +51,8 @@ const OrdersPage: React.FC = () => {
         reviews: [],
         createdAt: currentUserResponse.createdAt || new Date(),
         updatedAt: currentUserResponse.updatedAt || new Date(),
+        buyer: undefined,
+        seller: undefined,
       };
       
       setCurrentUser(currentUserData);
@@ -60,11 +62,11 @@ const OrdersPage: React.FC = () => {
         setProfileUser(currentUserData);
         
         // Lấy đơn hàng dựa trên role  
-        if (currentUserData.role === 'seller' && (currentUserResponse as any)?.sellerInfo?.id) {
+        if (currentUserData.role === 'seller' && (currentUserResponse as UserResponseDto)?.sellerInfo?.id) {
           // Seller: lấy đơn hàng đã bán từ API
           try {
-            console.log('Fetching seller orders for seller ID:', (currentUserResponse as any).sellerInfo.id);
-            const sellerOrdersData: SellerOrdersDto = await sellerApi.getSellerOrders((currentUserResponse as any).sellerInfo.id);
+            console.log('Fetching seller orders for seller ID:', (currentUserResponse as UserResponseDto).sellerInfo?.id);
+            const sellerOrdersData: SellerOrdersDto = await sellerApi.getSellerOrders((currentUserResponse as UserResponseDto).sellerInfo!.id);
             console.log('Seller orders data:', sellerOrdersData);
             
             // Convert SellerOrdersDto to Order[]
@@ -116,8 +118,26 @@ const OrdersPage: React.FC = () => {
                   updatedAt: new Date(),
                   sellerId: 0,
                   categoryId: 0,
-                  seller: {} as any,
-                  category: {} as any,
+                  seller: {
+                    id: 0,
+                    shopName: '',
+                    shopAddress: '',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: 0,
+                    user: {} as User,
+                    products: [],
+                    orders: [],
+                    reviews: []
+                  },
+                  category: {
+                    id: 0,
+                    name: '',
+                    description: '',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    products: []
+                  },
                   images: [],
                   reviews: [],
                   orderItems: []

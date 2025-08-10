@@ -27,7 +27,14 @@ export const PaymentStatus: React.FC<PaymentStatusProps> = ({
 }) => {
   const [status, setStatus] = useState<PaymentStatusEnum>(PaymentStatusEnum.PENDING);
   const [loading, setLoading] = useState(true);
-  const [paymentDetails, setPaymentDetails] = useState<any>(null);
+  const [paymentDetails, setPaymentDetails] = useState<{
+    orderId?: number; 
+    amount?: number; 
+    transactionId?: string;
+    gateway?: string;
+    gatewayTransactionId?: string;
+    createdAt?: string;
+  } | null>(null);
   const [countdown, setCountdown] = useState(redirectDelay / 1000);
   const router = useRouter();
 
@@ -232,7 +239,7 @@ export const PaymentStatus: React.FC<PaymentStatusProps> = ({
                 <div className="flex justify-between">
                   <span className="text-gray-600">Thời gian:</span>
                   <span className="font-medium">
-                    {new Date(paymentDetails.createdAt).toLocaleString('vi-VN')}
+                    {paymentDetails.createdAt ? new Date(paymentDetails.createdAt).toLocaleString('vi-VN') : 'N/A'}
                   </span>
                 </div>
               </div>

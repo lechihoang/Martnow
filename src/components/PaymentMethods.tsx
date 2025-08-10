@@ -96,7 +96,7 @@ interface MoMoPaymentProps {
   orderId: string;
   amount: number;
   orderInfo: string;
-  onSuccess?: (result: any) => void;
+  onSuccess?: (result: {transactionId?: string; orderId?: string; amount?: number}) => void;
   onError?: (error: string) => void;
   disabled?: boolean;
 }
@@ -160,10 +160,11 @@ export const MoMoPayment: React.FC<MoMoPaymentProps> = ({
         throw new Error(result.message || 'Không thể tạo thanh toán MoMo');
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra khi thanh toán';
       console.error('MoMo payment error:', error);
-      toast.error(error.message || 'Có lỗi xảy ra khi thanh toán');
-      onError?.(error.message);
+      toast.error(errorMessage);
+      onError?.(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -217,7 +218,7 @@ interface CODPaymentProps {
   orderId: number;
   amount: number;
   orderInfo: string;
-  onSuccess?: (result: any) => void;
+  onSuccess?: (result: {orderId: number; method: string}) => void;
   onError?: (error: string) => void;
   disabled?: boolean;
 }
@@ -260,10 +261,11 @@ export const CODPayment: React.FC<CODPaymentProps> = ({
         throw new Error(result.message || 'Không thể tạo đơn hàng COD');
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra';
       console.error('COD payment error:', error);
-      toast.error(error.message || 'Có lỗi xảy ra');
-      onError?.(error.message);
+      toast.error(errorMessage);
+      onError?.(errorMessage);
     } finally {
       setLoading(false);
     }

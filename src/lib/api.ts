@@ -375,7 +375,7 @@ export const reviewApi = {
         if (errorData.message) {
           errorMessage = errorData.message;
         }
-      } catch (parseError) {
+      } catch {
         // If can't parse as JSON, use the text as is
         if (errorText) {
           errorMessage = errorText;
@@ -383,8 +383,13 @@ export const reviewApi = {
       }
       
       // Create a proper error object with response details for handling in UI
-      const error = new Error(errorMessage);
-      (error as any).response = {
+      const error = new Error(errorMessage) as Error & {
+        response: {
+          status: number;
+          data: { message: string };
+        };
+      };
+      error.response = {
         status: response.status,
         data: { message: errorMessage }
       };

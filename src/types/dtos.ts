@@ -1,4 +1,4 @@
-import { UserRole, OrderStatus, ProductStatus } from './entities';
+import { UserRole, OrderStatus } from './entities';
 
 // User DTOs
 export interface CreateUserDto {

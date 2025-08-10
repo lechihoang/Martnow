@@ -84,6 +84,8 @@ const ProfilePage: React.FC = () => {
         reviews: [], // Default empty array
         createdAt: currentUserData.createdAt || new Date(),
         updatedAt: currentUserData.updatedAt || new Date(),
+        buyer: undefined,
+        seller: undefined,
       };
 
       // Chỉ setCurrentUser một lần khi chưa có hoặc khác
@@ -123,6 +125,8 @@ const ProfilePage: React.FC = () => {
             reviews: [], // Default empty array
             createdAt: new Date(otherUserData.createdAt),
             updatedAt: new Date(otherUserData.updatedAt),
+            buyer: undefined,
+            seller: undefined,
           };
           setUser(otherUser);
           

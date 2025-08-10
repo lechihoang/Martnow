@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Container from '@/components/Container';
-import { OrderStatus } from '@/types/entities';
 import { sellerApi } from '@/lib/api';
 import { SellerOrdersDto } from '@/types/dtos';
 import useUser from '@/hooks/useUser';

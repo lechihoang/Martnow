@@ -20,14 +20,14 @@ function useUser() {
         // Map userId to id if needed for consistency with frontend expectation
         const profileWithId = {
           ...profile,
-          id: profile.id || (profile as any).userId || (profile as any).id
+          id: profile.id || profile.id
         };
         
         // Store in localStorage for quick access across page reloads
         localStorage.setItem('user', JSON.stringify(profileWithId));
         setUser(profileWithId as UserResponseDto);
       }
-    } catch (err) {
+    } catch {
       // If no valid token/session, clear localStorage
       localStorage.removeItem('user');
       setUser(null);
@@ -122,7 +122,7 @@ function useUser() {
             id: storedUser.id || storedUser.userId
           };
           setUser(userWithId);
-        } catch (err) {
+        } catch {
           localStorage.removeItem('user');
         }
       }

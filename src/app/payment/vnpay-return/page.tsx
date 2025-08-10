@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Container from '@/components/Container';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ interface PaymentResult {
   transactionId?: string;
 }
 
-const PaymentReturnPage: React.FC = () => {
+const PaymentReturnContent: React.FC = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [result, setResult] = useState<PaymentResult | null>(null);
@@ -192,6 +192,22 @@ const PaymentReturnPage: React.FC = () => {
         </div>
       </div>
     </Container>
+  );
+};
+
+const PaymentReturnPage: React.FC = () => {
+  return (
+    <Suspense fallback={
+      <Container>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="text-lg">Đang xử lý kết quả thanh toán...</div>
+          </div>
+        </div>
+      </Container>
+    }>
+      <PaymentReturnContent />
+    </Suspense>
   );
 };
 

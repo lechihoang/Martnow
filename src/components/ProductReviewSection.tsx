@@ -87,12 +87,19 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
       setShowReviewForm(false);
       setEditingReview(null);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error submitting review:', error);
       
+      const err = error as Error & {
+        response?: {
+          status: number;
+          data: { message: string };
+        };
+      };
+      
       // Handle specific error for duplicate review
-      if (error?.response?.status === 400 && 
-          error?.response?.data?.message?.includes('đã đánh giá')) {
+      if (err?.response?.status === 400 && 
+          err?.response?.data?.message?.includes('đã đánh giá')) {
         toast.error('Bạn đã đánh giá sản phẩm này rồi! Bạn có thể chỉnh sửa đánh giá hiện có.');
       } else {
         toast.error('Có lỗi xảy ra. Vui lòng thử lại.');

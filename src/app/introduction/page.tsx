@@ -1,7 +1,5 @@
 import React from "react";
-import Image from "next/image";
 import Container from "@/components/Container";
-import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 
 const IntroductionPage = () => {

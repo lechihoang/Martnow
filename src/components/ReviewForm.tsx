@@ -13,7 +13,6 @@ interface ReviewFormProps {
 }
 
 const ReviewForm: React.FC<ReviewFormProps> = ({
-  productId,
   onSubmit,
   onCancel,
   loading = false,

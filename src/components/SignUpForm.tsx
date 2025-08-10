@@ -45,7 +45,7 @@ export default function RegisterForm() {
 
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
     setLoading(true);
-    const { confirmPassword, ...submitData } = data;
+    const { confirmPassword: _, ...submitData } = data;
     try {
       await register({
         ...submitData,

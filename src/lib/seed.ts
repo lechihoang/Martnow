@@ -1,4 +1,4 @@
-import { UserRole, OrderStatus, ProductStatus } from '@/types/entities';
+import { UserRole } from '@/types/entities';
 import type { 
   CreateUserDto, 
   CreateSellerDto, 
@@ -130,7 +130,7 @@ class SeedService {
   }
 
   // Mock buyer creation - phù hợp với BuyerResponseDto và backend entity
-  private async createBuyer(user: UserResponseDto, buyerData: CreateBuyerDto): Promise<BuyerResponseDto> {
+  private async createBuyer(user: UserResponseDto): Promise<BuyerResponseDto> {
     await mockApiDelay(100);
     
     const buyer: BuyerResponseDto = {
@@ -228,9 +228,7 @@ class SeedService {
       });
 
       // 2. Create Buyer Profile
-      const buyer = await this.createBuyer(buyerUser, {
-        userId: buyerUser.id
-      });
+      await this.createBuyer(buyerUser);
 
       // 3. Create Seller User
       console.log('\n🏪 Creating seller user...');

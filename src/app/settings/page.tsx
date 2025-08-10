@@ -4,8 +4,8 @@ import { useRouter } from 'next/navigation';
 import ProfileLayout from '@/components/profile/ProfileLayout';
 import UserInfo from '@/components/profile/UserInfo';
 import SellerInfo from '@/components/profile/SellerInfo';
-import { User, Seller, UserRole } from '@/types/entities';
-import { userApi, sellerApi } from '@/lib/api';
+import { User, Seller } from '@/types/entities';
+import { sellerApi } from '@/lib/api';
 import useUser from '@/hooks/useUser';
 
 const SettingsPage: React.FC = () => {
@@ -53,6 +53,8 @@ const SettingsPage: React.FC = () => {
         reviews: [],
         createdAt: currentUserData.createdAt || new Date(),
         updatedAt: currentUserData.updatedAt || new Date(),
+        buyer: undefined,
+        seller: undefined,
       };
 
       setUser(userAsUser);

@@ -1,11 +1,18 @@
-import { BRANDS_QUERYResult } from "@/sanity.types";
 import React from "react";
 import Title from "../Title";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
 
+interface Brand {
+  _id: string;
+  title: string;
+  slug?: {
+    current: string;
+  };
+}
+
 interface Props {
-  brands: BRANDS_QUERYResult;
+  brands: Brand[];
   selectedBrand?: string | null;
   setSelectedBrand: React.Dispatch<React.SetStateAction<string | null>>;
 }
