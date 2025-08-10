@@ -1,3 +1,5 @@
+"use client";
+
 import type { Product } from "../types/entities";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";

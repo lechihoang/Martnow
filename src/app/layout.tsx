@@ -5,7 +5,7 @@ import { Toaster } from "react-hot-toast";
 import Container from "../components/Container";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { CartProvider } from "@/hooks/useCart";
+import { ClientProviders } from "@/components/ClientProviders";
 // ...existing code...
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <CartProvider>
+        <ClientProviders>
           <Toaster />
           <div className="flex flex-col min-h-screen">
             <Header />
@@ -30,7 +30,7 @@ export default function RootLayout({
             </main>
             <Footer />
           </div>
-        </CartProvider>
+        </ClientProviders>
       </body>
     </html>
   );
