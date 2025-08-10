@@ -24,10 +24,17 @@ export class Order extends BaseEntity {
   totalPrice: number;
 
   @Column({ type: 'varchar', length: 20 })
-  status: string; // pending, confirmed, delivering, completed, cancelled
+  status: string; // pending, confirmed, delivering, completed, cancelled, paid
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   note: string;
+
+  // Thêm các fields cho VNPay
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  paymentReference: string; // Transaction reference từ VNPay
+
+  @Column({ type: 'timestamp', nullable: true })
+  paidAt: Date; // Thời gian thanh toán thành công
 
   @OneToMany(() => OrderItem, (item) => item.order)
   items: OrderItem[];

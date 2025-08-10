@@ -23,6 +23,7 @@ import { Review } from './review/entities/review.entity';
 import { SellerStats } from './user/entities/seller-stats.entity';
 import { ProductImage } from './product/entities/product-image.entity';
 import { Favorite } from './user/entities/favorite.entity';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { Favorite } from './user/entities/favorite.entity';
     SellerStatsModule,
     ReviewModule,
     FavoriteModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Order } from './entities/order.entity';
 import { Buyer } from '../user/entities/buyer.entity';
 import { OrderController } from './order.controller';
+import { OrderService } from './order.service';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -11,7 +12,7 @@ import { AuthModule } from '../auth/auth.module';
     AuthModule
   ],
   controllers: [OrderController],
-  providers: [],
-  exports: [],
+  providers: [OrderService],
+  exports: [OrderService],
 })
 export class OrderModule {}

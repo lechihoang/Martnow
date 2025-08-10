@@ -1,68 +1,91 @@
-import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Order } from './entities/order.entity';
-import { Buyer } from '../user/entities/buyer.entity';
+import { Controller, Post, Get, Body, UseGuards, Req, Param } from '@nestjs/common';
+import { OrderService } from './order.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../auth/roles.enum';
+import { CreateOrderDto } from './dto/order.dto';
 
 @Controller('orders')
 export class OrderController {
   constructor(
-    @InjectRepository(Order)
-    private readonly orderRepository: Repository<Order>,
-    @InjectRepository(Buyer)
-    private readonly buyerRepository: Repository<Buyer>,
+    private readonly orderService: OrderService,
   ) {}
 
   // Chỉ buyer mới có thể tạo đơn hàng
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.BUYER)
-  async createOrder(@Body() createOrderDto: any, @Req() req: any) {
-    const buyer = await this.buyerRepository.findOne({ 
-      where: { userId: req.user.userId } 
-    });
-    
-    const order = this.orderRepository.create({
-      ...createOrderDto,
-      buyer: buyer,
-    });
-    return await this.orderRepository.save(order);
+  async createOrder(@Body() createOrderDto: CreateOrderDto, @Req() req: any) {
+    // Lấy buyerId từ JWT token
+    const buyerId = req.user.buyerId; // Assuming JWT contains buyerId
+    return this.orderService.create(createOrderDto, buyerId);
   }
 
-  // Buyer có thể xem đơn hàng của mình, Seller có thể xem đơn hàng có sản phẩm của mình
-  @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.BUYER, UserRole.SELLER)
-  async getOrders(@Req() req: any) {
-    const userId = req.user.userId;
-    const userRole = req.user.role;
+  // 🎯 API để track orders chờ thanh toán
+  
+  /**
+   * Lấy tất cả đơn hàng chờ thanh toán (Admin only)
+   */
+  @Get('pending')
+  @UseGuards(JwtAuthGuard)
+  async getPendingOrders() {
+    return this.orderService.getPendingOrders();
+  }
 
-    if (userRole === UserRole.BUYER) {
-      // Buyer chỉ xem được đơn hàng của mình
-      const buyer = await this.buyerRepository.findOne({ 
-        where: { userId: userId } 
-      });
-      
-      if (!buyer) {
-        return [];
-      }
-      
-      return this.orderRepository.find({
-        where: { buyer: { id: buyer.id } },
-        relations: ['items', 'items.product'],
-      });
-    } else if (userRole === UserRole.SELLER) {
-      // Seller xem được đơn hàng có chứa sản phẩm của mình
-      return this.orderRepository.createQueryBuilder('order')
-        .leftJoinAndSelect('order.items', 'items')
-        .leftJoinAndSelect('items.product', 'product')
-        .leftJoinAndSelect('product.seller', 'seller')
-        .where('seller.userId = :userId', { userId })
-        .getMany();
-    }
+  /**
+   * Lấy đơn hàng chờ thanh toán của buyer hiện tại
+   */
+  @Get('my-pending')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.BUYER)
+  async getMyPendingOrders(@Req() req: any) {
+    const buyerId = req.user.buyerId;
+    return this.orderService.getPendingOrdersByBuyer(buyerId);
+  }
+
+  /**
+   * Lấy statistics đơn hàng (Admin only)
+   */
+  @Get('statistics')
+  @UseGuards(JwtAuthGuard)
+  async getOrderStatistics() {
+    return this.orderService.getOrderStatistics();
+  }
+
+  /**
+   * Lấy đơn hàng timeout (Admin only)
+   */
+  @Get('timeout')
+  @UseGuards(JwtAuthGuard)
+  async getTimeoutOrders() {
+    return this.orderService.getTimeoutOrders();
+  }
+
+  /**
+   * Tìm đơn hàng theo payment reference
+   */
+  @Get('payment/:paymentRef')
+  @UseGuards(JwtAuthGuard)
+  async findByPaymentReference(@Param('paymentRef') paymentRef: string) {
+    return this.orderService.findByPaymentReference(paymentRef);
+  }
+
+  /**
+   * Lấy tất cả đơn hàng
+   */
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  async getAllOrders() {
+    return this.orderService.findAll();
+  }
+
+  /**
+   * Lấy một đơn hàng cụ thể
+   */
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  async getOrder(@Param('id') id: number) {
+    return this.orderService.findOne(id);
   }
 }

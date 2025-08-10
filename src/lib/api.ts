@@ -473,3 +473,56 @@ export const favoritesApi = {
     }
   },
 };
+
+// Payment API  
+export const paymentApi = {
+  // Create payment URL
+  async createPayment(orderId: number, options?: { locale?: string }) {
+    const response = await fetch(`${API_BASE_URL}/payment/create/${orderId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(options || {})
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create payment');
+    }
+
+    return response.json();
+  },
+
+  // Query payment status
+  async queryPayment(txnRef: string, txnDate: string) {
+    const response = await fetch(`${API_BASE_URL}/payment/query/${txnRef}/${txnDate}`, {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to query payment');
+    }
+
+    return response.json();
+  },
+
+  // Refund payment
+  async refundPayment(txnRef: string, data: { amount: number; reason: string }) {
+    const response = await fetch(`${API_BASE_URL}/payment/refund/${txnRef}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to refund payment');
+    }
+
+    return response.json();
+  }
+};
