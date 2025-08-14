@@ -1,9 +1,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserService } from '../user/user.service';
+import { UserService } from '../account/user/user.service';
 import { UserRole } from './roles.enum';
-import { RegisterDto, AuthUserResponseDto, LoginResponseDto, LogoutResponseDto } from './dto/auth.dto';
-import { CreateUserDto } from '../user/dto/user.dto';
+import { RegisterDto, LoginResponseDto, LogoutResponseDto } from './dto/auth.dto';
+import { CreateUserDto, UserResponseDto } from '../account/user/dto/user.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -23,42 +23,65 @@ export class AuthService {
     throw new UnauthorizedException('Invalid credentials');
   }
 
-  async login(user: any, response: any): Promise<LoginResponseDto> {
-    const payload = { 
-      username: user.username, 
-      sub: user.id,
-      role: user.role
+  async login(user: any, request: any, response: any): Promise<LoginResponseDto> {
+    // Tạo JWT payload
+    const payload = {
+      sub: user.id, // Subject (user ID)
+      username: user.username,
+      email: user.email,
+      role: user.role,
     };
 
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    // Tạo JWT access token
+    const accessToken = this.jwtService.sign(payload);
 
-    // Set accessToken vào httpOnly cookie
-    response.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: false, // Development mode, set true for production
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 1000, // 1h in milliseconds
-    });
-    // Set refreshToken vào httpOnly cookie
-    response.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: false, // Development mode, set true for production
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7d in milliseconds
+    // Set JWT trong HTTP-only cookie
+    response.cookie('access_token', accessToken, {
+      httpOnly: true, // Không thể access từ JavaScript - bảo mật tối đa
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: 'strict', // CSRF protection nghiêm ngặt hơn
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/', // Available for entire app
     });
 
-    // Return user info  
+    // Optional: Set user info cookie cho frontend (không nhạy cảm)
+    response.cookie('user_info', JSON.stringify({
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      email: user.email,
+    }), {
+      httpOnly: false, // Frontend có thể đọc
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+
     return {
       user: await this.buildAuthUserResponse(user),
     };
   }
 
-  async logout(response: any): Promise<LogoutResponseDto> {
-    response.clearCookie('accessToken', { path: '/' });
-    response.clearCookie('refreshToken', { path: '/' });
+  async logout(request: any, response: any): Promise<LogoutResponseDto> {
+    // Với JWT, chúng ta chỉ cần xóa cookies
+    // JWT sẽ tự động hết hạn theo thời gian cấu hình
+    
+    // Clear JWT cookie
+    response.clearCookie('access_token', {
+      path: '/',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+    
+    // Clear user info cookie
+    response.clearCookie('user_info', {
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+
     return { message: 'Logout successful' };
   }
 
@@ -82,17 +105,36 @@ export class AuthService {
     return this.usersService.createUser(createUserDto);
   }
 
-  async getProfile(userId: number): Promise<AuthUserResponseDto> {
-    const user = await this.usersService.findByIdWithRelations(userId);
+  async getProfile(userId: string): Promise<UserResponseDto> {
+    const user = await this.usersService.findByIdWithRelations(parseInt(userId, 10));
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
     
-    return this.buildAuthUserResponse(user);
+    return new UserResponseDto(user);
   }
 
-  // Helper method để build AuthUserResponseDto
-  private async buildAuthUserResponse(user: any): Promise<AuthUserResponseDto> {
+  // Tạo refresh token (tùy chọn - cho session management)
+  async generateRefreshToken(userId: string): Promise<string> {
+    const payload = { sub: userId, type: 'refresh' };
+    return this.jwtService.sign(payload, { expiresIn: '7d' }); // Refresh token có thời hạn dài hơn
+  }
+
+  // Verify refresh token
+  async verifyRefreshToken(refreshToken: string): Promise<any> {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+      if (payload.type !== 'refresh') {
+        throw new UnauthorizedException('Invalid token type');
+      }
+      return payload;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  // ✅ Simplified helper method using UserResponseDto
+  private async buildAuthUserResponse(user: any): Promise<UserResponseDto> {
     // Lấy full user với relations nếu cần
     const fullUser = await this.usersService.findByIdWithRelations(user.id);
     
@@ -100,32 +142,6 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
     
-    const userResponse: AuthUserResponseDto = {
-      id: fullUser.id,
-      name: fullUser.name,
-      username: fullUser.username,
-      email: fullUser.email,
-      role: fullUser.role,
-      avatar: fullUser.avatar,
-    };
-
-    // Thêm buyer hoặc seller info tùy theo role
-    if (fullUser.role === UserRole.BUYER && fullUser.buyer) {
-      userResponse.buyer = {
-        id: fullUser.buyer.id,
-        createdAt: fullUser.buyer.createdAt,
-      };
-    } else if (fullUser.role === UserRole.SELLER && fullUser.seller) {
-      userResponse.seller = {
-        id: fullUser.seller.id,
-        shopName: fullUser.seller.shopName,
-        shopAddress: fullUser.seller.shopAddress,
-        shopPhone: fullUser.seller.shopPhone,
-        description: fullUser.seller.description,
-        createdAt: fullUser.seller.createdAt,
-      };
-    }
-
-    return userResponse;
+    return new UserResponseDto(fullUser);
   }
 }

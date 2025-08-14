@@ -51,8 +51,6 @@ const SettingsPage: React.FC = () => {
         ...currentUserData,
         password: '',
         reviews: [],
-        createdAt: currentUserData.createdAt || new Date(),
-        updatedAt: currentUserData.updatedAt || new Date(),
         buyer: undefined,
         seller: undefined,
       };

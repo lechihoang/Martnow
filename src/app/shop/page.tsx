@@ -1,154 +1,102 @@
-
 'use client';
 
-import { useEffect, useState } from "react";
-import type { Product } from "@/types/entities";
-import { ProductResponseDto } from "@/types/dtos";
-import { UserRole } from "@/types/entities";
-import { productApi, favoritesApi } from "@/lib/api";
-import ProductGrid from "@/components/ProductGrid";
-import useUser from "@/hooks/useUser";
-
-// Hàm chuyển đổi ProductResponseDto thành Product
-const mapProductResponseToProduct = (productDto: ProductResponseDto): Product => {
-  return {
-    id: productDto.id,
-    name: productDto.name,
-    description: productDto.description || "",
-    price: productDto.price,
-    imageUrl: productDto.imageUrl || "/images/banhmi.jpeg",
-    isAvailable: productDto.isAvailable,
-    stock: productDto.stock,
-    discount: productDto.discount,
-    createdAt: productDto.createdAt,
-    updatedAt: productDto.updatedAt,
-    sellerId: productDto.sellerId,
-    categoryId: productDto.categoryId,
-    seller: {
-      id: productDto.seller.id,
-      userId: productDto.seller.id,
-      user: {
-        id: productDto.seller.id,
-        name: productDto.seller.user.name,
-        username: productDto.seller.user.username,
-        email: "",
-        role: UserRole.SELLER,
-        password: "",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        reviews: [],
-      },
-      shopName: productDto.seller.shopName || "",
-      shopAddress: productDto.seller.shopAddress || "",
-      shopPhone: "",
-      description: "",
-      products: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    category: {
-      id: productDto.category.id,
-      name: productDto.category.name,
-      description: productDto.category.description || "",
-      products: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    images: [],
-    reviews: [],
-    orderItems: [],
-  };
-};
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { productApi, favoritesApi } from '@/lib/api';
+import { useApiCache } from '@/hooks/useApiCache';
+import { useFavorites } from '@/hooks/useFavorites';
+import useUser from '@/hooks/useUser';
+import ProductGrid from '@/components/ProductGrid';
+import { PageState } from '@/components/ui';
+import type { ProductResponseDto } from '@/types/dtos';
 
 const ShopPage = () => {
-  const [products, setProducts] = useState<(Product & { discount?: number })[]>([]);
-  const [favoriteStatus, setFavoriteStatus] = useState<Record<number, boolean>>({});
-  const [productsLoading, setProductsLoading] = useState(true);
-  const [favoritesLoading, setFavoritesLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useUser();
+  
+  // ✅ useFavorites has built-in caching (3min TTL, user-specific)
+  const { favorites, addFavorite, removeFavorite, loading: favoritesLoading } = useFavorites();
+  
+  // ✅ Products cache (5min TTL) 
+  const cache = useApiCache<ProductResponseDto[]>({ 
+    ttl: 5 * 60 * 1000, // 5 minutes cache
+    maxSize: 10 
+  });
+  
+  const [products, setProducts] = useState<ProductResponseDto[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  
+  // ✅ Combined loading state for both cached data sources
+  const loading = cache.loading || (user?.buyer && favoritesLoading);
 
-  // Tổng loading state - chỉ false khi tất cả đã load xong
-  const loading = productsLoading || favoritesLoading;
+  // Create favorite status map with useMemo for performance
+  const favoriteStatus = useMemo(() => {
+    return favorites.reduce((acc, product) => {
+      acc[product.id] = true;
+      return acc;
+    }, {} as Record<number, boolean>);
+  }, [favorites]);
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      setError(null);
+      const productData = await cache.fetchWithCache(
+        'products-list',
+        () => productApi.getProducts()
+      );
+      setProducts(productData);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError('Không thể tải danh sách sản phẩm');
+      setProducts([]);
+    }
+  }, [cache]);
+
+  const handleFavoriteChange = useCallback(async (productId: number, isFavorite: boolean) => {
+    try {
+      if (isFavorite) {
+        await favoritesApi.addToFavorites(productId);
+        await addFavorite(productId); // Update local state with cache invalidation
+      } else {
+        await favoritesApi.removeFromFavorites(productId);
+        removeFavorite(productId); // Update local state with cache invalidation
+      }
+    } catch (err) {
+      console.error('Error updating favorite:', err);
+    }
+  }, [addFavorite, removeFavorite]);
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  // Load favorite status when user changes
-  useEffect(() => {
-    if (user && user.buyer && products.length > 0) {
-      loadFavoriteStatus();
-    } else if (user && !user.buyer && products.length > 0) {
-      // Nếu không phải buyer thì không cần load favorites
-      setFavoritesLoading(false);
-    }
-  }, [user, products]);
-
-  const fetchProducts = async () => {
-    try {
-      setProductsLoading(true);
-      const productDtos = await productApi.getProducts();
-      const mappedProducts = productDtos.map(mapProductResponseToProduct);
-      setProducts(mappedProducts);
-    } catch (err) {
-      console.error('Error fetching products:', err);
-      setError('Không thể tải danh sách sản phẩm');
-    } finally {
-      setProductsLoading(false);
-    }
-  };
-
-  const loadFavoriteStatus = async () => {
-    try {
-      setFavoritesLoading(true);
-      const productIds = products.map(p => p.id);
-      const status = await favoritesApi.getFavoriteStatus(productIds);
-      setFavoriteStatus(status);
-    } catch (err) {
-      console.error('Error loading favorite status:', err);
-    } finally {
-      setFavoritesLoading(false);
-    }
-  };
-
-  const handleFavoriteChange = (productId: number, isFavorite: boolean) => {
-    setFavoriteStatus(prev => ({
-      ...prev,
-      [productId]: isFavorite
-    }));
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-shop_dark_green mx-auto mb-4"></div>
-          <div className="text-lg">
-            {productsLoading ? 'Đang tải sản phẩm...' : 
-             favoritesLoading ? 'Đang tải trạng thái yêu thích...' : 
-             'Đang tải...'}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="text-lg text-red-500">{error}</div>
-      </div>
-    );
-  }
-
   return (
-    <ProductGrid 
-      products={products} 
-      favoriteStatus={favoriteStatus}
-      onFavoriteChange={handleFavoriteChange}
-    />
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Cửa hàng</h1>
+        <p className="text-gray-600">Khám phá các món ăn ngon từ nhiều người bán khác nhau</p>
+      </div>
+      
+      <PageState
+        loading={loading}
+        error={error}
+        empty={products.length === 0 && !loading && !error}
+        emptyMessage="Chưa có sản phẩm nào. Hãy quay lại sau!"
+        onRetry={fetchProducts}
+        loadingMessage={cache.loading ? "Đang tải sản phẩm..." : "Đang tải danh sách yêu thích..."}
+        emptyIcon={
+          <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} 
+                  d="M16 11V7a4 4 0 00-8 0v4M8 11v6a2 2 0 002 2h4a2 2 0 002-2v-6M8 11h8" />
+          </svg>
+        }
+      >
+        <ProductGrid 
+          products={products}
+          favoriteStatus={favoriteStatus}
+          onFavoriteChange={handleFavoriteChange}
+        />
+      </PageState>
+    </div>
   );
-}
+};
 
 export default ShopPage;

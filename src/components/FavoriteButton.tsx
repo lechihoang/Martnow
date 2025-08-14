@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Heart } from 'lucide-react';
 import useUser from '../hooks/useUser';
 import { favoritesApi } from '../lib/api';
+import useApiCache from '../hooks/useApiCache';
 
 interface FavoriteButtonProps {
   productId: number;
@@ -19,13 +20,30 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite ?? false);
   const [isLoading, setIsLoading] = useState(false);
   const { user, loading } = useUser();
+  const { fetchWithCache, invalidate } = useApiCache({ ttl: 2 * 60 * 1000 }); // 2 minutes cache
+
+  // Cached favorite status check
+  const checkIsFavorite = useCallback(async () => {
+    if (!user || (!user.buyer && user.role !== 'buyer')) return;
+    
+    try {
+      const cacheKey = `favorite-${productId}-${user.id}`;
+      const isFav = await fetchWithCache(
+        cacheKey,
+        () => favoritesApi.isFavorite(productId)
+      );
+      setIsFavorite(isFav);
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    }
+  }, [productId, user, fetchWithCache]);
 
   // Chỉ kiểm tra favorite status nếu không có initialIsFavorite
   useEffect(() => {
-    if (initialIsFavorite === undefined && user && (user.buyer || user.buyerInfo)) {
+    if (initialIsFavorite === undefined && user && (user.buyer || user.role === 'buyer')) {
       checkIsFavorite();
     }
-  }, [productId, user, initialIsFavorite]);
+  }, [checkIsFavorite, initialIsFavorite, user]);
 
   // Cập nhật state khi initialIsFavorite thay đổi
   useEffect(() => {
@@ -34,14 +52,6 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
     }
   }, [initialIsFavorite]);
 
-  const checkIsFavorite = async () => {
-    try {
-      const isFav = await favoritesApi.isFavorite(productId);
-      setIsFavorite(isFav);
-    } catch (error) {
-      console.error('Error checking favorite status:', error);
-    }
-  };
 
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault(); // Ngăn Link navigation
@@ -53,7 +63,7 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       return;
     }
 
-    if (!user.buyer && !user.buyerInfo) {
+    if (!user.buyer && user.role !== 'buyer') {
       alert('Chỉ khách hàng mới có thể sử dụng tính năng yêu thích');
       return;
     }
@@ -61,13 +71,17 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
     setIsLoading(true);
 
     try {
+      const cacheKey = `favorite-${productId}-${user.id}`;
+      
       if (isFavorite) {
         await favoritesApi.removeFromFavorites(productId);
         setIsFavorite(false);
+        invalidate(cacheKey); // Invalidate cache
         onFavoriteChange?.(productId, false);
       } else {
         await favoritesApi.addToFavorites(productId);
         setIsFavorite(true);
+        invalidate(cacheKey); // Invalidate cache
         onFavoriteChange?.(productId, true);
       }
     } catch (error) {
@@ -88,7 +102,7 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   }
 
   // Nếu user chưa đăng nhập hoặc không phải buyer thì không hiển thị nút
-  if (!user || (!user.buyer && !user.buyerInfo)) {
+  if (!user || (!user.buyer && user.role !== 'buyer')) {
     return null;
   }
 

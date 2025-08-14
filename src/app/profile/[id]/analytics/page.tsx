@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import ProfileLayout from '@/components/profile/ProfileLayout';
 import SellerStats from '@/components/profile/SellerStats';
 import ProfileCard from '@/components/profile/ProfileCard';
-import { Stats, Order, OrderStatus } from '@/types/entities';
+import { Stats, Order, OrderStatus, User } from '@/types/entities';
 import { UserResponseDto } from '@/types/dtos';
 import useUser from '@/hooks/useUser';
 
@@ -23,7 +23,7 @@ const AnalyticsPage: React.FC = () => {
     averageRating: 0,
     totalReviews: 0
   });
-  const [currentUser, setCurrentUser] = useState<UserResponseDto | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | UserResponseDto | null>(null);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 

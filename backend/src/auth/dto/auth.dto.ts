@@ -1,6 +1,7 @@
 import { IsEmail, IsString, IsOptional, IsEnum } from 'class-validator';
 import { UserRole } from '../roles.enum';
 
+// ✅ Simplified RegisterDto
 export class RegisterDto {
   @IsString()
   name: string;
@@ -21,22 +22,14 @@ export class RegisterDto {
   @IsOptional()
   avatar?: string;
 
-  // Seller fields - optional for when registering as seller
-  @IsString()
+  // ✅ Seller info as nested object (optional)
   @IsOptional()
-  shopName?: string;
-
-  @IsString()
-  @IsOptional()
-  shopAddress?: string;
-
-  @IsString()
-  @IsOptional()
-  shopPhone?: string;
-
-  @IsString()
-  @IsOptional()
-  description?: string;
+  sellerInfo?: {
+    shopName?: string;
+    shopAddress?: string;
+    shopPhone?: string;
+    description?: string;
+  };
 }
 
 export class LoginDto {
@@ -47,30 +40,13 @@ export class LoginDto {
   password: string;
 }
 
-// Response DTOs
-export class AuthUserResponseDto {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-  role: UserRole;
-  avatar?: string;
-  buyer?: {
-    id: number;
-    createdAt: Date;
-  };
-  seller?: {
-    id: number;
-    shopName?: string;
-    shopAddress?: string;
-    shopPhone?: string;
-    description?: string;
-    createdAt: Date;
-  };
-}
+// ✅ Import UserResponseDto instead of duplicating
+import { UserResponseDto } from '../../account/user/dto/user.dto';
 
+// ✅ Use existing UserResponseDto instead of duplicate AuthUserResponseDto
 export class LoginResponseDto {
-  user: AuthUserResponseDto;
+  user: UserResponseDto;
+  accessToken?: string; // If using JWT
 }
 
 export class LogoutResponseDto {

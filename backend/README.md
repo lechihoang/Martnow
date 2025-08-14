@@ -1,98 +1,433 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Foodee Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend API cho ứng dụng Foodee được xây dựng với **NestJS**, **TypeORM**, và **PostgreSQL**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🏗 Kiến trúc
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
-```bash
-$ npm install
+```
+src/
+├── auth/                   # Authentication & Authorization
+│   ├── dto/               # Data Transfer Objects
+│   ├── guards/            # JWT & Role guards
+│   ├── strategies/        # Passport strategies
+│   └── auth.service.ts    # Auth logic
+├── user/                  # User management
+│   ├── entities/          # User, Buyer, Seller entities
+│   ├── dto/               # User DTOs
+│   └── user.service.ts
+├── product/               # Product management
+│   ├── entities/          # Product, ProductImage, Category
+│   ├── dto/               # Product DTOs
+│   └── product.service.ts
+├── order/                 # Order processing
+├── payment/               # VNPay integration
+├── review/                # Product reviews
+├── favorite/              # User favorites
+├── address/               # Address management
+└── common/                # Shared utilities
 ```
 
-## Compile and run the project
+## 🚀 Cài đặt
 
+### 1. Cài đặt dependencies:
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
-
+### 2. Tạo file môi trường:
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env
 ```
 
-## Deployment
+### 3. Cấu hình .env:
+```env
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=your_password
+DB_DATABASE=foodee_db
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+# JWT
+JWT_SECRET=your-super-secret-jwt-key
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+# VNPay
+VNPAY_TMN_CODE=your_vnpay_tmn_code
+VNPAY_SECRET_KEY=your_vnpay_secret
+VNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+VNPAY_RETURN_URL=http://localhost:3000/payment/result
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# App
+PORT=3001
+NODE_ENV=development
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 4. Chạy database migration:
+```bash
+npm run typeorm:run
+```
 
-## Resources
+### 5. Seed dữ liệu mẫu (optional):
+```bash
+npm run seed
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+## 🏃‍♂️ Chạy ứng dụng
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### Development:
+```bash
+npm run start:dev
+```
 
-## Support
+### Production:
+```bash
+npm run build
+npm run start:prod
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Debug mode:
+```bash
+npm run start:debug
+```
 
-## Stay in touch
+## 📡 API Endpoints
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Authentication (`/auth`)
 
-## License
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/auth/register` | Đăng ký tài khoản mới | ❌ |
+| POST | `/auth/login` | Đăng nhập | ❌ |
+| POST | `/auth/logout` | Đăng xuất | ✅ |
+| POST | `/auth/profile` | Lấy thông tin user | ✅ |
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+#### Register Request:
+```json
+{
+  "name": "John Doe",
+  "username": "johndoe",
+  "email": "john@example.com",
+  "password": "password123",
+  "role": "BUYER" // or "SELLER"
+}
+```
+
+#### Login Request:
+```json
+{
+  "username": "johndoe",
+  "password": "password123"
+}
+```
+
+### Products (`/products`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/products` | Lấy danh sách sản phẩm | ❌ |
+| GET | `/products/categories` | Lấy danh mục sản phẩm | ❌ |
+| GET | `/products/:id` | Lấy chi tiết sản phẩm | ❌ |
+| POST | `/products` | Tạo sản phẩm mới | ✅ (Seller) |
+| PATCH | `/products/:id` | Cập nhật sản phẩm | ✅ (Seller) |
+| DELETE | `/products/:id` | Xóa sản phẩm | ✅ (Seller) |
+
+#### Create Product Request:
+```json
+{
+  "name": "Cơm chiên dương châu",
+  "description": "Cơm chiên thơm ngon với tôm, xúc xích",
+  "price": 45000,
+  "stock": 100,
+  "categoryId": 1
+}
+```
+
+### Orders (`/orders`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/orders` | Lấy danh sách đơn hàng | ✅ |
+| GET | `/orders/:id` | Chi tiết đơn hàng | ✅ |
+| POST | `/orders` | Tạo đơn hàng mới | ✅ (Buyer) |
+| GET | `/orders/pending` | Đơn hàng đang chờ | ✅ (Seller) |
+
+#### Create Order Request:
+```json
+{
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 2,
+      "price": 45000
+    }
+  ],
+  "totalPrice": 90000,
+  "addressId": 1,
+  "note": "Giao hàng nhanh"
+}
+```
+
+### Payment (`/payment`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/payment/create/:orderId` | Tạo link thanh toán VNPay | ✅ |
+| GET | `/payment/vnpay-return` | Xử lý callback VNPay | ❌ |
+| POST | `/payment/vnpay-ipn` | Webhook VNPay IPN | ❌ |
+
+### Reviews (`/reviews`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/reviews/product/:productId` | Đánh giá của sản phẩm | ❌ |
+| POST | `/reviews` | Tạo đánh giá mới | ✅ (Buyer) |
+| PATCH | `/reviews/:id` | Cập nhật đánh giá | ✅ |
+| DELETE | `/reviews/:id` | Xóa đánh giá | ✅ |
+
+## 🔐 Authentication & Authorization
+
+### JWT Token:
+- Access token có thời hạn 1 giờ
+- Refresh token có thời hạn 7 ngày
+- Token được gửi qua Cookie (HTTP-only)
+
+### Role-based Access:
+- **BUYER**: Khách hàng có thể đặt hàng, đánh giá
+- **SELLER**: Người bán có thể quản lý sản phẩm, đơn hàng
+
+### Guard Usage:
+```typescript
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.SELLER)
+@Post()
+createProduct(@Body() dto: CreateProductDto) {
+  // Only sellers can access
+}
+```
+
+## 🗄 Database Schema
+
+### Core Entities:
+
+#### User:
+- `id` - Primary key
+- `name` - Tên người dùng
+- `username` - Tên đăng nhập (unique)
+- `email` - Email (unique)
+- `password` - Mật khẩu đã hash
+- `role` - BUYER hoặc SELLER
+- `avatar` - URL avatar
+
+#### Product:
+- `id` - Primary key
+- `name` - Tên sản phẩm
+- `description` - Mô tả
+- `price` - Giá
+- `stock` - Số lượng tồn kho
+- `sellerId` - ID người bán
+- `categoryId` - ID danh mục
+- `isAvailable` - Còn bán không
+- `averageRating` - Điểm đánh giá trung bình
+- `totalSold` - Đã bán
+
+
+#### Order:
+- `id` - Primary key
+- `buyerId` - ID khách hàng
+- `totalPrice` - Tổng tiền
+- `status` - Trạng thái đơn hàng
+- `note` - Ghi chú
+
+### Relationships:
+```
+User 1:1 Buyer
+User 1:1 Seller
+Seller 1:n Products
+Product 1:n Reviews
+Buyer 1:n Orders
+Order 1:n OrderItems
+```
+
+## 🎯 Business Logic
+
+### Product Management:
+- Sellers có thể tạo/sửa/xóa sản phẩm của mình
+- Tự động tính toán điểm đánh giá trung bình
+
+### Order Processing:
+1. Buyer tạo đơn hàng
+2. Kiểm tra tồn kho
+3. Tạo payment link (VNPay)
+4. Callback xử lý kết quả thanh toán
+5. Cập nhật trạng thái đơn hàng
+
+
+## 🧪 Testing
+
+### Unit Tests:
+```bash
+npm run test
+```
+
+### E2E Tests:
+```bash
+npm run test:e2e
+```
+
+### Test Coverage:
+```bash
+npm run test:cov
+```
+
+### Testing Structure:
+```
+src/
+├── auth/
+│   ├── auth.service.spec.ts
+│   └── auth.controller.spec.ts
+├── product/
+│   ├── product.service.spec.ts
+│   └── product.controller.spec.ts
+└── test/
+    ├── app.e2e-spec.ts
+    └── fixtures/
+```
+
+## 🔧 Configuration
+
+### TypeORM Configuration:
+```typescript
+@Module({
+  imports: [
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DB_HOST,
+      port: +process.env.DB_PORT,
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_DATABASE,
+      entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+      synchronize: process.env.NODE_ENV === 'development',
+    }),
+  ],
+})
+```
+
+### JWT Configuration:
+```typescript
+JwtModule.register({
+  secret: process.env.JWT_SECRET,
+  signOptions: { expiresIn: '1h' },
+})
+```
+
+## 📊 Monitoring & Logging
+
+### Request Logging:
+```typescript
+// All requests are logged with timestamp
+[Nest] INFO [RouterExplorer] Mapped {/products, GET} route
+```
+
+### Error Handling:
+```typescript
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    // Global error handling
+  }
+}
+```
+
+## 🚀 Performance Optimization
+
+### Database Optimizations:
+- Indexes trên các trường thường query
+- Lazy loading cho relations
+- Query optimization với QueryBuilder
+
+### Caching (Future):
+```typescript
+@CacheKey('products')
+@CacheTTL(300)
+@Get()
+findAll() {
+  return this.productService.findAll();
+}
+```
+
+## 📝 API Response Format
+
+### Success Response:
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "name": "Product name"
+  }
+}
+```
+
+### Error Response:
+```json
+{
+  "status": "error",
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "email",
+      "message": "Email is required"
+    }
+  ]
+}
+```
+
+## 🔒 Security
+
+### Security Measures:
+- JWT Authentication
+- Password hashing với bcrypt
+- Rate limiting
+- CORS configuration
+- Input validation với class-validator
+- SQL injection protection (TypeORM)
+
+### Environment Variables:
+```bash
+# Bảo mật secrets
+JWT_SECRET=complex-random-string
+DB_PASSWORD=strong-password
+VNPAY_SECRET_KEY=vnpay-secret
+
+# Không commit .env file
+echo ".env" >> .gitignore
+```
+
+## 📈 Scaling Considerations
+
+### Horizontal Scaling:
+- Stateless API design
+- Database connection pooling
+- Load balancer ready
+
+### Database Scaling:
+- Read replicas
+- Connection pooling
+- Query optimization
+
+---
+
+## 🤝 Contributing
+
+1. Fork repository
+2. Tạo feature branch
+3. Viết tests cho code mới
+4. Đảm bảo tất cả tests pass
+5. Tạo Pull Request
+
+## 📞 Support
+
+- Issues: [GitHub Issues](https://github.com/yourrepo/foodee/issues)
+- Documentation: [API Docs](http://localhost:3001/api)
+- Email: dev@foodee.com

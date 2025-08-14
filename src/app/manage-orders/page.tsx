@@ -5,20 +5,16 @@ import { useRouter } from 'next/navigation';
 import Container from '@/components/Container';
 import { sellerApi } from '@/lib/api';
 import { SellerOrdersDto } from '@/types/dtos';
+import { OrderStatus } from '@/types/entities';
 import useUser from '@/hooks/useUser';
 
 interface OrderWithDetails {
-  orderId: number;
+  id: number;
   buyerName: string;
   totalPrice: number;
-  status: string;
+  status: OrderStatus;
   createdAt: Date;
-  items: Array<{
-    productId: number;
-    productName: string;
-    quantity: number;
-    price: number;
-  }>;
+  itemCount: number;
 }
 
 const ManageOrdersPage: React.FC = () => {
@@ -56,13 +52,13 @@ const ManageOrdersPage: React.FC = () => {
       }
 
       // Lấy thông tin seller để có sellerId
-      if (!currentUserData?.sellerInfo?.id) {
+      if (!currentUserData?.seller?.id) {
         setError('Không tìm thấy thông tin seller');
         return;
       }
 
       // Gọi API để lấy đơn hàng của seller
-      const sellerOrdersData: SellerOrdersDto = await sellerApi.getSellerOrders(currentUserData.sellerInfo.id);
+      const sellerOrdersData: SellerOrdersDto = await sellerApi.getSellerOrders(currentUserData.seller.id);
       
       setOrders(sellerOrdersData.orders || []);
     } catch (error) {
@@ -118,8 +114,8 @@ const ManageOrdersPage: React.FC = () => {
       
       setOrders(prevOrders => 
         prevOrders.map(order => 
-          order.orderId === orderId 
-            ? { ...order, status: newStatus }
+          order.id === orderId 
+            ? { ...order, status: newStatus as OrderStatus }
             : order
         )
       );
@@ -232,10 +228,10 @@ const ManageOrdersPage: React.FC = () => {
             ) : (
               <div className="space-y-4">
                 {filteredOrders.map((order) => (
-                  <div key={order.orderId} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div key={order.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="font-semibold text-gray-900">Đơn hàng #{order.orderId}</h3>
+                        <h3 className="font-semibold text-gray-900">Đơn hàng #{order.id}</h3>
                         <p className="text-sm text-gray-600">
                           Khách hàng: {order.buyerName}
                         </p>
@@ -243,7 +239,7 @@ const ManageOrdersPage: React.FC = () => {
                           Ngày đặt: {new Date(order.createdAt).toLocaleDateString('vi-VN')}
                         </p>
                         <div className="text-sm text-gray-600">
-                          Sản phẩm: {order.items.map(item => `${item.productName} (x${item.quantity})`).join(', ')}
+                          Số lượng sản phẩm: {order.itemCount}
                         </div>
                       </div>
                       <div className="text-right">
@@ -258,19 +254,19 @@ const ManageOrdersPage: React.FC = () => {
                     
                     <div className="flex justify-between items-center">
                       <div className="text-sm text-gray-600">
-                        {order.items.length} sản phẩm
+                        {order.itemCount} sản phẩm
                       </div>
                       
                       {order.status.toLowerCase() === 'pending' && (
                         <div className="flex gap-2">
                           <button
-                            onClick={() => handleStatusChange(order.orderId, 'confirmed')}
+                            onClick={() => handleStatusChange(order.id, 'confirmed')}
                             className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
                           >
                             Xác nhận
                           </button>
                           <button
-                            onClick={() => handleStatusChange(order.orderId, 'cancelled')}
+                            onClick={() => handleStatusChange(order.id, 'cancelled')}
                             className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
                           >
                             Hủy
@@ -280,7 +276,7 @@ const ManageOrdersPage: React.FC = () => {
                       
                       {order.status.toLowerCase() === 'confirmed' && (
                         <button
-                          onClick={() => handleStatusChange(order.orderId, 'preparing')}
+                          onClick={() => handleStatusChange(order.id, 'preparing')}
                           className="px-3 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600"
                         >
                           Chuẩn bị
@@ -289,7 +285,7 @@ const ManageOrdersPage: React.FC = () => {
 
                       {order.status.toLowerCase() === 'preparing' && (
                         <button
-                          onClick={() => handleStatusChange(order.orderId, 'delivering')}
+                          onClick={() => handleStatusChange(order.id, 'delivering')}
                           className="px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
                         >
                           Giao hàng
@@ -298,7 +294,7 @@ const ManageOrdersPage: React.FC = () => {
                       
                       {order.status.toLowerCase() === 'delivering' && (
                         <button
-                          onClick={() => handleStatusChange(order.orderId, 'completed')}
+                          onClick={() => handleStatusChange(order.id, 'completed')}
                           className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
                         >
                           Hoàn thành

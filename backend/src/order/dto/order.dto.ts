@@ -1,11 +1,7 @@
-import { IsNumber, IsString, IsOptional, IsArray, IsEnum } from 'class-validator';
-import { OrderStatus } from '../../common/enums';
+import { IsNumber, IsString, IsOptional, IsArray, IsEnum, Min } from 'class-validator';
+import { OrderStatus } from '../../shared/enums';
 
 export class CreateOrderDto {
-  @IsNumber()
-  @IsOptional()
-  addressId?: number;
-
   @IsString()
   @IsOptional()
   note?: string;
@@ -14,15 +10,14 @@ export class CreateOrderDto {
   items: CreateOrderItemDto[];
 }
 
+// ✅ Simplified CreateOrderItemDto - Remove price (calculated from product)
 export class CreateOrderItemDto {
   @IsNumber()
   productId: number;
 
   @IsNumber()
+  @Min(1)
   quantity: number;
-
-  @IsNumber()
-  price: number;
 }
 
 export class UpdateOrderDto {
@@ -38,7 +33,6 @@ export class UpdateOrderDto {
 export class OrderResponseDto {
   id: number;
   buyerId: number;
-  addressId?: number;
   totalPrice: number;
   status: OrderStatus;
   note?: string;
@@ -50,14 +44,9 @@ export class OrderResponseDto {
       name: string;
       username: string;
       email: string;
+      address?: string;
+      phone?: string;
     };
-  };
-  address?: {
-    addressLine: string;
-    city: string;
-    district: string;
-    ward: string;
-    phone: string;
   };
   items: {
     id: number;
@@ -77,7 +66,6 @@ export class OrderResponseDto {
   constructor(order: any) {
     this.id = order.id;
     this.buyerId = order.buyerId;
-    this.addressId = order.addressId;
     this.totalPrice = order.totalPrice;
     this.status = order.status;
     this.note = order.note;
@@ -90,18 +78,10 @@ export class OrderResponseDto {
         name: order.buyer.user.name,
         username: order.buyer.user.username,
         email: order.buyer.user.email,
+        address: order.buyer.user.address,
+        phone: order.buyer.user.phone,
       },
     };
-
-    if (order.address) {
-      this.address = {
-        addressLine: order.address.addressLine,
-        city: order.address.city,
-        district: order.address.district,
-        ward: order.address.ward,
-        phone: order.address.phone,
-      };
-    }
 
     this.items = order.items.map((item: any) => ({
       id: item.id,

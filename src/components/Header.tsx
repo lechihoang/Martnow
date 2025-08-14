@@ -10,6 +10,7 @@ import UserMenu from './UserMenu'
 import { ShoppingBag } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/hooks/useCart'
+import FavoritesDropdown from './FavoritesDropdown'
 
 import useUser from '@/hooks/useUser';
 
@@ -30,6 +31,9 @@ const Header = () => {
             <div className="px-4 py-2 text-sm">Loading...</div>
           ) : user ? (
             <>
+              {/* Favorites Dropdown - only show when logged in */}
+              <FavoritesDropdown />
+              
               {/* Cart Icon - chỉ hiện khi đã đăng nhập */}
               <button
                 onClick={() => router.push('/cart')}

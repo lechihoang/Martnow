@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards, Req, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Req, Param, ParseIntPipe } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -34,14 +34,14 @@ export class OrderController {
   }
 
   /**
-   * Lấy đơn hàng chờ thanh toán của buyer hiện tại
+   * Lấy đơn hàng đã thanh toán của buyer hiện tại
    */
-  @Get('my-pending')
+  @Get('my-orders')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.BUYER)
-  async getMyPendingOrders(@Req() req: any) {
+  async getMyPaidOrders(@Req() req: any) {
     const buyerId = req.user.buyerId;
-    return this.orderService.getPendingOrdersByBuyer(buyerId);
+    return this.orderService.getPaidOrdersByBuyer(buyerId);
   }
 
   /**
@@ -85,7 +85,7 @@ export class OrderController {
    */
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  async getOrder(@Param('id') id: number) {
+  async getOrder(@Param('id', ParseIntPipe) id: number) {
     return this.orderService.findOne(id);
   }
 }

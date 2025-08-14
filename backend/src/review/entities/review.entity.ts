@@ -1,20 +1,19 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
-import { User } from '../../user/entities/user.entity';
-import { Buyer } from '../../user/entities/buyer.entity';
+import { Entity, Column, ManyToOne, JoinColumn, Index, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { Buyer } from '../../account/buyer/entities/buyer.entity';
 import { Product } from '../../product/entities/product.entity';
 
 @Entity()
-export class Review extends BaseEntity {
-  @Column()
-  userId: number;
+@Index(['productId']) // Index cho việc lấy reviews của sản phẩm
+@Index(['buyerId']) // Index cho việc lấy reviews của buyer
+export class Review {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @ManyToOne(() => User, (user) => user.reviews)
-  @JoinColumn({ name: 'userId' })
-  user: User;
-
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
+  
   @Column()
-  buyerId: number;
+  buyerId: number; // Reference to Buyer.id
 
   @ManyToOne(() => Buyer, (buyer) => buyer.reviews)
   @JoinColumn({ name: 'buyerId' })
@@ -32,4 +31,7 @@ export class Review extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   comment: string;
+
+  @Column({ type: 'int', default: 0 })
+  helpfulCount: number;
 }

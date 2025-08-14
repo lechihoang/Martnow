@@ -22,10 +22,15 @@ const mapProductResponseToProduct = (productDto: ProductResponseDto): Product =>
     isAvailable: productDto.isAvailable,
     stock: productDto.stock,
     discount: productDto.discount,
-    createdAt: productDto.createdAt,
-    updatedAt: productDto.updatedAt,
     sellerId: productDto.sellerId,
     categoryId: productDto.categoryId,
+    // Statistics fields
+    averageRating: productDto.averageRating || 0,
+    totalReviews: productDto.totalReviews || 0,
+    totalSold: productDto.totalSold || 0,
+    viewCount: 0,
+    // SEO field
+    tags: undefined,
     seller: {
       id: productDto.seller.id,
       userId: productDto.seller.id,
@@ -36,8 +41,6 @@ const mapProductResponseToProduct = (productDto: ProductResponseDto): Product =>
         email: "",
         role: UserRole.SELLER,
         password: "",
-        createdAt: new Date(),
-        updatedAt: new Date(),
         reviews: [],
       },
       shopName: productDto.seller.shopName || "",
@@ -45,16 +48,12 @@ const mapProductResponseToProduct = (productDto: ProductResponseDto): Product =>
       shopPhone: "",
       description: "",
       products: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     category: {
       id: productDto.category.id,
       name: productDto.category.name,
       description: productDto.category.description || "",
       products: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     images: [],
     reviews: [],
@@ -74,9 +73,9 @@ export default function FavoritesPage() {
   const loading = favoritesLoading || statusLoading;
 
   useEffect(() => {
-    if (user && user.buyer) {
+    if (user && (user.buyer || user.role === 'buyer')) {
       fetchFavorites();
-    } else if (user && !user.buyer) {
+    } else if (user && !user.buyer && user.role !== 'buyer') {
       setFavoritesLoading(false);
     }
   }, [user]);
@@ -155,7 +154,7 @@ export default function FavoritesPage() {
     );
   }
 
-  if (!user.buyer) {
+  if (!user.buyer && user.role !== 'buyer') {
     return (
       <Container className="py-10">
         <div className="text-center">

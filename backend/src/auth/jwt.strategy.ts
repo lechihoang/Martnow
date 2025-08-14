@@ -9,9 +9,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request) => {
+          // Ưu tiên đọc từ HTTP-only cookie
+          const cookieToken = request?.cookies?.access_token;
+          // Fallback to Authorization header for API clients
           const authHeader = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
-          const cookieToken = request?.cookies?.accessToken;
-          return authHeader || cookieToken;
+          return cookieToken || authHeader;
         }
       ]),
       ignoreExpiration: false,
@@ -20,11 +22,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    const user = { 
-      userId: payload.sub, 
+    return {
+      userId: payload.sub,
+      id: payload.sub, // For compatibility
       username: payload.username,
-      role: payload.role
+      email: payload.email,
+      role: payload.role,
     };
-    return user;
   }
 }

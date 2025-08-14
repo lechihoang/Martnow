@@ -1,4 +1,5 @@
 import { Controller, Get, Query, Post, Body, Param, Patch, Delete, UseGuards, Request } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductService } from './product.service';
@@ -23,6 +24,7 @@ export class ProductController {
   @Roles(UserRole.SELLER)
   async createProduct(@Body() body: any, @Request() req: any) {
     try {
+      
       // Lấy sellerId từ user hiện tại
       const sellerId = await this.productService.getSellerIdByUserId(req.user.userId);
       
@@ -31,12 +33,10 @@ export class ProductController {
         description: body.description,
         price: body.price,
         stock: body.stock || 0, // Thêm stock với default là 0
-        images: body.images || [],
-        sellerId: sellerId,
         categoryId: body.categoryId,
       };
 
-      return this.productService.createProduct(createProductDto);
+      return this.productService.createProduct(createProductDto, sellerId);
     } catch (error) {
       console.error('Error creating product:', error);
       throw error;
@@ -94,5 +94,43 @@ export class ProductController {
     // Lấy sellerId từ user hiện tại
     const sellerId = await this.productService.getSellerIdByUserId(req.user.userId);
     return this.productService.deleteProduct(id, sellerId);
+  }
+
+  // === SIMPLE ENHANCED ENDPOINTS ===
+
+  // 🔍 Simple search
+  @Get('search')
+  @UseGuards(ThrottlerGuard)
+  async searchProducts(
+    @Query('q') query: string,
+    @Query('limit') limit: number = 20,
+  ) {
+    if (!query || query.trim().length < 2) {
+      return [];
+    }
+    return this.productService.searchProducts(query.trim(), limit);
+  }
+
+  // 🔥 Popular products
+  @Get('popular')
+  async getPopularProducts(@Query('limit') limit: number = 10) {
+    return this.productService.getPopularProducts(limit);
+  }
+
+  // 🎯 Similar products
+  @Get(':id/similar')
+  async getSimilarProducts(
+    @Param('id') id: number,
+    @Query('limit') limit: number = 5,
+  ) {
+    return this.productService.getSimilarProducts(id, limit);
+  }
+
+  // 🛠️ Generate slug utility
+  @Get('utils/slug/:name')
+  generateProductSlug(@Param('name') name: string) {
+    return {
+      slug: this.productService.generateProductSlug(name),
+    };
   }
 }

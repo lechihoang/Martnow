@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   UserResponseDto, 
   UserReviewsDto,
@@ -14,7 +14,7 @@ export const useUserProfile = (userId?: number) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
     setError(null);
@@ -26,13 +26,11 @@ export const useUserProfile = (userId?: number) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
-    if (userId) {
-      fetchUser();
-    }
-  }, [userId]); // Remove fetchUser from dependency
+    fetchUser();
+  }, [fetchUser]);
 
   return { user, loading, error, refetch: fetchUser };
 };
@@ -71,7 +69,7 @@ export const useBuyerOrders = (buyerId?: number) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!buyerId) return;
     setLoading(true);
     setError(null);
@@ -83,13 +81,11 @@ export const useBuyerOrders = (buyerId?: number) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [buyerId]);
 
   useEffect(() => {
-    if (buyerId) {
-      fetchOrders();
-    }
-  }, [buyerId]); // Remove fetchOrders from dependency
+    fetchOrders();
+  }, [fetchOrders]);
 
   return { orders, loading, error, refetch: fetchOrders };
 };
@@ -100,7 +96,7 @@ export const useSellerOrders = (sellerId?: number) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!sellerId) return;
     setLoading(true);
     setError(null);
@@ -112,13 +108,11 @@ export const useSellerOrders = (sellerId?: number) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sellerId]);
 
   useEffect(() => {
-    if (sellerId) {
-      fetchOrders();
-    }
-  }, [sellerId]); // Remove fetchOrders from dependency
+    fetchOrders();
+  }, [fetchOrders]);
 
   return { orders, loading, error, refetch: fetchOrders };
 };
@@ -128,13 +122,16 @@ export const useEnhancedUser = (userId?: number) => {
   const { user, loading: userLoading, error: userError } = useUserProfile(userId);
   const { reviews, loading: reviewsLoading } = useUserReviews(userId);
   
-  // Conditionally fetch buyer or seller data based on role
+  // Only fetch orders if user has the appropriate role
+  const shouldFetchBuyerOrders = user?.role === UserRole.BUYER || user?.role === UserRole.BOTH;
+  const shouldFetchSellerOrders = user?.role === UserRole.SELLER || user?.role === UserRole.BOTH;
+  
   const { orders: buyerOrders, loading: buyerOrdersLoading } = useBuyerOrders(
-    user?.buyerInfo?.id
+    shouldFetchBuyerOrders ? user?.buyer?.id : undefined
   );
   
   const { orders: sellerOrders, loading: sellerOrdersLoading } = useSellerOrders(
-    user?.sellerInfo?.id
+    shouldFetchSellerOrders ? user?.seller?.id : undefined
   );
 
   const loading = userLoading || reviewsLoading || buyerOrdersLoading || sellerOrdersLoading;
@@ -142,7 +139,7 @@ export const useEnhancedUser = (userId?: number) => {
   const isBuyer = user?.role === UserRole.BUYER || user?.role === UserRole.BOTH;
   const isSeller = user?.role === UserRole.SELLER || user?.role === UserRole.BOTH;
 
-  return {
+  return useMemo(() => ({
     user,
     reviews,
     buyerOrders: isBuyer ? buyerOrders : null,
@@ -151,7 +148,7 @@ export const useEnhancedUser = (userId?: number) => {
     error: userError,
     isBuyer,
     isSeller,
-  };
+  }), [user, reviews, buyerOrders, sellerOrders, loading, userError, isBuyer, isSeller]);
 };
 
 // Hook for user management (create/update roles)

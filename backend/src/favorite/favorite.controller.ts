@@ -1,9 +1,9 @@
-import { Controller, Post, Delete, Get, Param, ParseIntPipe, UseGuards, Request, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Delete, Get, Param, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { FavoriteService } from './favorite.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Buyer } from '../user/entities/buyer.entity';
+import { Buyer } from '../account/buyer/entities/buyer.entity';
 
 @Controller('favorites')
 @UseGuards(JwtAuthGuard)
@@ -15,9 +15,10 @@ export class FavoriteController {
   ) {}
 
   // Helper method để lấy buyerId từ user
-  private async getBuyerId(userId: number): Promise<number> {
+  private async getBuyerId(userId: string): Promise<number> {
     const buyer = await this.buyerRepository.findOne({
-      where: { userId },
+      where: { user: { id: parseInt(userId) } },
+      relations: ['user']
     });
     
     if (!buyer) {
@@ -30,10 +31,10 @@ export class FavoriteController {
   // Thêm sản phẩm vào yêu thích
   @Post(':productId')
   async addToFavorites(
-    @Param('productId', ParseIntPipe) productId: number,
+    @Param('productId') productId: number,
     @Request() req: any,
   ) {
-    const buyerId = await this.getBuyerId(req.user.userId);
+    const buyerId = await this.getBuyerId(req.user.id);
     const favorite = await this.favoriteService.addToFavorites(buyerId, productId);
     return {
       message: 'Đã thêm vào danh sách yêu thích',
@@ -44,10 +45,10 @@ export class FavoriteController {
   // Xóa sản phẩm khỏi yêu thích
   @Delete(':productId')
   async removeFromFavorites(
-    @Param('productId', ParseIntPipe) productId: number,
+    @Param('productId') productId: number,
     @Request() req: any,
   ) {
-    const buyerId = await this.getBuyerId(req.user.userId);
+    const buyerId = await this.getBuyerId(req.user.id);
     await this.favoriteService.removeFromFavorites(buyerId, productId);
     return {
       message: 'Đã xóa khỏi danh sách yêu thích',
@@ -57,7 +58,7 @@ export class FavoriteController {
   // Lấy danh sách yêu thích của user hiện tại
   @Get()
   async getMyFavorites(@Request() req: any) {
-    const buyerId = await this.getBuyerId(req.user.userId);
+    const buyerId = await this.getBuyerId(req.user.id);
     const products = await this.favoriteService.getFavoritesByBuyer(buyerId);
     return {
       message: 'Danh sách sản phẩm yêu thích',
@@ -68,11 +69,11 @@ export class FavoriteController {
   // Kiểm tra sản phẩm có trong yêu thích không
   @Get('check/:productId')
   async checkIsFavorite(
-    @Param('productId', ParseIntPipe) productId: number,
+    @Param('productId') productId: number,
     @Request() req: any,
   ) {
     try {
-      const buyerId = await this.getBuyerId(req.user.userId);
+      const buyerId = await this.getBuyerId(req.user.id);
       const isFavorite = await this.favoriteService.isFavorite(buyerId, productId);
       return { isFavorite };
     } catch (error) {
@@ -83,7 +84,7 @@ export class FavoriteController {
 
   // Lấy số lượng lượt yêu thích của sản phẩm
   @Get('count/:productId')
-  async getFavoriteCount(@Param('productId', ParseIntPipe) productId: number) {
+  async getFavoriteCount(@Param('productId') productId: number) {
     const count = await this.favoriteService.getFavoriteCount(productId);
     return { count };
   }

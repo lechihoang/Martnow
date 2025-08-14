@@ -1,11 +1,17 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
-import { Buyer } from '../../user/entities/buyer.entity';
-import { Address } from '../../address/entities/address.entity';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Buyer } from '../../account/buyer/entities/buyer.entity';
 import { OrderItem } from './order-item.entity';
 
 @Entity()
-export class Order extends BaseEntity {
+export class Order {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedAt: Date;
   @Column()
   buyerId: number;
 
@@ -13,18 +19,11 @@ export class Order extends BaseEntity {
   @JoinColumn({ name: 'buyerId' })
   buyer: Buyer;
 
-  @Column({ nullable: true })
-  addressId: number;
-
-  @ManyToOne(() => Address)
-  @JoinColumn({ name: 'addressId' })
-  address: Address;
-
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   totalPrice: number;
 
-  @Column({ type: 'varchar', length: 20 })
-  status: string; // pending, confirmed, delivering, completed, cancelled, paid
+  @Column({ type: 'varchar', length: 50 })
+  status: string; // Buyer: đã thanh toán | Seller: đang bán, đã bán hết | Nội bộ: chờ thanh toán, cancelled
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   note: string;

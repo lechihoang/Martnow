@@ -11,6 +11,17 @@ export const mockUser: User = {
   avatar: '/default-avatar.jpg'
 } as User;
 
+// Mock buyer user
+export const mockBuyerUser: User = {
+  id: 2,
+  name: 'Nguyễn Thị B',
+  username: 'nguyenthib',
+  email: 'nguyenthib@example.com',
+  role: UserRole.BUYER,
+  password: '', // Không hiển thị password
+  avatar: '/default-avatar.jpg'
+} as User;
+
 export const mockBuyer: Buyer = {
   id: 1,
   userId: 1,
@@ -48,11 +59,16 @@ export const mockProduct: Product = {
   isAvailable: true,
   stock: 50,
   discount: 10,
+  // Statistics fields
+  averageRating: 4.5,
+  totalReviews: 89,
+  totalSold: 148,
+  viewCount: 523,
+  // SEO field
+  tags: JSON.stringify(['bánh mì', 'thịt nướng', 'ngon']),
   images: [],
   reviews: [],
-  orderItems: [],
-  createdAt: new Date(),
-  updatedAt: new Date()
+  orderItems: []
 };
 
 export const mockAddress: Address = {
@@ -112,11 +128,16 @@ export const mockProducts: Product[] = [
     imageUrl: '/images/banhmi.jpeg',
     isAvailable: true,
     stock: 30,
+    // Statistics fields
+    averageRating: 4.2,
+    totalReviews: 45,
+    totalSold: 89,
+    viewCount: 312,
+    // SEO field
+    tags: JSON.stringify(['bánh mì', 'pate']),
     images: [],
     reviews: [],
-    orderItems: [],
-    createdAt: new Date(),
-    updatedAt: new Date()
+    orderItems: []
     // Không có discount - sẽ là undefined
   }
 ];

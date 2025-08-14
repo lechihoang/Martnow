@@ -40,20 +40,6 @@ export const getStockStatus = (stock: number, isAvailable: boolean) => {
   return { status: 'in-stock', text: 'Còn hàng', color: 'green' };
 };
 
-// Generate product URL slug
-export const generateProductSlug = (product: Product): string => {
-  const slug = product.name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single
-    .trim();
-  
-  return `${slug}-${product.id}`;
-};
-
 // Format product code
 export const formatProductCode = (id: number): string => {
   return `SP${id.toString().padStart(6, '0')}`;

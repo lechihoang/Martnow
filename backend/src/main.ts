@@ -8,10 +8,12 @@ async function bootstrap() {
   // Use cookie parser middleware
   app.use(cookieParser());
 
-  // Enable CORS for frontend
+  // Enable CORS for frontend with cookie support
   app.enableCors({
-    origin: 'http://localhost:3000', // Đổi nếu frontend chạy ở domain khác
-    credentials: true,
+    origin: ['http://localhost:3000', 'http://localhost:3001'], // Support multiple origins
+    credentials: true, // Required for HTTP-only cookies
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
   await app.listen(3001);

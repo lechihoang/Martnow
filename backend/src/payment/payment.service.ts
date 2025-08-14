@@ -1,18 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { VnpayService } from 'nestjs-vnpay';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../order/entities/order.entity';
+import { OrderBusinessService } from '../order/order-business.service';
 import { CreatePaymentDto, PaymentResponseDto } from './dto/payment.dto';
 
 @Injectable()
 export class PaymentService {
+  private readonly logger = new Logger(PaymentService.name);
+
   constructor(
     private readonly vnpayService: VnpayService,
     private readonly configService: ConfigService,
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
+    private readonly orderBusinessService: OrderBusinessService,
   ) {}
 
   /**
@@ -75,18 +79,22 @@ export class PaymentService {
     const verifyResult = await this.vnpayService.verifyReturnUrl(query);
     
     if (verifyResult.isSuccess) {
-      // Thanh toán thành công - cập nhật order status
       const txnRef = query.vnp_TxnRef;
+      this.logger.log(`✅ Payment verified successfully: ${txnRef}`);
+      
       const order = await this.orderRepository.findOne({
         where: { paymentReference: txnRef },
       });
 
       if (order) {
-        await this.orderRepository.update(order.id, {
-          status: 'paid', // Cập nhật trạng thái đã thanh toán
-          paidAt: new Date(),
-        });
+        // 🔥 Gọi business logic để xử lý order paid
+        await this.orderBusinessService.handleOrderPaid(order.id);
+        this.logger.log(`🎉 Order ${order.id} business logic completed`);
+      } else {
+        this.logger.error(`❌ Order not found for transaction: ${txnRef}`);
       }
+    } else {
+      this.logger.warn(`❌ Payment verification failed: ${query.vnp_TxnRef}`);
     }
 
     return verifyResult;
@@ -99,18 +107,24 @@ export class PaymentService {
     const ipnResult = await this.vnpayService.verifyIpnCall(query);
     
     if (ipnResult.isSuccess) {
-      // Xử lý logic cập nhật database
       const txnRef = query.vnp_TxnRef;
+      this.logger.log(`📞 IPN received for transaction: ${txnRef}`);
+      
       const order = await this.orderRepository.findOne({
         where: { paymentReference: txnRef },
       });
 
       if (order && order.status !== 'paid') {
-        await this.orderRepository.update(order.id, {
-          status: 'paid',
-          paidAt: new Date(),
-        });
+        // 🔥 Gọi business logic để xử lý order paid
+        await this.orderBusinessService.handleOrderPaid(order.id);
+        this.logger.log(`🎉 IPN: Order ${order.id} business logic completed`);
+      } else if (order?.status === 'paid') {
+        this.logger.log(`ℹ️  IPN: Order ${order.id} already processed`);
+      } else {
+        this.logger.error(`❌ IPN: Order not found for transaction: ${txnRef}`);
       }
+    } else {
+      this.logger.warn(`❌ IPN verification failed: ${query.vnp_TxnRef}`);
     }
 
     return ipnResult;

@@ -23,6 +23,44 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+// Helper function để handle API errors, đặc biệt là authentication errors
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public data?: any
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+// Helper function để handle response và errors
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    let errorData: any;
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = { message: response.statusText };
+    }
+
+    // Nếu là 401 Unauthorized, có thể redirect đến login
+    if (response.status === 401) {
+      // Có thể dispatch logout event hoặc redirect
+      console.warn('Authentication failed - token may be expired');
+    }
+
+    throw new ApiError(
+      errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+      response.status,
+      errorData
+    );
+  }
+
+  return response.json();
+}
+
 // User API
 export const userApi = {
   // Get user profile with buyer/seller info
@@ -70,8 +108,18 @@ export const userApi = {
 
 // Buyer API
 export const buyerApi = {
-  // Get buyer orders
+  // Get user orders (new method using userId)
+  async getUserOrders(userId: number): Promise<BuyerOrdersDto> {
+    const response = await fetch(`${API_BASE_URL}/user-activity/user/${userId}/orders`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch user orders');
+    return response.json();
+  },
+
+  // Legacy method - deprecated
   async getBuyerOrders(buyerId: number): Promise<BuyerOrdersDto> {
+    console.warn('getBuyerOrders is deprecated. Use getUserOrders instead.');
     const response = await fetch(`${API_BASE_URL}/user-activity/buyer/${buyerId}/orders`, {
       credentials: 'include',
     });
@@ -190,10 +238,20 @@ export const authApi = {
 
   async getProfile(): Promise<UserResponseDto> {
     const response = await fetch(`${API_BASE_URL}/auth/profile`, {
-      method: 'POST',
+      method: 'GET', // Đổi từ POST thành GET
       credentials: 'include',
     });
     if (!response.ok) throw new Error('Failed to get profile');
+    return response.json();
+  },
+
+  // Thêm method để check auth status
+  async getStatus(): Promise<{ isAuthenticated: boolean; user: any }> {
+    const response = await fetch(`${API_BASE_URL}/auth/status`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to get auth status');
     return response.json();
   },
 };
@@ -418,6 +476,25 @@ export const reviewApi = {
     });
     if (!response.ok) throw new Error('Failed to delete review');
   },
+
+  // Mark review as helpful
+  async markReviewHelpful(reviewId: number): Promise<{ helpfulCount: number }> {
+    const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}/helpful`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to mark review as helpful');
+    return response.json();
+  },
+
+  // Get top reviews for product
+  async getTopProductReviews(productId: number, limit: number = 5): Promise<ReviewResponseDto[]> {
+    const response = await fetch(`${API_BASE_URL}/reviews/product/${productId}/top?limit=${limit}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch top product reviews');
+    return response.json();
+  },
 };
 
 // Favorites API
@@ -427,7 +504,13 @@ export const favoritesApi = {
     const response = await fetch(`${API_BASE_URL}/favorites`, {
       credentials: 'include',
     });
-    if (!response.ok) throw new Error('Failed to fetch favorites');
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error fetching favorites:', { status: response.status, error: errorText });
+      throw new Error(`Failed to fetch favorites: ${response.status} ${errorText}`);
+    }
+    
     const data = await response.json();
     return data.data || []; // API trả về { message, data }
   },

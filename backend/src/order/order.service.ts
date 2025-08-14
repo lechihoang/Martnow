@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { CreateOrderDto } from './dto/order.dto';
-import { Buyer } from '../user/entities/buyer.entity';
+import { Buyer } from '../account/buyer/entities/buyer.entity';
 import { Product } from '../product/entities/product.entity';
+import { OrderStatus } from '../shared/enums';
 
 @Injectable()
 export class OrderService {
@@ -18,12 +19,14 @@ export class OrderService {
     private orderItemRepository: Repository<OrderItem>,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+    private dataSource: DataSource,
   ) {}
 
-  async createFromUserId(createOrderDto: CreateOrderDto, userId: number): Promise<Order> {
+  async createFromUserId(createOrderDto: CreateOrderDto, userId: string): Promise<Order> {
     // Tìm buyer từ userId
     const buyer = await this.buyerRepository.findOne({
-      where: { userId: userId }
+      where: { user: { id: parseInt(userId) } },
+      relations: ['user']
     });
 
     if (!buyer) {
@@ -33,50 +36,73 @@ export class OrderService {
     return this.create(createOrderDto, buyer.id);
   }
 
+  // ✅ Optimized: Create order with transaction and bulk operations
   async create(createOrderDto: CreateOrderDto, buyerId: number): Promise<Order> {
-    // Tính tổng tiền từ items trước khi tạo order
-    let totalPrice = 0;
-    
-    for (const item of createOrderDto.items) {
-      // Lấy thông tin product để tính giá
-      const product = await this.productRepository.findOne({
-        where: { id: item.productId }
+    return this.dataSource.transaction(async manager => {
+      // ✅ Bulk load all products to avoid N+1 queries
+      const productIds = createOrderDto.items.map(item => item.productId);
+      const products = await manager.find(Product, {
+        where: { id: In(productIds) }
       });
-      
-      if (!product) {
-        throw new NotFoundException(`Product with ID ${item.productId} not found`);
-      }
-      
-      totalPrice += product.price * item.quantity;
-    }
 
-    const order = this.orderRepository.create({
-      buyerId,
-      addressId: createOrderDto.addressId,
-      note: createOrderDto.note,
-      totalPrice: totalPrice, // Tính từ items
-      status: 'pending', // Mặc định chờ thanh toán
+      // Create product lookup map
+      const productMap = new Map(products.map(p => [p.id, p]));
+
+      // Validate all products exist and calculate total
+      let totalPrice = 0;
+      const validItems: any[] = [];
+
+      for (const item of createOrderDto.items) {
+        const product = productMap.get(item.productId);
+        if (!product) {
+          throw new NotFoundException(`Product with ID ${item.productId} not found`);
+        }
+        
+        // Check stock
+        if (product.stock < item.quantity) {
+          throw new Error(`Insufficient stock for product ${product.name}`);
+        }
+
+        const itemTotal = Number(product.price) * item.quantity;
+        totalPrice += itemTotal;
+        
+        validItems.push({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: product.price,
+          product
+        });
+      }
+
+      // Create order
+      const order = manager.create(Order, {
+        buyerId,
+        note: createOrderDto.note,
+        totalPrice,
+        status: OrderStatus.WAITING_PAYMENT,
+      });
+
+      const savedOrder = await manager.save(Order, order);
+
+      // ✅ Bulk create order items
+      const orderItems = validItems.map(item => 
+        manager.create(OrderItem, {
+          orderId: savedOrder.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+        })
+      );
+
+      await manager.save(OrderItem, orderItems);
+
+      // ✅ Bulk update product stock
+      for (const item of validItems) {
+        await manager.decrement(Product, { id: item.productId }, 'stock', item.quantity);
+      }
+
+      return savedOrder;
     });
-
-    const savedOrder = await this.orderRepository.save(order);
-
-    // Tạo order items
-    for (const item of createOrderDto.items) {
-      const product = await this.productRepository.findOne({ where: { id: item.productId } });
-      if (!product) {
-        throw new NotFoundException(`Product with ID ${item.productId} not found`);
-      }
-      
-      const orderItem = this.orderItemRepository.create({
-        orderId: savedOrder.id,
-        productId: item.productId,
-        quantity: item.quantity,
-        price: product.price,
-      });
-      await this.orderItemRepository.save(orderItem);
-    }
-
-    return savedOrder;
   }
 
   async findAll(): Promise<Order[]> {
@@ -99,17 +125,49 @@ export class OrderService {
     return order;
   }
 
-  // 🎯 Các methods để track orders chờ thanh toán
+  // 🎯 Các methods để quản lý orders
   
   /**
-   * Lấy tất cả đơn hàng chờ thanh toán
+   * Lấy tất cả đơn hàng chờ thanh toán (dành cho admin)
    */
   async getPendingOrders(): Promise<Order[]> {
     return this.orderRepository.find({
-      where: { status: 'pending' },
+      where: { status: OrderStatus.WAITING_PAYMENT },
       relations: ['buyer', 'buyer.user', 'items', 'items.product'],
       order: { createdAt: 'DESC' },
     });
+  }
+  
+  /**
+   * Lấy đơn hàng đã thanh toán của buyer
+   */
+  async getPaidOrdersByBuyer(buyerId: number): Promise<Order[]> {
+    return this.orderRepository.find({
+      where: { 
+        buyerId,
+        status: OrderStatus.PAID 
+      },
+      relations: ['buyer', 'buyer.user', 'items', 'items.product'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+  
+  /**
+   * Lấy đơn hàng của seller (đang bán + đã bán hết)
+   */
+  async getOrdersBySeller(sellerId: number): Promise<Order[]> {
+    return this.orderRepository
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.buyer', 'buyer')
+      .leftJoinAndSelect('buyer.user', 'user')
+      .leftJoinAndSelect('order.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
+      .where('product.sellerId = :sellerId', { sellerId })
+      .andWhere('order.status IN (:...statuses)', { 
+        statuses: [OrderStatus.SELLING, OrderStatus.SOLD_OUT] 
+      })
+      .orderBy('order.createdAt', 'DESC')
+      .getMany();
   }
 
   /**
@@ -119,7 +177,7 @@ export class OrderService {
     return this.orderRepository.find({
       where: { 
         buyerId,
-        status: 'pending' 
+        status: OrderStatus.WAITING_PAYMENT 
       },
       relations: ['buyer', 'buyer.user', 'items', 'items.product'],
       order: { createdAt: 'DESC' },
@@ -142,14 +200,14 @@ export class OrderService {
   async updatePaymentStatus(
     orderId: number, 
     paymentReference: string, 
-    status: 'paid' | 'failed' | 'cancelled'
+    status: OrderStatus.PAID | OrderStatus.CANCELLED
   ): Promise<Order> {
     const order = await this.findOne(orderId);
     
     order.paymentReference = paymentReference;
     order.status = status;
     
-    if (status === 'paid') {
+    if (status === OrderStatus.PAID) {
       order.paidAt = new Date();
     }
 
@@ -160,19 +218,19 @@ export class OrderService {
    * Lấy statistics đơn hàng
    */
   async getOrderStatistics() {
-    const [total, pending, paid, cancelled] = await Promise.all([
+    const [total, waiting, paid, cancelled] = await Promise.all([
       this.orderRepository.count(),
-      this.orderRepository.count({ where: { status: 'pending' } }),
-      this.orderRepository.count({ where: { status: 'paid' } }),
-      this.orderRepository.count({ where: { status: 'cancelled' } }),
+      this.orderRepository.count({ where: { status: OrderStatus.WAITING_PAYMENT } }),
+      this.orderRepository.count({ where: { status: OrderStatus.PAID } }),
+      this.orderRepository.count({ where: { status: OrderStatus.CANCELLED } }),
     ]);
 
     return {
       total,
-      pending,
+      waiting_payment: waiting,
       paid,
       cancelled,
-      pendingPercentage: total > 0 ? Math.round((pending / total) * 100) : 0,
+      waitingPercentage: total > 0 ? Math.round((waiting / total) * 100) : 0,
     };
   }
 
@@ -187,7 +245,7 @@ export class OrderService {
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.buyer', 'buyer')
       .leftJoinAndSelect('buyer.user', 'user')
-      .where('order.status = :status', { status: 'pending' })
+      .where('order.status = :status', { status: OrderStatus.WAITING_PAYMENT })
       .andWhere('order.createdAt < :timeout', { timeout: thirtyMinutesAgo })
       .orderBy('order.createdAt', 'ASC')
       .getMany();

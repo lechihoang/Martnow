@@ -1,10 +1,10 @@
 import React from 'react'
 import Container from './Container'
 import ProductCard from './ProductCard'
-import type { Product } from '../types/entities'
+import type { ProductResponseDto } from '../types/dtos'
 
 type ProductGridProps = {
-  products: Product[]
+  products: ProductResponseDto[]
   favoriteStatus?: Record<number, boolean>
   onFavoriteChange?: (productId: number, isFavorite: boolean) => void
 }

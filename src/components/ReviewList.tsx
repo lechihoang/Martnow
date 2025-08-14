@@ -6,11 +6,10 @@ interface Review {
   rating: number;
   comment?: string;
   createdAt: Date;
-  buyer: {
-    id: number;
-    name: string;
-    avatar?: string;
-  };
+  buyerId: number;
+  buyerName: string;
+  buyerAvatar?: string;
+  helpfulCount?: number;
 }
 
 interface ReviewListProps {
@@ -19,6 +18,7 @@ interface ReviewListProps {
   currentBuyerId?: number;
   onEditReview?: (review: Review) => void;
   onDeleteReview?: (reviewId: number) => void;
+  onHelpfulClick?: (reviewId: number) => void;
 }
 
 const ReviewList: React.FC<ReviewListProps> = ({
@@ -26,7 +26,8 @@ const ReviewList: React.FC<ReviewListProps> = ({
   loading = false,
   currentBuyerId,
   onEditReview,
-  onDeleteReview
+  onDeleteReview,
+  onHelpfulClick
 }) => {
   if (loading) {
     return (
@@ -73,16 +74,16 @@ const ReviewList: React.FC<ReviewListProps> = ({
           <div className="flex items-start gap-3">
             {/* Avatar */}
             <div className="flex-shrink-0">
-              {review.buyer.avatar ? (
+              {review.buyerAvatar ? (
                 <img
-                  src={review.buyer.avatar}
-                  alt={review.buyer.name}
+                  src={review.buyerAvatar}
+                  alt={review.buyerName}
                   className="w-10 h-10 rounded-full object-cover"
                 />
               ) : (
                 <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
                   <span className="text-gray-600 font-medium">
-                    {review.buyer.name.charAt(0).toUpperCase()}
+                    {review.buyerName.charAt(0).toUpperCase()}
                   </span>
                 </div>
               )}
@@ -92,11 +93,11 @@ const ReviewList: React.FC<ReviewListProps> = ({
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
                 <h4 className="font-medium text-gray-900">
-                  {review.buyer.name}
+                  {review.buyerName}
                 </h4>
                 
                 {/* Action buttons for owner */}
-                {currentBuyerId === review.buyer.id && (
+                {currentBuyerId === review.buyerId && (
                   <div className="flex gap-2">
                     {onEditReview && (
                       <button
@@ -132,6 +133,21 @@ const ReviewList: React.FC<ReviewListProps> = ({
                   {review.comment}
                 </p>
               )}
+
+              {/* Helpful Actions */}
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="flex items-center gap-4 text-sm text-gray-500">
+                  {onHelpfulClick && (
+                    <button 
+                      className="flex items-center gap-1 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                      onClick={() => onHelpfulClick(review.id)}
+                    >
+                      <span>👍</span>
+                      <span>Hữu ích ({review.helpfulCount || 0})</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

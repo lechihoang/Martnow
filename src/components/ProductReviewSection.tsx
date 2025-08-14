@@ -75,7 +75,6 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
           productId,
           rating: reviewData.rating,
           comment: reviewData.comment,
-          userId: userData.user?.id || 0,
         });
         toast.success('Gửi đánh giá thành công!');
       }
@@ -134,9 +133,20 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
     setEditingReview(null);
   };
 
+  const handleHelpfulClick = async (reviewId: number) => {
+    try {
+      await reviewApi.markReviewHelpful(reviewId);
+      // Refresh reviews to show updated helpful count
+      await fetchReviews();
+    } catch (error) {
+      console.error('Error marking review as helpful:', error);
+      toast.error('Có lỗi xảy ra khi đánh dấu hữu ích.');
+    }
+  };
+
   const canReview = userData.user?.role === UserRole.BUYER && !userData.loading;
-  const currentBuyerId = userData.user?.buyerInfo?.id || userData.user?.buyer?.id;
-  const hasUserReviewed = currentBuyerId && reviews.some(review => review.buyer.id === currentBuyerId);
+  const currentBuyerId = userData.user?.buyer?.id;
+  const hasUserReviewed = currentBuyerId && reviews.some(review => review.buyerId === currentBuyerId);
 
   console.log('Review debugging:', {
     userRole: userData.user?.role,
@@ -145,8 +155,8 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
     userLoggedIn: !!userData.user,
     loading: userData.loading,
     currentBuyerId,
-    userBuyerInfo: userData.user?.buyerInfo,
-    reviews: reviews.map(r => ({ id: r.id, buyerId: r.buyer.id })),
+    userBuyer: userData.user?.buyer,
+    reviews: reviews.map(r => ({ id: r.id, buyerId: r.buyerId })),
     hasUserReviewed
   });
 
@@ -229,15 +239,15 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
             rating: review.rating,
             comment: review.comment,
             createdAt: review.createdAt,
-            buyer: {
-              id: review.buyer.id,
-              name: review.user.name,
-              avatar: review.user.avatar
-            }
+            buyerId: review.buyerId,
+            buyerName: review.buyerName,
+            buyerAvatar: review.buyerAvatar,
+            helpfulCount: review.helpfulCount
           }))}
           currentBuyerId={currentBuyerId}
           onEditReview={(review) => handleEditReview(reviews.find(r => r.id === review.id)!)}
           onDeleteReview={handleDeleteReview}
+          onHelpfulClick={handleHelpfulClick}
         />
       </div>
     </div>

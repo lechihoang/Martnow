@@ -82,8 +82,6 @@ const ProfilePage: React.FC = () => {
         ...currentUserData,
         password: '', // UserResponseDto doesn't have password for security
         reviews: [], // Default empty array
-        createdAt: currentUserData.createdAt || new Date(),
-        updatedAt: currentUserData.updatedAt || new Date(),
         buyer: undefined,
         seller: undefined,
       };
@@ -123,8 +121,6 @@ const ProfilePage: React.FC = () => {
             ...otherUserData,
             password: '', // Không hiển thị password
             reviews: [], // Default empty array
-            createdAt: new Date(otherUserData.createdAt),
-            updatedAt: new Date(otherUserData.updatedAt),
             buyer: undefined,
             seller: undefined,
           };

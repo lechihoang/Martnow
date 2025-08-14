@@ -63,8 +63,6 @@ const ProfilePage: React.FC = () => {
         ...currentUser,
         password: '',
         reviews: [],
-        createdAt: currentUser.createdAt || new Date(),
-        updatedAt: currentUser.updatedAt || new Date(),
         buyer: undefined,
         seller: undefined,
       };

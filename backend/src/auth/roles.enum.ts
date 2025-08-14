@@ -1,4 +1,5 @@
 export enum UserRole {
   BUYER = 'buyer',
-  SELLER = 'seller'
+  SELLER = 'seller',
+  BOTH = 'both'
 }

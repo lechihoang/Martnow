@@ -2,11 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
-import { ProductImage } from './entities/product-image.entity';
 import { Category } from './entities/category.entity';
-import { Seller } from '../user/entities/seller.entity';
+import { Seller } from '../account/seller/entities/seller.entity';
 import { CreateProductDto, ProductResponseDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import * as slug from 'slug';
 
 export interface ProductFilterOptions {
   categoryId?: number;
@@ -18,26 +18,27 @@ export interface ProductFilterOptions {
 
 @Injectable()
 export class ProductService {
-  private readonly productRelations = ['category', 'seller', 'seller.user', 'images'];
+  private readonly productRelations = ['category', 'seller', 'seller.user'];
 
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
-    @InjectRepository(ProductImage)
-    private readonly productImageRepository: Repository<ProductImage>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(Seller)
     private readonly sellerRepository: Repository<Seller>,
   ) {}
 
+  // === BASIC CRUD METHODS ===
+
   async getCategories(): Promise<Category[]> {
-    return this.categoryRepository.find();
+    return this.categoryRepository.find({ order: { name: 'ASC' } });
   }
 
-  async getSellerIdByUserId(userId: number): Promise<number> {
+  async getSellerIdByUserId(userId: string): Promise<number> {
     const seller = await this.sellerRepository.findOne({ 
-      where: { userId: userId } 
+      where: { user: { id: parseInt(userId) } },
+      relations: ['user']
     });
     
     if (!seller) {
@@ -47,40 +48,15 @@ export class ProductService {
     return seller.id;
   }
 
-  async createProduct(createProductDto: CreateProductDto): Promise<ProductResponseDto> {
-    // Tách images khỏi DTO để tạo Product trước
-    const { images, ...productData } = createProductDto;
-    
-    // Đảm bảo có category và seller tồn tại
-    await this.ensureDefaultDataExists();
-    
-    // Tạo product chỉ với các trường cần thiết
+  async createProduct(createProductDto: CreateProductDto, sellerId: number): Promise<ProductResponseDto> {
     const product = this.productRepository.create({
-      ...productData,
-      sellerId: createProductDto.sellerId,
+      ...createProductDto,
+      sellerId: sellerId,
       categoryId: createProductDto.categoryId,
     });
     
     const savedProduct = await this.productRepository.save(product);
     
-    // Tạo ProductImage nếu có images
-    if (images && images.length > 0) {
-      const productImages = images.map((imageInfo, index) => {
-        return this.productImageRepository.create({
-          productId: savedProduct.id,
-          imageData: imageInfo.imageData,
-          mimeType: imageInfo.mimeType,
-          originalName: imageInfo.originalName,
-          fileSize: imageInfo.fileSize,
-          displayOrder: index,
-          isPrimary: index === 0, // Ảnh đầu tiên là ảnh chính
-        });
-      });
-      
-      await this.productImageRepository.save(productImages);
-    }
-    
-    // Load và trả về product với đầy đủ relations
     const result = await this.productRepository.findOne({
       where: { id: savedProduct.id },
       relations: this.productRelations,
@@ -93,26 +69,7 @@ export class ProductService {
     return new ProductResponseDto(result);
   }
 
-  private async ensureDefaultDataExists(): Promise<void> {
-    // Tạo category mặc định nếu chưa có
-    let defaultCategory = await this.categoryRepository.findOne({ where: { id: 1 } });
-    if (!defaultCategory) {
-      defaultCategory = this.categoryRepository.create({
-        id: 1,
-        name: 'Món ăn',
-        description: 'Danh mục món ăn mặc định',
-      });
-      await this.categoryRepository.save(defaultCategory);
-    }
-
-    // Tạo seller mặc định nếu chưa có
-    let defaultSeller = await this.sellerRepository.findOne({ where: { id: 1 } });
-    if (!defaultSeller) {
-      // Tạo seller mặc định sẽ cần user mặc định trước
-      // Tạm thời bỏ qua, sẽ xử lý sau
-      console.log('Default seller not found, but continuing...');
-    }
-  }  async findOne(id: number): Promise<ProductResponseDto> {
+  async findOne(id: number): Promise<ProductResponseDto> {
     const product = await this.productRepository.findOne({
       where: { id },
       relations: this.productRelations,
@@ -122,46 +79,27 @@ export class ProductService {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
+    // Increment view count asynchronously (fire and forget)
+    this.incrementViewCount(id).catch(err => 
+      console.error('Failed to increment view count:', err)
+    );
+
     return new ProductResponseDto(product);
   }
 
   async updateProduct(id: number, updateProductDto: UpdateProductDto, sellerId?: number): Promise<ProductResponseDto> {
-    const product = await this.findOne(id); // Kiểm tra product có tồn tại không
+    const productEntity = await this.productRepository.findOne({ where: { id } });
+    if (!productEntity) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
     
     // Kiểm tra quyền sở hữu nếu sellerId được cung cấp
-    if (sellerId !== undefined && product.sellerId !== sellerId) {
+    if (sellerId !== undefined && productEntity.sellerId !== sellerId) {
       throw new NotFoundException(`Product with ID ${id} not found or you don't have permission to update it`);
     }
     
-    // Tách images khỏi DTO để update Product trước
-    const { images, ...productData } = updateProductDto;
+    await this.productRepository.update(id, updateProductDto);
     
-    await this.productRepository.update(id, productData);
-    
-    // Cập nhật images nếu có
-    if (images !== undefined) {
-      // Xóa các ảnh cũ
-      await this.productImageRepository.delete({ productId: id });
-      
-      // Thêm ảnh mới
-      if (images.length > 0) {
-        const productImages = images.map((imageInfo, index) => {
-          return this.productImageRepository.create({
-            productId: id,
-            imageData: imageInfo.imageData,
-            mimeType: imageInfo.mimeType,
-            originalName: imageInfo.originalName,
-            fileSize: imageInfo.fileSize,
-            displayOrder: index,
-            isPrimary: index === 0,
-          });
-        });
-        
-        await this.productImageRepository.save(productImages);
-      }
-    }
-    
-    // Lấy product mới và trả về ProductResponseDto
     const updatedProduct = await this.productRepository.findOne({
       where: { id },
       relations: this.productRelations,
@@ -171,10 +109,13 @@ export class ProductService {
   }
 
   async deleteProduct(id: number, sellerId?: number): Promise<{ message: string }> {
-    const product = await this.findOne(id); // Kiểm tra product có tồn tại không
+    const productEntity = await this.productRepository.findOne({ where: { id } });
+    if (!productEntity) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
     
     // Kiểm tra quyền sở hữu nếu sellerId được cung cấp
-    if (sellerId !== undefined && product.sellerId !== sellerId) {
+    if (sellerId !== undefined && productEntity.sellerId !== sellerId) {
       throw new NotFoundException(`Product with ID ${id} not found or you don't have permission to delete it`);
     }
     
@@ -182,18 +123,57 @@ export class ProductService {
     return { message: 'Product deleted successfully' };
   }
 
+  // === QUERY METHODS ===
+
   async findAll(filters: ProductFilterOptions = {}): Promise<ProductResponseDto[]> {
-    const { categoryId, type, minPrice, maxPrice } = filters;
+    const { categoryId, sellerId, type, minPrice, maxPrice } = filters;
     
     const query = this.productRepository.createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.seller', 'seller')
-      .leftJoinAndSelect('seller.user', 'user')
-      .leftJoinAndSelect('product.images', 'images');
+      .leftJoinAndSelect('seller.user', 'user');
 
-    this.applyFilters(query, { categoryId, type, minPrice, maxPrice });
+    this.applyFilters(query, { categoryId, sellerId, type, minPrice, maxPrice });
 
     const products = await query.getMany();
+    return products.map(product => new ProductResponseDto(product));
+  }
+
+  async searchProducts(searchQuery: string, limit: number = 20): Promise<ProductResponseDto[]> {
+    const products = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.seller', 'seller')
+      .leftJoinAndSelect('seller.user', 'user')
+      .where('product.isAvailable = :isAvailable', { isAvailable: true })
+      .andWhere(`(
+        product.name ILIKE :likeQuery OR
+        product.description ILIKE :likeQuery OR
+        product.tags ILIKE :likeQuery
+      )`, { 
+        likeQuery: `%${searchQuery}%`
+      })
+      .orderBy('product.totalSold', 'DESC')
+      .addOrderBy('product.averageRating', 'DESC')
+      .limit(limit)
+      .getMany();
+
+    return products.map(product => new ProductResponseDto(product));
+  }
+
+  async getPopularProducts(limit: number = 10): Promise<ProductResponseDto[]> {
+    const products = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.seller', 'seller')
+      .leftJoinAndSelect('seller.user', 'user')
+      .where('product.isAvailable = :isAvailable', { isAvailable: true })
+      .orderBy('product.totalSold', 'DESC')
+      .addOrderBy('product.averageRating', 'DESC')
+      .addOrderBy('product.viewCount', 'DESC')
+      .limit(limit)
+      .getMany();
+
     return products.map(product => new ProductResponseDto(product));
   }
 
@@ -202,7 +182,6 @@ export class ProductService {
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.seller', 'seller')
       .leftJoinAndSelect('seller.user', 'user')
-      .leftJoinAndSelect('product.images', 'images')
       .orderBy('product.discount', 'DESC')
       .take(limit)
       .getMany();
@@ -210,7 +189,32 @@ export class ProductService {
     return products.map(product => new ProductResponseDto(product));
   }
 
-  // Kiểm tra xem product có thuộc về seller không
+  async getSimilarProducts(productId: number, limit: number = 5): Promise<ProductResponseDto[]> {
+    const product = await this.productRepository.findOne({
+      where: { id: productId },
+      relations: ['category'],
+    });
+
+    if (!product) return [];
+
+    const similar = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.seller', 'seller')
+      .leftJoinAndSelect('seller.user', 'user')
+      .where('product.categoryId = :categoryId', { categoryId: product.categoryId })
+      .andWhere('product.id != :productId', { productId })
+      .andWhere('product.isAvailable = :isAvailable', { isAvailable: true })
+      .orderBy('product.averageRating', 'DESC')
+      .addOrderBy('product.totalSold', 'DESC')
+      .limit(limit)
+      .getMany();
+
+    return similar.map(p => new ProductResponseDto(p));
+  }
+
+  // === UTILITY METHODS ===
+
   async validateSellerOwnership(productId: number, sellerId: number): Promise<boolean> {
     const product = await this.productRepository.findOne({
       where: { id: productId, sellerId },
@@ -218,21 +222,57 @@ export class ProductService {
     return !!product;
   }
 
-  // Lấy tất cả products của một seller
-  async findProductsBySeller(sellerId: number, withRelations: boolean = false): Promise<Product[]> {
-    if (withRelations) {
-      return this.productRepository.createQueryBuilder('product')
-        .leftJoinAndSelect('product.category', 'category')
-        .leftJoinAndSelect('product.seller', 'seller')
-        .leftJoinAndSelect('seller.user', 'user')
-        .leftJoinAndSelect('product.images', 'images')
-        .where('product.sellerId = :sellerId', { sellerId })
-        .getMany();
-    }
+  async findProductsBySeller(sellerId: number): Promise<ProductResponseDto[]> {
+    const products = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.seller', 'seller')
+      .leftJoinAndSelect('seller.user', 'user')
+      .where('product.sellerId = :sellerId', { sellerId })
+      .getMany();
 
-    return this.productRepository.find({
-      where: { sellerId },
+    return products.map(product => new ProductResponseDto(product));
+  }
+
+  async incrementViewCount(productId: number): Promise<void> {
+    await this.productRepository
+      .createQueryBuilder()
+      .update(Product)
+      .set({ viewCount: () => 'viewCount + 1' })
+      .where('id = :id', { id: productId })
+      .execute();
+  }
+
+  async updateProductStatistics(productId: number): Promise<void> {
+    const [reviewStats, salesStats] = await Promise.all([
+      // Get review statistics
+      this.productRepository.query(`
+        SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews
+        FROM review WHERE productId = $1
+      `, [productId]),
+      
+      // Get sales statistics  
+      this.productRepository.query(`
+        SELECT COALESCE(SUM(oi.quantity), 0) as total_sold
+        FROM order_item oi 
+        JOIN "order" o ON oi.orderId = o.id 
+        WHERE oi.productId = $1 AND o.status = 'đã thanh toán'
+      `, [productId])
+    ]);
+
+    const avgRating = reviewStats[0]?.avg_rating || 0;
+    const totalReviews = reviewStats[0]?.total_reviews || 0;
+    const totalSold = salesStats[0]?.total_sold || 0;
+
+    await this.productRepository.update(productId, {
+      averageRating: parseFloat(avgRating),
+      totalReviews: totalReviews,
+      totalSold: totalSold,
     });
+  }
+
+  generateProductSlug(name: string): string {
+    return slug(name, { lower: true });
   }
 
   private applyFilters(query: any, filters: ProductFilterOptions): void {

@@ -5,6 +5,7 @@ import {
   Request,
   Res,
   UseGuards,
+  Get,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -24,24 +25,37 @@ export class AuthController {
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
+    @Request() request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const user = await this.authService.validateUser( // Sử dụng method đã cập nhật
+    const user = await this.authService.validateUser(
       loginDto.email,
       loginDto.password,
     );
-    return this.authService.login(user, response);
+    return this.authService.login(user, request, response);
   }
 
   @Post('logout')
-  async logout(@Res({ passthrough: true }) response: Response) {
-    return this.authService.logout(response);
+  async logout(
+    @Request() request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authService.logout(request, response);
   }
 
-  @Post('profile')
+  @Get('profile')
   @UseGuards(JwtAuthGuard)
-  async getProfile(@Request() req) {
-    // Trả về user đầy đủ với relations
-    return this.authService.getProfile(req.user.userId);
+  async getProfile(@Request() request) {
+    return this.authService.getProfile(request.user.userId);
+  }
+
+  // JWT status check
+  @Get('status')
+  @UseGuards(JwtAuthGuard)
+  async getAuthStatus(@Request() request) {
+    return {
+      isAuthenticated: true,
+      user: request.user,
+    };
   }
 }

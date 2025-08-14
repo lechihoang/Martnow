@@ -1,6 +1,8 @@
 import { UserRole, OrderStatus } from './entities';
 
-// User DTOs
+// ===============================
+// USER DTOs
+// ===============================
 export interface CreateUserDto {
   name: string;
   username: string;
@@ -8,6 +10,11 @@ export interface CreateUserDto {
   password: string;
   role: UserRole;
   avatar?: string;
+}
+
+export interface LoginDto {
+  email: string;
+  password: string;
 }
 
 export interface UpdateUserDto {
@@ -28,21 +35,8 @@ export interface UserResponseDto {
   avatar?: string;
   createdAt: Date;
   updatedAt: Date;
-  buyerInfo?: {
-    id: number;
-    createdAt: Date;
-  };
   buyer?: {
     id: number;
-    createdAt: Date;
-  };
-  sellerInfo?: {
-    id: number;
-    shopName?: string;
-    shopAddress?: string;
-    shopPhone?: string;
-    description?: string;
-    createdAt: Date;
   };
   seller?: {
     id: number;
@@ -50,75 +44,13 @@ export interface UserResponseDto {
     shopAddress?: string;
     shopPhone?: string;
     description?: string;
-    createdAt: Date;
   };
 }
 
-// Buyer DTOs
-export interface CreateBuyerDto {
-  userId: number;
-}
-
-export interface BuyerResponseDto {
-  id: number;
-  userId: number;
-  createdAt: Date;
-  updatedAt: Date;
-  user: {
-    id: number;
-    name: string;
-    username: string;
-    email: string;
-    avatar?: string;
-  };
-  totalOrders: number;
-  totalReviews: number;
-}
-
-// Seller DTOs
-export interface CreateSellerDto {
-  userId: number;
-  shopName?: string;
-  shopAddress?: string;
-  shopPhone?: string;
-  description?: string;
-}
-
-export interface UpdateSellerDto {
-  shopName?: string;
-  shopAddress?: string;
-  shopPhone?: string;
-  description?: string;
-}
-
-export interface SellerResponseDto {
-  id: number;
-  userId: number;
-  shopName?: string;
-  shopAddress?: string;
-  shopPhone?: string;
-  description?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  user: {
-    id: number;
-    name: string;
-    username: string;
-    email: string;
-    avatar?: string;
-  };
-  totalProducts: number;
-  stats?: {
-    totalOrders: number;
-    totalRevenue: number;
-    averageRating: number;
-    completionRate: number;
-  };
-}
-
-// Product DTOs
+// ===============================
+// PRODUCT DTOs
+// ===============================
 export interface CreateProductDto {
-  sellerId: number;
   categoryId: number;
   name: string;
   description?: string;
@@ -167,29 +99,15 @@ export interface ProductResponseDto {
     name: string;
     description?: string;
   };
-  images: {
-    id: number;
-    imageUrl: string;
-  }[];
-  reviews: {
-    id: number;
-    rating: number;
-    comment?: string;
-    createdAt: Date;
-    user: {
-      name: string;
-      username: string;
-      avatar?: string;
-    };
-  }[];
-  averageRating: number;
-  totalReviews: number;
-  totalSold: number;
+  averageRating?: number;
+  totalReviews?: number;
+  totalSold?: number;
 }
 
-// Order DTOs
+// ===============================
+// ORDER DTOs
+// ===============================
 export interface CreateOrderDto {
-  buyerId: number;
   addressId?: number;
   totalPrice: number;
   note?: string;
@@ -242,19 +160,10 @@ export interface OrderResponseDto {
   }[];
 }
 
-// Upload DTOs
-export interface UploadResponseDto {
-  filename: string;
-  originalName: string;
-  mimeType: string;
-  size: number;
-  url: string;
-}
-
-// Review DTOs
+// ===============================
+// REVIEW DTOs
+// ===============================
 export interface CreateReviewDto {
-  userId: number;
-  buyerId: number;
   productId: number;
   rating: number;
   comment?: string;
@@ -280,9 +189,6 @@ export interface ReviewResponseDto {
     username: string;
     avatar?: string;
   };
-  buyer: {
-    id: number;
-  };
   product: {
     id: number;
     name: string;
@@ -294,7 +200,113 @@ export interface ReviewResponseDto {
   };
 }
 
-// User Activity DTOs
+// ===============================
+// SELLER DTOs
+// ===============================
+export interface CreateSellerDto {
+  userId: number;
+  shopName?: string;
+  shopAddress?: string;
+  shopPhone?: string;
+  description?: string;
+}
+
+export interface UpdateSellerDto {
+  shopName?: string;
+  shopAddress?: string;
+  shopPhone?: string;
+  description?: string;
+}
+
+export interface SellerResponseDto {
+  id: number;
+  userId: number;
+  shopName?: string;
+  shopAddress?: string;
+  shopPhone?: string;
+  description?: string;
+  user: {
+    id: number;
+    name: string;
+    username: string;
+    email: string;
+    avatar?: string;
+  };
+  totalProducts: number;
+  stats?: {
+    totalOrders: number;
+    totalRevenue: number;
+    averageRating: number;
+    completionRate: number;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ===============================
+// BUYER DTOs
+// ===============================
+export interface CreateBuyerDto {
+  userId: number;
+}
+
+export interface BuyerResponseDto {
+  id: number;
+  userId: number;
+  user: {
+    id: number;
+    name: string;
+    username: string;
+    email: string;
+    avatar?: string;
+  };
+  totalOrders: number;
+  totalReviews: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ===============================
+// UTILITY DTOs
+// ===============================
+export interface UploadResponseDto {
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+}
+
+export interface CategoryDto {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export interface AddressDto {
+  id: number;
+  addressLine: string;
+  city: string;
+  district: string;
+  ward: string;
+  phone: string;
+}
+
+// ===============================
+// API RESPONSE WRAPPERS
+// ===============================
+export interface ApiResponse<T> {
+  message: string;
+  data: T;
+}
+
+export interface AuthResponse {
+  user: UserResponseDto;
+}
+
+// ===============================
+// USER ACTIVITY DTOs
+// ===============================
 export interface UserReviewsDto {
   userId: number;
   reviews: {
@@ -302,7 +314,7 @@ export interface UserReviewsDto {
     productId: number;
     productName: string;
     rating: number;
-    comment: string;
+    comment?: string;
     createdAt: Date;
   }[];
 }
@@ -312,8 +324,9 @@ export interface BuyerOrdersDto {
   orders: {
     id: number;
     totalPrice: number;
-    status: string;
+    status: OrderStatus;
     createdAt: Date;
+    itemCount: number;
     items: {
       productId: number;
       productName: string;
@@ -326,21 +339,18 @@ export interface BuyerOrdersDto {
 export interface SellerOrdersDto {
   sellerId: number;
   orders: {
-    orderId: number;
+    id: number;
     buyerName: string;
     totalPrice: number;
-    status: string;
+    status: OrderStatus;
     createdAt: Date;
-    items: {
-      productId: number;
-      productName: string;
-      quantity: number;
-      price: number;
-    }[];
+    itemCount: number;
   }[];
 }
 
-// Seller Stats DTO
+// ===============================
+// STATS DTOs
+// ===============================
 export interface SellerStatsDto {
   id: number;
   sellerId: number;
@@ -353,47 +363,4 @@ export interface SellerStatsDto {
   totalReviews: number;
   createdAt: Date;
   updatedAt: Date;
-}
-
-// Review DTOs
-export interface CreateReviewDto {
-  userId: number;
-  buyerId: number;
-  productId: number;
-  rating: number;
-  comment?: string;
-}
-
-export interface UpdateReviewDto {
-  rating?: number;
-  comment?: string;
-}
-
-export interface ReviewResponseDto {
-  id: number;
-  userId: number;
-  buyerId: number;
-  productId: number;
-  rating: number;
-  comment?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  user: {
-    id: number;
-    name: string;
-    username: string;
-    avatar?: string;
-  };
-  buyer: {
-    id: number;
-  };
-  product: {
-    id: number;
-    name: string;
-    imageUrl?: string;
-    seller: {
-      id: number;
-      shopName?: string;
-    };
-  };
 }

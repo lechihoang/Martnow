@@ -3,12 +3,12 @@ import Link from "next/link";
 import Image from "next/image";
 import PriceView from "./PriceView";
 import Title from "./Title";
-import type { Product } from "../types/entities";
+import type { ProductResponseDto } from "../types/dtos";
 import AddToCartButton from "./AddToCartButton";
 import FavoriteButton from "./FavoriteButton";
 
 interface ProductCardProps {
-  product: Product;
+  product: ProductResponseDto;
   isFavorite?: boolean;
   onFavoriteChange?: (productId: number, isFavorite: boolean) => void;
 }

@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { authApi } from '../lib/api';
 import { UserRole } from '../types/entities';
-import { UserResponseDto } from '../types/dtos';
+import { UserResponseDto, CreateUserDto, LoginDto } from '../types/dtos';
 
 function useUser() {
   const [user, setUser] = useState<UserResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -35,9 +35,10 @@ function useUser() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (credentials: LoginDto) => {
+    const { email, password } = credentials;
     try {
       setLoading(true);
       setError(null);
@@ -78,13 +79,7 @@ function useUser() {
     }
   };
 
-  const register = async (userData: {
-    name: string;
-    username: string;
-    email: string;
-    password: string;
-    role: UserRole;
-  }) => {
+  const register = async (userData: CreateUserDto) => {
     try {
       setLoading(true);
       setError(null);

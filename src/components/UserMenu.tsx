@@ -23,31 +23,32 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
   }, []);
 
   const getMenuItems = () => {
-    const commonItems = [
+    const baseItems = [
       { href: `/profile/${user.id}`, label: "Thông tin cá nhân", icon: "👤" },
-      { href: "/settings", label: "Cài đặt tài khoản", icon: "⚙️" },
-      { href: `/profile/${user.id}/orders`, label: "Đơn hàng", icon: "📦" }
+      { href: "/settings", label: "Cài đặt tài khoản", icon: "⚙️" }
     ];
 
     if (user.role === 'seller') {
       return [
-        ...commonItems,
+        ...baseItems,
         { href: `/profile/${user.id}/products`, label: "Quản lý sản phẩm", icon: "🛍️" },
         { href: `/manage-orders`, label: "Quản lý đơn hàng", icon: "📋" },
+        { href: `/profile/${user.id}/sales-history`, label: "Lịch sử bán hàng", icon: "📈" },
         { href: `/profile/${user.id}/analytics`, label: "Thống kê", icon: "📊" },
         { href: "/add", label: "Thêm sản phẩm", icon: "➕" }
       ];
     }
 
-    // Thêm link yêu thích cho buyer
-    if (user.buyer) {
+    // Menu cho buyer
+    if (user.role === 'buyer' || user.buyer) {
       return [
-        ...commonItems,
+        ...baseItems,
+        { href: "/orders", label: "Đơn hàng đã mua", icon: "📦" },
         { href: "/favorites", label: "Sản phẩm yêu thích", icon: "❤️" }
       ];
     }
 
-    return commonItems;
+    return baseItems;
   };
 
   return (

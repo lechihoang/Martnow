@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   ParseIntPipe,
   UseGuards,
   Request
@@ -65,5 +66,21 @@ export class ReviewController {
     const userId = req.user.userId;
     await this.reviewService.deleteReview(id, userId);
     return { message: 'Xóa đánh giá thành công' };
+  }
+
+  // Tăng helpful count cho review
+  @Post(':id/helpful')
+  @UseGuards(JwtAuthGuard)
+  async markReviewHelpful(@Param('id', ParseIntPipe) id: number) {
+    return this.reviewService.incrementHelpfulCount(id);
+  }
+
+  // Lấy top reviews của sản phẩm (sorted by helpful count)
+  @Get('product/:productId/top')
+  async getTopProductReviews(
+    @Param('productId', ParseIntPipe) productId: number,
+    @Query('limit') limit: string = '5'
+  ) {
+    return this.reviewService.getTopProductReviews(productId, parseInt(limit));
   }
 }

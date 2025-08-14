@@ -26,61 +26,68 @@ export class UpdateReviewDto {
   comment?: string;
 }
 
+// ✅ Simplified ReviewResponseDto - Remove redundant fields and complex nesting
 export class ReviewResponseDto {
   id: number;
-  userId: number;
-  buyerId: number;
   productId: number;
   rating: number;
   comment?: string;
+  helpfulCount: number;
   createdAt: Date;
-  updatedAt: Date;
-  user: {
-    id: number;
-    name: string;
-    username: string;
-    avatar?: string;
-  };
+  
+  // Essential user info only
+  buyerName: string;
+  buyerAvatar?: string;
+  
+  // Essential product info only
+  productName: string;
+  
+  constructor(review: any) {
+    this.id = review.id;
+    this.productId = review.productId;
+    this.rating = review.rating;
+    this.comment = review.comment;
+    this.helpfulCount = review.helpfulCount || 0;
+    this.createdAt = review.createdAt;
+    
+    // ✅ Simple buyer info from nested relation
+    this.buyerName = review.buyer?.user?.name || 'Anonymous';
+    this.buyerAvatar = review.buyer?.user?.avatar;
+    
+    // ✅ Simple product info
+    this.productName = review.product?.name || '';
+  }
+}
+
+// ✅ Detailed DTO for review management (admin/owner view)
+export class ReviewDetailDto extends ReviewResponseDto {
+  buyerId: number;
   buyer: {
     id: number;
+    user: { name: string; username: string; email: string };
   };
   product: {
     id: number;
     name: string;
-    imageUrl?: string;
-    seller: {
-      id: number;
-      shopName?: string;
-    };
+    seller: { id: number; shopName?: string };
   };
-
+  
   constructor(review: any) {
-    this.id = review.id;
-    this.userId = review.userId;
+    super(review);
+    
     this.buyerId = review.buyerId;
-    this.productId = review.productId;
-    this.rating = review.rating;
-    this.comment = review.comment;
-    this.createdAt = review.createdAt;
-    this.updatedAt = review.updatedAt;
-
-    // Defensive checks for buyer and user
-    this.user = {
-      id: review.buyer?.user?.id || 0,
-      name: review.buyer?.user?.name || '',
-      username: review.buyer?.user?.username || '',
-      avatar: review.buyer?.user?.avatar,
-    };
-
     this.buyer = {
       id: review.buyer?.id || 0,
+      user: {
+        name: review.buyer?.user?.name || '',
+        username: review.buyer?.user?.username || '',
+        email: review.buyer?.user?.email || '',
+      },
     };
-
-    // Defensive checks for product and seller
+    
     this.product = {
       id: review.product?.id || 0,
       name: review.product?.name || '',
-      imageUrl: review.product?.imageUrl,
       seller: {
         id: review.product?.seller?.id || 0,
         shopName: review.product?.seller?.shopName,

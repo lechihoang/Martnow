@@ -22,14 +22,23 @@ export enum ProductStatus {
   DISCONTINUED = 'discontinued',
 }
 
-// Base interface for all entities
-export interface BaseEntity {
+// Base interfaces - minimal timestamps only for order-related entities
+export interface WithOrderTimestamps {
   id: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface User extends BaseEntity {
+export interface WithCreatedOnly {
+  id: number;
+  createdAt: Date;
+}
+
+export interface WithoutTimestamps {
+  id: number;
+}
+
+export interface User extends WithoutTimestamps {
   name: string;
   username: string;
   email: string;
@@ -41,7 +50,7 @@ export interface User extends BaseEntity {
   reviews: Review[];
 }
 
-export interface Buyer extends BaseEntity {
+export interface Buyer extends WithoutTimestamps {
   userId: number;
   user: User;
   orders: Order[];
@@ -49,7 +58,7 @@ export interface Buyer extends BaseEntity {
   addresses: Address[];
 }
 
-export interface Seller extends BaseEntity {
+export interface Seller extends WithoutTimestamps {
   userId: number;
   user: User;
   shopName?: string;
@@ -60,7 +69,7 @@ export interface Seller extends BaseEntity {
   stats?: SellerStats;
 }
 
-export interface SellerStats extends BaseEntity {
+export interface SellerStats extends WithoutTimestamps {
   sellerId: number;
   seller: Seller;
   totalOrders: number;
@@ -75,7 +84,7 @@ export interface SellerStats extends BaseEntity {
 // Alias for compatibility with existing code
 export type Stats = Pick<SellerStats, 'totalOrders' | 'totalRevenue' | 'totalProducts' | 'pendingOrders' | 'completedOrders' | 'averageRating' | 'totalReviews'>;
 
-export interface Address extends BaseEntity {
+export interface Address extends WithoutTimestamps {
   userId: number;
   buyerId: number;
   user: User;
@@ -88,13 +97,13 @@ export interface Address extends BaseEntity {
   isDefault: boolean;
 }
 
-export interface Category extends BaseEntity {
+export interface Category extends WithoutTimestamps {
   name: string;
   description?: string;
   products: Product[];
 }
 
-export interface Product extends BaseEntity {
+export interface Product extends WithoutTimestamps {
   sellerId: number;
   categoryId: number;
   seller: Seller;
@@ -106,12 +115,19 @@ export interface Product extends BaseEntity {
   images: ProductImage[];
   isAvailable: boolean;
   stock: number;
-  discount?: number; // Cho phép undefined/null
+  discount?: number;
+  // Statistics fields
+  averageRating: number;
+  totalReviews: number;
+  totalSold: number;
+  viewCount: number;
+  // SEO field
+  tags?: string; // JSON string
   reviews: Review[];
   orderItems: OrderItem[];
 }
 
-export interface ProductImage extends BaseEntity {
+export interface ProductImage extends WithoutTimestamps {
   productId: number;
   product: Product;
   imageData: string; // base64 string
@@ -123,7 +139,8 @@ export interface ProductImage extends BaseEntity {
   isPrimary: boolean;
 }
 
-export interface Order extends BaseEntity {
+// Only keep timestamps for Order-related entities
+export interface Order extends WithOrderTimestamps {
   buyerId: number;
   addressId?: number;
   buyer: Buyer;
@@ -131,10 +148,12 @@ export interface Order extends BaseEntity {
   totalPrice: number;
   status: OrderStatus;
   note?: string;
+  paymentReference?: string;
+  paidAt?: Date;
   items: OrderItem[];
 }
 
-export interface OrderItem extends BaseEntity {
+export interface OrderItem extends WithCreatedOnly {
   orderId: number;
   productId: number;
   order: Order;
@@ -143,7 +162,7 @@ export interface OrderItem extends BaseEntity {
   price: number;
 }
 
-export interface Review extends BaseEntity {
+export interface Review extends WithCreatedOnly {
   userId: number;
   buyerId: number;
   productId: number;
@@ -152,4 +171,12 @@ export interface Review extends BaseEntity {
   product: Product;
   rating: number;
   comment?: string;
+  helpfulCount: number;
+}
+
+export interface Favorite extends WithoutTimestamps {
+  buyerId: number;
+  productId: number;
+  buyer: Buyer;
+  product: Product;
 }

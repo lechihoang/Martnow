@@ -115,6 +115,13 @@ const PaymentReturnContent: React.FC = () => {
                 </h2>
                 <p className="text-gray-600 mb-4">{result.message}</p>
                 
+                {/* Success details */}
+                <div className="text-sm text-gray-500 mb-4">
+                  ✅ Đơn hàng đã được xác nhận<br/>
+                  ✅ Kho hàng đã được cập nhật<br/>
+                  ✅ Thống kê seller đã được cập nhật
+                </div>
+                
                 {result.orderId && (
                   <div className="bg-gray-50 rounded-lg p-4 mb-4">
                     <p className="text-sm text-gray-600">Mã đơn hàng:</p>
