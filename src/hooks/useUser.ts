@@ -39,12 +39,17 @@ function useUser() {
 
   const login = async (credentials: LoginDto) => {
     const { email, password } = credentials;
+    console.log('🔑 Frontend login attempt:', { email, password: '***', passwordLength: password?.length });
     try {
       setLoading(true);
       setError(null);
       
+      console.log('📡 Calling authApi.login...');
       const response = await authApi.login(email, password);
+      console.log('📥 Login response:', response);
+      
       if (response.user) {
+        console.log('✅ Login successful, saving user:', response.user);
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
         
@@ -56,6 +61,7 @@ function useUser() {
         return response.user;
       }
     } catch (err) {
+      console.error('❌ Frontend login error:', err);
       setError(err instanceof Error ? err.message : 'Login failed');
       throw err;
     } finally {

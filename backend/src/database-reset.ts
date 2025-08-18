@@ -212,13 +212,13 @@ class DatabaseReset {
 
       // Create buyer/seller profile
       if (userData.role === UserRole.BUYER) {
-        const buyer = this.repositories.buyer.create({ userId: savedUser.id });
+        const buyer = this.repositories.buyer.create({ id: savedUser.id });
         await this.repositories.buyer.save(buyer);
         console.log(`      ↳ Created buyer profile`);
 
       } else if (userData.role === UserRole.SELLER) {
         const seller = this.repositories.seller.create({
-          userId: savedUser.id,
+          id: savedUser.id,
           shopName: userData.sellerInfo?.shopName,
           shopAddress: userData.sellerInfo?.shopAddress,
           shopPhone: userData.sellerInfo?.shopPhone,
@@ -229,7 +229,7 @@ class DatabaseReset {
 
         // Create seller stats
         const sellerStats = this.repositories.sellerStats.create({
-          sellerId: savedSeller.id,
+          id: savedSeller.id, // SellerStats sử dụng same id
           totalOrders: Math.floor(Math.random() * 50) + 10,
           totalRevenue: Math.floor(Math.random() * 1000000) + 500000,
           totalProducts: 0, // Will be updated after products
@@ -268,7 +268,7 @@ class DatabaseReset {
       }
 
       const seller = await this.repositories.seller.findOne({
-        where: { userId: sellerUser.id }
+        where: { id: sellerUser.id }
       });
       if (!seller) {
         console.log(`   ❌ Seller profile not found for: ${productData.sellerUsername}`);
@@ -310,7 +310,7 @@ class DatabaseReset {
       if (!buyerUser) continue;
 
       const buyer = await this.repositories.buyer.findOne({
-        where: { userId: buyerUser.id }
+        where: { id: buyerUser.id }
       });
       if (!buyer) continue;
 
@@ -354,7 +354,7 @@ class DatabaseReset {
       });
 
       await this.repositories.sellerStats.update(
-        { sellerId: seller.id },
+        { id: seller.id },
         { totalProducts: productCount }
       );
       console.log(`   ✅ Updated seller stats for seller ID: ${seller.id}`);

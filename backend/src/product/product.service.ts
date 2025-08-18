@@ -6,6 +6,7 @@ import { Category } from './entities/category.entity';
 import { Seller } from '../account/seller/entities/seller.entity';
 import { CreateProductDto, ProductResponseDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { MediaService } from '../media/media.service';
 import * as slug from 'slug';
 
 export interface ProductFilterOptions {
@@ -27,6 +28,7 @@ export class ProductService {
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(Seller)
     private readonly sellerRepository: Repository<Seller>,
+    private readonly mediaService: MediaService,
   ) {}
 
   // === BASIC CRUD METHODS ===
@@ -119,8 +121,13 @@ export class ProductService {
       throw new NotFoundException(`Product with ID ${id} not found or you don't have permission to delete it`);
     }
     
+    // ✅ MANUAL CLEANUP: Delete media files trước khi xóa product
+    await this.mediaService.deleteAllMediaFiles('product', id);
+    
+    // Delete product từ database
     await this.productRepository.delete(id);
-    return { message: 'Product deleted successfully' };
+    
+    return { message: 'Product and associated media files deleted successfully' };
   }
 
   // === QUERY METHODS ===

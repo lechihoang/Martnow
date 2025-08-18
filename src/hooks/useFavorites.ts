@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { favoritesApi } from '@/lib/api';
+import { favoritesApi, ApiError } from '@/lib/api';
 import { ProductResponseDto } from '@/types/dtos';
 import { useApiCache } from './useApiCache';
 import useUser from './useUser';
@@ -37,7 +37,19 @@ export const useFavorites = () => {
       setFavorites(favoriteProducts);
     } catch (err) {
       console.error('Error fetching favorites:', err);
-      setError('Không thể tải danh sách yêu thích');
+      
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          setError('Bạn cần đăng nhập để xem danh sách yêu thích');
+        } else if (err.status === 400 && err.message.includes('buyer')) {
+          setError('Chỉ người mua mới có thể sử dụng tính năng yêu thích');
+        } else {
+          setError(err.message || 'Không thể tải danh sách yêu thích');
+        }
+      } else {
+        setError('Không thể tải danh sách yêu thích');
+      }
+      
       setFavorites([]);
     }
   }, [user, cache]);

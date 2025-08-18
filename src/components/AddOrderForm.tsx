@@ -91,27 +91,40 @@ const AddProductForm = () => {
     setImagePreviews(newPreviews);
   };
 
-    const convertImagesToBase64 = async (): Promise<{imageData: string, mimeType: string, originalName: string, fileSize: number}[]> => {
+  const uploadProductImages = async (productId: number): Promise<string[]> => {
     if (selectedImages.length === 0) return [];
 
-    const base64Promises = selectedImages.map(async (file) => {
-      return new Promise<{imageData: string, mimeType: string, originalName: string, fileSize: number}>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result as string;
-          resolve({
-            imageData: result, // Base64 data URL
-            mimeType: file.type,
-            originalName: file.name,
-            fileSize: file.size
-          });
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      
+      // Add all selected images to FormData
+      selectedImages.forEach((file) => {
+        formData.append('files', file);
       });
-    });
+      
+      formData.append('entityType', 'product');
+      formData.append('entityId', productId.toString());
 
-    return Promise.all(base64Promises);
+      // Upload to backend media endpoint
+      const response = await fetch('http://localhost:3001/media/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const uploadedFiles = await response.json();
+      
+      // Return array of secure URLs
+      return uploadedFiles.map((file: any) => file.secureUrl);
+    } catch (error) {
+      console.error('Image upload error:', error);
+      throw new Error('Không thể tải ảnh lên');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -125,54 +138,69 @@ const AddProductForm = () => {
         return;
       }
 
-      // Chuyển đổi ảnh thành base64 trực tiếp
-      const imageBase64Array = await convertImagesToBase64();
-      
-      const res = await fetch('http://localhost:3001/products', {
+      // Step 1: Create product without images first
+      const productResponse = await fetch('http://localhost:3001/products', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json' 
         },
-        credentials: 'include', // Để gửi cookie authentication
+        credentials: 'include',
         body: JSON.stringify({
           name: form.name,
           description: form.description,
-          categoryId: form.categoryId, // Gửi categoryId thay vì categories
+          categoryId: form.categoryId,
           price: form.price,
-          stock: form.stock, // Thêm số lượng
-          images: imageBase64Array, // Gửi base64 data URLs
+          stock: form.stock,
         }),
       });
       
-      if (res.ok) {
-        await res.json();
-        toast.success('Đã thêm sản phẩm thành công!');
-        // Reset form sau khi thành công
-        setForm({
-          name: '',
-          description: '',
-          categoryId: undefined,
-          price: 0,
-          stock: 0,
-        });
-        setSelectedImages([]);
-        setImagePreviews([]);
-      } else {
-        // Xử lý các mã lỗi cụ thể
-        if (res.status === 403) {
+      if (!productResponse.ok) {
+        // Handle product creation errors
+        if (productResponse.status === 403) {
           toast.error('Chỉ người bán mới có thể thêm sản phẩm');
-        } else if (res.status === 401) {
+        } else if (productResponse.status === 401) {
           toast.error('Vui lòng đăng nhập để thêm sản phẩm.');
         } else {
           try {
-            const errorData = await res.json();
-            toast.error(errorData.message || `Lỗi ${res.status}: Không thể thêm sản phẩm`);
+            const errorData = await productResponse.json();
+            toast.error(errorData.message || `Lỗi ${productResponse.status}: Không thể thêm sản phẩm`);
           } catch {
-            toast.error(`Lỗi ${res.status}: Không thể thêm sản phẩm`);
+            toast.error(`Lỗi ${productResponse.status}: Không thể thêm sản phẩm`);
           }
         }
+        return;
       }
-    } catch {
+
+      const createdProduct = await productResponse.json();
+      const productId = createdProduct.id;
+
+      // Step 2: Upload images if any
+      if (selectedImages.length > 0) {
+        try {
+          await uploadProductImages(productId);
+          toast.success('Đã thêm sản phẩm và tải ảnh thành công!');
+        } catch (error) {
+          // Product created but image upload failed
+          console.error('Image upload failed:', error);
+          toast.success('Đã thêm sản phẩm thành công, nhưng có lỗi khi tải ảnh lên');
+        }
+      } else {
+        toast.success('Đã thêm sản phẩm thành công!');
+      }
+      
+      // Reset form after success
+      setForm({
+        name: '',
+        description: '',
+        categoryId: undefined,
+        price: 0,
+        stock: 0,
+      });
+      setSelectedImages([]);
+      setImagePreviews([]);
+      
+    } catch (error) {
+      console.error('Submit error:', error);
       toast.error('Có lỗi xảy ra! Vui lòng thử lại.');
     } finally {
       setLoading(false);

@@ -206,14 +206,28 @@ export const sellerApi = {
 // Authentication helpers
 export const authApi = {
   async login(email: string, password: string): Promise<{ user: UserResponseDto }> {
+    console.log('📡 API: Sending login request to:', `${API_BASE_URL}/auth/login`);
+    console.log('📡 API: Request data:', { email, password: '***' });
+    
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include', // Include cookies for httpOnly authentication
       body: JSON.stringify({ email, password }),
     });
-    if (!response.ok) throw new Error('Login failed');
-    return response.json();
+    
+    console.log('📥 API: Response status:', response.status);
+    console.log('📥 API: Response ok:', response.ok);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ API: Login failed with:', errorText);
+      throw new Error(`Login failed: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ API: Login successful, data:', data);
+    return data;
   },
 
   async register(userData: CreateUserDto): Promise<UserResponseDto> {
@@ -361,19 +375,115 @@ export const orderApi = {
   },
 };
 
-// Upload API
+// Media/Upload API
 export const uploadApi = {
-  // Upload file
-  async uploadFile(file: File): Promise<UploadResponseDto> {
+  // Upload single file for entity
+  async uploadFile(
+    file: File, 
+    entityType: string = 'general', 
+    entityId?: number
+  ): Promise<any> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('files', file); // Backend expects 'files'
+    formData.append('entityType', entityType);
+    if (entityId) {
+      formData.append('entityId', entityId.toString());
+    }
     
-    const response = await fetch(`${API_BASE_URL}/upload`, {
+    const response = await fetch(`${API_BASE_URL}/media/upload`, {
       method: 'POST',
       credentials: 'include',
       body: formData,
     });
     if (!response.ok) throw new Error('Failed to upload file');
+    return response.json();
+  },
+
+  // Upload multiple files
+  async uploadMultipleFiles(
+    files: File[], 
+    entityType: string, 
+    entityId: number,
+    isPrimary?: boolean[]
+  ): Promise<any> {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    formData.append('entityType', entityType);
+    formData.append('entityId', entityId.toString());
+    if (isPrimary) {
+      isPrimary.forEach((primary, index) => {
+        formData.append(`isPrimary[${index}]`, primary.toString());
+      });
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/media/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+    if (!response.ok) throw new Error('Failed to upload files');
+    return response.json();
+  },
+
+  // Get media files for entity
+  async getMediaFiles(entityType: string, entityId: number): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/media/${entityType}/${entityId}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to get media files');
+    return response.json();
+  },
+
+  // Update media files (add/remove)
+  async updateMediaFiles(
+    entityType: string,
+    entityId: number,
+    options: {
+      filesToAdd?: File[];
+      filesToDelete?: number[];
+      primaryFileId?: number;
+    }
+  ): Promise<any> {
+    const formData = new FormData();
+    
+    if (options.filesToAdd) {
+      options.filesToAdd.forEach(file => formData.append('files', file));
+    }
+    
+    if (options.filesToDelete) {
+      formData.append('filesToDelete', JSON.stringify(options.filesToDelete));
+    }
+    
+    if (options.primaryFileId) {
+      formData.append('primaryFileId', options.primaryFileId.toString());
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/media/${entityType}/${entityId}`, {
+      method: 'PUT',
+      credentials: 'include',
+      body: formData,
+    });
+    if (!response.ok) throw new Error('Failed to update media files');
+    return response.json();
+  },
+
+  // Set primary media file
+  async setPrimaryMedia(mediaFileId: number): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/media/primary/${mediaFileId}`, {
+      method: 'PUT',
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to set primary media');
+    return response.json();
+  },
+
+  // Delete all media for entity
+  async deleteAllMedia(entityType: string, entityId: number): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/media/${entityType}/${entityId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to delete media files');
     return response.json();
   },
 };
@@ -505,13 +615,7 @@ export const favoritesApi = {
       credentials: 'include',
     });
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error fetching favorites:', { status: response.status, error: errorText });
-      throw new Error(`Failed to fetch favorites: ${response.status} ${errorText}`);
-    }
-    
-    const data = await response.json();
+    const data = await handleResponse<{ message: string; data: ProductResponseDto[] }>(response);
     return data.data || []; // API trả về { message, data }
   },
 
@@ -521,7 +625,7 @@ export const favoritesApi = {
       method: 'POST',
       credentials: 'include',
     });
-    if (!response.ok) throw new Error('Failed to add to favorites');
+    await handleResponse<{ message: string; data?: any }>(response);
   },
 
   // Remove product from favorites
@@ -530,17 +634,22 @@ export const favoritesApi = {
       method: 'DELETE',
       credentials: 'include',
     });
-    if (!response.ok) throw new Error('Failed to remove from favorites');
+    await handleResponse<{ message: string }>(response);
   },
 
   // Check if product is favorite
   async isFavorite(productId: number): Promise<boolean> {
-    const response = await fetch(`${API_BASE_URL}/favorites/check/${productId}`, {
-      credentials: 'include',
-    });
-    if (!response.ok) return false;
-    const data = await response.json();
-    return data.isFavorite;
+    try {
+      const response = await fetch(`${API_BASE_URL}/favorites/check/${productId}`, {
+        credentials: 'include',
+      });
+      const data = await handleResponse<{ isFavorite: boolean }>(response);
+      return data.isFavorite;
+    } catch (error) {
+      // If there's an auth error or other error, assume not favorite
+      console.warn('Error checking favorite status:', error);
+      return false;
+    }
   },
 
   // Get favorite status for multiple products

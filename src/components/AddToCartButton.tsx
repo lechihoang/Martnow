@@ -1,6 +1,7 @@
 "use client";
 
 import type { Product } from "../types/entities";
+import type { ProductResponseDto } from "../types/dtos";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import { ShoppingBag } from "lucide-react";
@@ -8,7 +9,7 @@ import { useState } from "react";
 import { useCart } from "@/hooks/useCart";
 
 interface Props {
-  product: Product;
+  product: Product | ProductResponseDto;
   className?: string;
   showSuccessMessage?: boolean;
 }

@@ -6,6 +6,7 @@ import {
   Res,
   UseGuards,
   Get,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -28,6 +29,11 @@ export class AuthController {
     @Request() request,
     @Res({ passthrough: true }) response: Response,
   ) {
+    // Additional validation to ensure data is present
+    if (!loginDto || !loginDto.email || !loginDto.password) {
+      throw new BadRequestException('Email and password are required');
+    }
+    
     const user = await this.authService.validateUser(
       loginDto.email,
       loginDto.password,
@@ -56,6 +62,22 @@ export class AuthController {
     return {
       isAuthenticated: true,
       user: request.user,
+    };
+  }
+
+  // Debug endpoint to list all users
+  @Get('debug/users')
+  async debugGetAllUsers() {
+    const users = await this.authService['usersService'].findAll();
+    return {
+      count: users.length,
+      users: users.map(user => ({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        hasPassword: !!user.password
+      }))
     };
   }
 }

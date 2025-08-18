@@ -1,22 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository } from 'typeorm';
 import { MediaFile } from './entities/media-file.entity';
-import { CloudinaryService, UploadResult } from './cloudinary.service';
+import { CloudinaryService } from 'nestjs-cloudinary';
+import { MediaUploadDto } from './dto/media-upload.dto';
+import { User } from '../account/user/entities/user.entity';
 
-export interface MediaUploadDto {
-  entityType: string; // 'product', 'user', 'restaurant'
-  entityId: number;
-  files: Express.Multer.File[];
-  isPrimary?: boolean[];
-}
-
-export interface MediaUpdateDto {
+export interface MediaUploadServiceDto {
   entityType: string;
   entityId: number;
-  filesToDelete?: number[]; // IDs của media files cần xóa
-  filesToAdd?: Express.Multer.File[]; // Files mới cần thêm
-  primaryFileId?: number; // ID của file sẽ được set làm primary
+  files: any[];
 }
 
 @Injectable()
@@ -24,152 +17,70 @@ export class MediaService {
   constructor(
     @InjectRepository(MediaFile)
     private mediaRepository: Repository<MediaFile>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
     private cloudinaryService: CloudinaryService,
-    private dataSource: DataSource,
   ) {}
 
   /**
    * Upload media files cho entity
    */
   async uploadMediaFiles(dto: MediaUploadDto): Promise<MediaFile[]> {
-    const { entityType, entityId, files, isPrimary = [] } = dto;
+    const { entityType, entityId, files } = dto;
     
-    // Generate folder path
-    const folder = this.cloudinaryService.generateFolderPath(entityType, entityId);
+    if (!files || files.length === 0) {
+      throw new Error('No files provided');
+    }
     
-    // Upload files to Cloudinary
-    const uploadResults = await this.cloudinaryService.uploadMultipleFiles(files, folder);
-    
-    // Create MediaFile entities
-    const mediaFiles: MediaFile[] = [];
-    
-    for (let i = 0; i < uploadResults.length; i++) {
-      const result = uploadResults[i];
-      const mediaFile = this.mediaRepository.create({
-        fileName: result.fileName,
-        publicId: result.publicId,
-        url: result.url,
-        secureUrl: result.secureUrl,
-        fileType: this.getFileType(result.mimeType),
-        mimeType: result.mimeType,
-        fileSize: result.fileSize,
-        width: result.width,
-        height: result.height,
-        duration: result.duration,
+    // Upload files to Cloudinary using nestjs-cloudinary
+    const uploadPromises = files.map(async (file, index) => {
+      // Generate folder path for each file
+      const folder = `foodee/${entityType}/${entityId}`;
+      
+      // Upload options
+      const uploadOptions = {
+        folder: folder,
+        resource_type: 'auto' as const, // auto detect image/video
+        quality: 'auto',
+        fetch_format: 'auto'
+      };
+      
+      // Upload file using nestjs-cloudinary
+      const result = await this.cloudinaryService.uploadFile(file, uploadOptions);
+      
+      return {
+        fileName: file.originalname,
+        publicId: result.public_id,
+        secureUrl: result.secure_url,
+        fileType: this.getFileType(file.mimetype),
         entityType,
         entityId,
-        isPrimary: isPrimary[i] || false,
-        sortOrder: i,
-      });
-      
-      mediaFiles.push(mediaFile);
+        isPrimary: index === 0, // First file is primary
+      };
+    });
+    
+    // Wait for all uploads to complete
+    const uploadResults = await Promise.all(uploadPromises);
+    
+    // Save media files to database
+    const savedFiles = await this.mediaRepository.save(
+      uploadResults.map(result => this.mediaRepository.create(result))
+    ) as MediaFile[];
+    
+    // If uploading avatar for user, update User entity
+    if (entityType === 'user' && savedFiles.length > 0) {
+      const primaryFile = savedFiles.find(file => file.isPrimary) || savedFiles[0];
+      if (primaryFile) {
+        await this.userRepository.update(
+          { id: entityId },
+          { avatar: primaryFile.secureUrl }
+        );
+      }
     }
     
-    // Save to database
-    return this.mediaRepository.save(mediaFiles);
+    return savedFiles;
   }
 
-  /**
-   * Update media files - Incremental approach
-   */
-  async updateMediaFiles(dto: MediaUpdateDto): Promise<MediaFile[]> {
-    const { entityType, entityId, filesToDelete = [], filesToAdd = [], primaryFileId } = dto;
-    
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    
-    try {
-      // 1. Delete specified files
-      if (filesToDelete.length > 0) {
-        // Get Cloudinary public_ids before deleting from DB
-        const filesToDeleteFromCloudinary = await queryRunner.manager
-          .getRepository(MediaFile)
-          .findBy({ id: { $in: filesToDelete } as any });
-        
-        const publicIds = filesToDeleteFromCloudinary.map(file => file.publicId);
-        
-        // Delete from database first
-        await queryRunner.manager
-          .getRepository(MediaFile)
-          .delete(filesToDelete);
-        
-        // Delete from Cloudinary (async, don't wait)
-        this.cloudinaryService.deleteMultipleFiles(publicIds).catch(error => {
-          console.error('Failed to delete files from Cloudinary:', error);
-        });
-      }
-      
-      // 2. Add new files
-      const newMediaFiles: MediaFile[] = [];
-      if (filesToAdd.length > 0) {
-        const folder = this.cloudinaryService.generateFolderPath(entityType, entityId);
-        const uploadResults = await this.cloudinaryService.uploadMultipleFiles(filesToAdd, folder);
-        
-        // Get current max sortOrder
-        const maxSortOrder = await queryRunner.manager
-          .getRepository(MediaFile)
-          .createQueryBuilder('media')
-          .select('MAX(media.sortOrder)', 'max')
-          .where('media.entityType = :entityType AND media.entityId = :entityId', 
-                 { entityType, entityId })
-          .getRawOne();
-        
-        const startingSortOrder = (maxSortOrder?.max || 0) + 1;
-        
-        for (let i = 0; i < uploadResults.length; i++) {
-          const result = uploadResults[i];
-          const mediaFile = queryRunner.manager.getRepository(MediaFile).create({
-            fileName: result.fileName,
-            publicId: result.publicId,
-            url: result.url,
-            secureUrl: result.secureUrl,
-            fileType: this.getFileType(result.mimeType),
-            mimeType: result.mimeType,
-            fileSize: result.fileSize,
-            width: result.width,
-            height: result.height,
-            duration: result.duration,
-            entityType,
-            entityId,
-            isPrimary: false, // Set manually sau nếu cần
-            sortOrder: startingSortOrder + i,
-          });
-          
-          newMediaFiles.push(mediaFile);
-        }
-        
-        await queryRunner.manager.getRepository(MediaFile).save(newMediaFiles);
-      }
-      
-      // 3. Update primary file if specified
-      if (primaryFileId) {
-        // Reset all primary flags for this entity
-        await queryRunner.manager
-          .getRepository(MediaFile)
-          .update(
-            { entityType, entityId },
-            { isPrimary: false }
-          );
-        
-        // Set new primary
-        await queryRunner.manager
-          .getRepository(MediaFile)
-          .update(primaryFileId, { isPrimary: true });
-      }
-      
-      await queryRunner.commitTransaction();
-      
-      // Return all current media files for this entity
-      return this.getMediaFiles(entityType, entityId);
-      
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  }
 
   /**
    * Get all media files for an entity
@@ -179,7 +90,7 @@ export class MediaService {
       where: { entityType, entityId },
       order: { 
         isPrimary: 'DESC', // Primary first
-        sortOrder: 'ASC'   // Then by sort order
+        createdAt: 'ASC'   // Then by upload order
       }
     });
   }
@@ -200,44 +111,24 @@ export class MediaService {
     // Delete from database
     await this.mediaRepository.delete({ entityType, entityId });
     
-    // Delete from Cloudinary (async)
-    this.cloudinaryService.deleteMultipleFiles(publicIds).catch(error => {
-      console.error('Failed to delete files from Cloudinary:', error);
-    });
-  }
-
-  /**
-   * Set primary media file
-   */
-  async setPrimaryMediaFile(mediaFileId: number): Promise<void> {
-    const mediaFile = await this.mediaRepository.findOne({
-      where: { id: mediaFileId }
-    });
-    
-    if (!mediaFile) {
-      throw new NotFoundException(`Media file with ID ${mediaFileId} not found`);
-    }
-    
-    // Reset all primary flags for this entity
-    await this.mediaRepository.update(
-      { entityType: mediaFile.entityType, entityId: mediaFile.entityId },
-      { isPrimary: false }
-    );
-    
-    // Set new primary
-    await this.mediaRepository.update(mediaFileId, { isPrimary: true });
-  }
-
-  /**
-   * Get primary media file for entity
-   */
-  async getPrimaryMediaFile(entityType: string, entityId: number): Promise<MediaFile | null> {
-    return this.mediaRepository.findOne({
-      where: { 
-        entityType, 
-        entityId, 
-        isPrimary: true 
+    // Delete from Cloudinary using cloudinary instance (async)
+    // Use Promise.all to properly handle all async operations
+    const deletePromises = publicIds.map(async (publicId) => {
+      try {
+        // Try both image and video resource types
+        await this.cloudinaryService.cloudinaryInstance.uploader.destroy(publicId, { resource_type: 'image' });
+      } catch (error) {
+        try {
+          await this.cloudinaryService.cloudinaryInstance.uploader.destroy(publicId, { resource_type: 'video' });
+        } catch (videoError) {
+          console.error(`Failed to delete ${publicId}:`, error.message);
+        }
       }
+    });
+    
+    // Wait for all deletions to complete (but don't block the main operation)
+    Promise.all(deletePromises).catch(error => {
+      console.error('Some Cloudinary deletions failed:', error);
     });
   }
 
@@ -248,40 +139,5 @@ export class MediaService {
     if (mimeType.startsWith('image/')) return 'image';
     if (mimeType.startsWith('video/')) return 'video';
     return 'other';
-  }
-
-  /**
-   * Reorder media files
-   */
-  async reorderMediaFiles(
-    entityType: string, 
-    entityId: number, 
-    fileIds: number[]
-  ): Promise<void> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    
-    try {
-      for (let i = 0; i < fileIds.length; i++) {
-        await queryRunner.manager
-          .getRepository(MediaFile)
-          .update(
-            { 
-              id: fileIds[i], 
-              entityType, 
-              entityId 
-            },
-            { sortOrder: i }
-          );
-      }
-      
-      await queryRunner.commitTransaction();
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
   }
 }

@@ -85,13 +85,39 @@ const ProfilePage: React.FC = () => {
 
   const handleUpdateUser = async (updatedUser: Partial<User>) => {
     try {
-      // API call để cập nhật thông tin user
-      console.log('Updating user:', updatedUser);
+      console.log('🔄 Updating user:', updatedUser);
       if (user) {
-        setUser({ ...user, ...updatedUser });
+        // Gọi API để cập nhật thông tin user
+        const { userApi } = await import('@/lib/api');
+        const updatedUserResponse = await userApi.updateUser(user.id, updatedUser);
+        console.log('✅ User update API response:', updatedUserResponse);
+        
+        // Cập nhật local state với dữ liệu từ server
+        if (updatedUserResponse) {
+          // API trả về UserResponseDto, không có nested user object
+          setUser(prev => prev ? ({ 
+            ...prev, 
+            ...updatedUserResponse,
+            password: prev.password || '', // Keep existing password field
+            reviews: prev.reviews || [], // Keep existing reviews
+            buyer: prev.buyer, // Keep existing buyer relation
+            seller: prev.seller // Keep existing seller relation
+          }) : null);
+        } else {
+          // Fallback: cập nhật local state với dữ liệu được gửi đi
+          setUser(prev => prev ? ({ ...prev, ...updatedUser }) : null);
+        }
+        console.log('✅ Local user state updated successfully');
       }
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('❌ Error updating user:', error);
+      // Show error toast if needed
+      const toast = (await import('react-hot-toast')).default;
+      if (error instanceof Error) {
+        toast.error(`Lỗi cập nhật: ${error.message}`);
+      } else {
+        toast.error('Có lỗi xảy ra khi cập nhật thông tin');
+      }
     }
   };
 

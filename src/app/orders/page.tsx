@@ -80,7 +80,9 @@ const OrdersPage: React.FC = () => {
               user: {
                 ...user,
                 password: '',
-                reviews: []
+                reviews: [],
+                buyer: undefined,
+                seller: undefined
               },
               orders: [],
               reviews: [],

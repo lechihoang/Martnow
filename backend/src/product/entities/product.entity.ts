@@ -4,7 +4,6 @@ import { Category } from './category.entity';
 import { Review } from '../../review/entities/review.entity';
 import { OrderItem } from '../../order/entities/order-item.entity';
 import { Favorite } from '../../favorite/entities/favorite.entity';
-import { MediaFile } from '../../media/entities/media-file.entity';
 
 @Entity()
 @Index(['sellerId']) // Index cho việc lấy products của seller
@@ -74,10 +73,4 @@ export class Product {
 
   @OneToMany(() => Favorite, (favorite) => favorite.product)
   favorites: Favorite[];
-
-  // Media files relationship
-  @OneToMany(() => MediaFile, (media) => media.product, { 
-    cascade: ['remove'] // Xóa media files khi xóa product
-  })
-  mediaFiles: MediaFile[];
 }

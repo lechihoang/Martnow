@@ -1,121 +1,34 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Heart, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import Container from '../../components/Container';
 import Title from '../../components/Title';
 import ProductCard from '../../components/ProductCard';
 import useUser from '../../hooks/useUser';
-import { Product, UserRole } from '../../types/entities';
-import { ProductResponseDto } from '../../types/dtos';
-import { favoritesApi } from '../../lib/api';
-
-// Sử dụng cùng mapping function như shop page
-const mapProductResponseToProduct = (productDto: ProductResponseDto): Product => {
-  return {
-    id: productDto.id,
-    name: productDto.name,
-    description: productDto.description || "",
-    price: productDto.price,
-    imageUrl: productDto.imageUrl || "/images/banhmi.jpeg", // Same fallback như shop page
-    isAvailable: productDto.isAvailable,
-    stock: productDto.stock,
-    discount: productDto.discount,
-    sellerId: productDto.sellerId,
-    categoryId: productDto.categoryId,
-    // Statistics fields
-    averageRating: productDto.averageRating || 0,
-    totalReviews: productDto.totalReviews || 0,
-    totalSold: productDto.totalSold || 0,
-    viewCount: 0,
-    // SEO field
-    tags: undefined,
-    seller: {
-      id: productDto.seller.id,
-      userId: productDto.seller.id,
-      user: {
-        id: productDto.seller.id,
-        name: productDto.seller.user.name,
-        username: productDto.seller.user.username,
-        email: "",
-        role: UserRole.SELLER,
-        password: "",
-        reviews: [],
-      },
-      shopName: productDto.seller.shopName || "",
-      shopAddress: productDto.seller.shopAddress || "",
-      shopPhone: "",
-      description: "",
-      products: [],
-    },
-    category: {
-      id: productDto.category.id,
-      name: productDto.category.name,
-      description: productDto.category.description || "",
-      products: [],
-    },
-    images: [],
-    reviews: [],
-    orderItems: [],
-  };
-};
+import { useFavorites } from '../../hooks/useFavorites';
 
 export default function FavoritesPage() {
-  const [favorites, setFavorites] = useState<Product[]>([]);
-  const [favoriteStatus, setFavoriteStatus] = useState<Record<number, boolean>>({});
-  const [favoritesLoading, setFavoritesLoading] = useState(true);
-  const [statusLoading, setStatusLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useUser();
-
-  // Tổng loading state
-  const loading = favoritesLoading || statusLoading;
-
-  useEffect(() => {
-    if (user && (user.buyer || user.role === 'buyer')) {
-      fetchFavorites();
-    } else if (user && !user.buyer && user.role !== 'buyer') {
-      setFavoritesLoading(false);
-    }
-  }, [user]);
-
-  const fetchFavorites = async () => {
-    try {
-      setFavoritesLoading(true);
-      setStatusLoading(true);
-      
-      const productDtos = await favoritesApi.getFavorites();
-      const mappedProducts = productDtos.map(mapProductResponseToProduct);
-      setFavorites(mappedProducts);
-      setFavoritesLoading(false);
-      
-      // Tất cả products trong favorites đều là favorite = true
-      const initialFavoriteStatus: Record<number, boolean> = {};
-      mappedProducts.forEach(product => {
-        initialFavoriteStatus[product.id] = true;
-      });
-      setFavoriteStatus(initialFavoriteStatus);
-      setStatusLoading(false);
-    } catch (err) {
-      setError('Đã xảy ra lỗi khi tải danh sách yêu thích');
-      console.error('Error fetching favorites:', err);
-      setFavoritesLoading(false);
-      setStatusLoading(false);
-    }
-  };
-
-  const handleFavoriteChange = (productId: number, isFavorite: boolean) => {
-    setFavoriteStatus(prev => ({
-      ...prev,
-      [productId]: isFavorite
-    }));
-    
-    // Nếu unfavorite thì remove khỏi list
+  const { favorites, loading, error, removeFavorite, refetch } = useFavorites();
+  
+  // Create favorite status map - all items in favorites are favorite by definition
+  const favoriteStatus = React.useMemo(() => {
+    const status: Record<number, boolean> = {};
+    favorites.forEach(product => {
+      status[product.id] = true;
+    });
+    return status;
+  }, [favorites]);
+  
+  const handleFavoriteChange = React.useCallback((productId: number, isFavorite: boolean) => {
+    // If unfavorite, remove from favorites
     if (!isFavorite) {
-      setFavorites(prev => prev.filter(product => product.id !== productId));
+      removeFavorite(productId);
     }
-  };
+    // Note: We don't handle adding favorites here since this page only shows existing favorites
+  }, [removeFavorite]);
 
   if (loading) {
     return (
@@ -123,11 +36,7 @@ export default function FavoritesPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-shop_dark_green mx-auto mb-4"></div>
-            <p className="text-gray-600">
-              {favoritesLoading ? 'Đang tải danh sách yêu thích...' : 
-               statusLoading ? 'Đang xử lý trạng thái...' : 
-               'Đang tải...'}
-            </p>
+            <p className="text-gray-600">Đang tải danh sách yêu thích...</p>
           </div>
         </div>
       </Container>
@@ -176,7 +85,7 @@ export default function FavoritesPage() {
           <Title className="text-2xl mb-4 text-red-600">Đã xảy ra lỗi</Title>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
-            onClick={fetchFavorites}
+            onClick={() => refetch(true)}
             className="inline-flex items-center px-6 py-3 bg-shop_dark_green text-white rounded-lg hover:bg-shop_dark_green/90 transition-colors"
           >
             Thử lại

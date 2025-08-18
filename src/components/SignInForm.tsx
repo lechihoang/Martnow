@@ -34,7 +34,8 @@ export default function LoginForm() {
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     setLoading(true);
     try {
-      await login(data.email, data.password);
+      // Truyền LoginDto object thay vì 2 tham số riêng biệt
+      await login({ email: data.email, password: data.password });
       toast.success("Đăng nhập thành công!");
       router.push("/");
     } catch (error) {

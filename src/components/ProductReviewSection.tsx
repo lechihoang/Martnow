@@ -240,9 +240,9 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
             comment: review.comment,
             createdAt: review.createdAt,
             buyerId: review.buyerId,
-            buyerName: review.buyerName,
-            buyerAvatar: review.buyerAvatar,
-            helpfulCount: review.helpfulCount
+            buyerName: review.user?.name || 'Unknown User',
+            buyerAvatar: review.user?.avatar,
+            helpfulCount: 0 // ReviewResponseDto doesn't have helpfulCount, set default
           }))}
           currentBuyerId={currentBuyerId}
           onEditReview={(review) => handleEditReview(reviews.find(r => r.id === review.id)!)}

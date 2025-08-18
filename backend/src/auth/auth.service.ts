@@ -14,12 +14,32 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.usersService.findByEmail(email);
-    if (user && await bcrypt.compare(password, user.password)) {
-      // Trả về toàn bộ user (ẩn password)
-      const { password, ...userInfo } = user;
-      return userInfo;
+    // Validate input parameters
+    if (!email || !password) {
+      throw new UnauthorizedException('Email and password are required');
     }
+
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!user.password) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    try {
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (isPasswordValid) {
+        // Trả về toàn bộ user (ẩn password)
+        const { password: _, ...userInfo } = user;
+        return userInfo;
+      }
+    } catch (error) {
+      console.error('Bcrypt comparison error:', error);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
     throw new UnauthorizedException('Invalid credentials');
   }
 
