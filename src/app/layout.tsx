@@ -5,6 +5,7 @@ import Container from "../components/Container";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ClientProviders } from "@/components/ClientProviders";
+import ChatSystem from "@/components/chat/ChatSystem";
 // ...existing code...
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export default function RootLayout({
             </main>
             <Footer />
           </div>
+          <ChatSystem />
         </ClientProviders>
       </body>
     </html>

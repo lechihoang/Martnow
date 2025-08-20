@@ -1,18 +1,17 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ProfileLayout from '@/components/profile/ProfileLayout';
 import SellerStats from '@/components/profile/SellerStats';
 import ProfileCard from '@/components/profile/ProfileCard';
-import { Stats, Order, OrderStatus, User } from '@/types/entities';
-import { UserResponseDto } from '@/types/dtos';
+import { Stats, Order, OrderStatus } from '@/types/entities';
 import useUser from '@/hooks/useUser';
 
 const AnalyticsPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const userId = params?.id as string;
-  const userData = useUser(); // Sử dụng hook useUser
+  const { user: currentUser, loading: currentUserLoading } = useUser();
   
   const [stats, setStats] = useState<Stats>({
     totalOrders: 0,
@@ -23,38 +22,23 @@ const AnalyticsPage: React.FC = () => {
     averageRating: 0,
     totalReviews: 0
   });
-  const [currentUser, setCurrentUser] = useState<User | UserResponseDto | null>(null);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (userData === null) {
-      // User hook vẫn đang loading
-      return;
-    }
-    
-    if (userData === undefined || !userData.user) {
-      // Không có user data, chuyển về login
-      router.push('/login');
-      return;
-    }
-
-    // Có user data, load analytics
-    fetchData();
-  }, [userData, userId, router]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const { mockUser, mockStats, mockOrders } = await import('@/lib/mockData');
-      const currentUserData = userData.user || mockUser;
-      setCurrentUser(currentUserData);
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
 
       // Kiểm tra quyền truy cập - chỉ seller và chính chủ tài khoản
-      if (currentUserData.role !== 'seller' || currentUserData.id.toString() !== userId) {
+      if (currentUser.role !== 'seller' || currentUser.id.toString() !== userId) {
         router.push('/');
         return;
       }
 
+      const { mockStats, mockOrders } = await import('@/lib/mockData');
       setStats(mockStats);
       setRecentOrders(mockOrders.slice(0, 5)); // 5 đơn hàng gần nhất
       setLoading(false);
@@ -62,7 +46,20 @@ const AnalyticsPage: React.FC = () => {
       console.error('Error fetching data:', error);
       setLoading(false);
     }
-  };
+  }, [currentUser, userId, router]);
+
+  useEffect(() => {
+    if (currentUserLoading) {
+      return;
+    }
+    
+    if (!currentUser) {
+      router.push('/login');
+      return;
+    }
+
+    fetchData();
+  }, [currentUserLoading, currentUser, userId, router, fetchData]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -94,11 +91,7 @@ const AnalyticsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <ProfileLayout 
-        userRole={currentUser?.role || 'seller'} 
-        userId={userId} 
-        isOwnProfile={true}
-      >
+      <ProfileLayout>
         <div className="flex justify-center items-center min-h-[400px]">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
         </div>
@@ -107,11 +100,7 @@ const AnalyticsPage: React.FC = () => {
   }
 
   return (
-    <ProfileLayout 
-      userRole={currentUser?.role || 'seller'} 
-      userId={userId} 
-      isOwnProfile={true}
-    >
+    <ProfileLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">Thống kê & Phân tích</h1>

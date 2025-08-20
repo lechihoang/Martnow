@@ -4,16 +4,10 @@ import Container from '@/components/Container';
 
 interface ProfileLayoutProps {
   children: React.ReactNode;
-  userRole: string;
-  userId: string;
-  isOwnProfile: boolean;
 }
 
 const ProfileLayout: React.FC<ProfileLayoutProps> = ({ 
-  children, 
-  userRole, 
-  userId, 
-  isOwnProfile 
+  children
 }) => {
   return (
     <Container>

@@ -23,7 +23,10 @@ import { Review } from './review/entities/review.entity';
 import { SellerStats } from './seller-stats/entities/seller-stats.entity';
 import { Favorite } from './favorite/entities/favorite.entity';
 import { MediaFile } from './media/entities/media-file.entity';
+import { Room } from './chat/entities/room.entity';
+import { Message } from './chat/entities/message.entity';
 import { PaymentModule } from './payment/payment.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -39,7 +42,7 @@ import { PaymentModule } from './payment/payment.module';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [Product, Seller, Category, User, Buyer, Order, OrderItem, Review, SellerStats, Favorite, MediaFile],
+        entities: [Product, Seller, Category, User, Buyer, Order, OrderItem, Review, SellerStats, Favorite, MediaFile, Room, Message],
         synchronize: true, // chỉ dùng cho dev, không nên dùng cho production
         ssl: config.get('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
       }),
@@ -53,6 +56,7 @@ import { PaymentModule } from './payment/payment.module';
     FavoriteModule,
     MediaModule,
     PaymentModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

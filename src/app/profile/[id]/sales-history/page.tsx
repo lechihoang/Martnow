@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ProfileLayout from '@/components/profile/ProfileLayout';
 import OrderHistory from '@/components/profile/OrderHistory';
@@ -20,20 +20,7 @@ const SalesHistoryPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (userData.loading) {
-      return;
-    }
-    
-    if (userData.user === null) {
-      router.push('/login');
-      return;
-    }
-
-    fetchData();
-  }, [userData.loading, userData.user, userId, router]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -111,7 +98,7 @@ const SalesHistoryPage: React.FC = () => {
               reviews: [],
               addresses: []
             },
-            items: [] as any[], // SellerOrdersDto doesn't include item details, just itemCount
+            items: [] as Order['items'], // Fix the 'any' type
             address: undefined
           }));
           
@@ -134,15 +121,24 @@ const SalesHistoryPage: React.FC = () => {
       setError('Có lỗi xảy ra khi tải dữ liệu');
       setLoading(false);
     }
-  };
+  }, [userData.user, userId, router]);
+
+  useEffect(() => {
+    if (userData.loading) {
+      return;
+    }
+    
+    if (userData.user === null) {
+      router.push('/login');
+      return;
+    }
+
+    fetchData();
+  }, [userData.loading, userData.user, userId, router, fetchData]);
 
   if (loading) {
     return (
-      <ProfileLayout 
-        userRole={currentUser?.role || 'seller'} 
-        userId={userId} 
-        isOwnProfile={true}
-      >
+      <ProfileLayout>
         <div className="flex justify-center items-center min-h-[400px]">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
         </div>
@@ -152,11 +148,7 @@ const SalesHistoryPage: React.FC = () => {
 
   if (!profileUser || !currentUser) {
     return (
-      <ProfileLayout 
-        userRole="seller" 
-        userId={userId} 
-        isOwnProfile={false}
-      >
+      <ProfileLayout>
         <div className="text-center py-8">
           <p className="text-red-500">Không thể tải lịch sử bán hàng</p>
         </div>
@@ -164,14 +156,8 @@ const SalesHistoryPage: React.FC = () => {
     );
   }
 
-  const isOwnProfile = currentUser.id.toString() === userId;
-
   return (
-    <ProfileLayout 
-      userRole={profileUser.role} 
-      userId={userId} 
-      isOwnProfile={isOwnProfile}
-    >
+    <ProfileLayout>
       <div className="space-y-6">
         {error && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">

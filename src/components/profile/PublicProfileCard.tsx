@@ -1,11 +1,13 @@
 "use client";
 
 import React from 'react';
-import { User, UserRole } from '@/types/entities';
-import { Calendar, MapPin, Phone, Mail, Star, Users, Award } from 'lucide-react';
+import { UserResponseDto } from '@/types/dtos';
+import { Calendar, Mail, Star, Award } from 'lucide-react';
+import { useChatContext } from '@/contexts/ChatContext';
+import useUser from '@/hooks/useUser';
 
 interface PublicProfileCardProps {
-  user: User;
+  user: UserResponseDto;
   isOwnProfile: boolean;
   onMessage?: () => void;
   onViewShop?: () => void;
@@ -17,12 +19,23 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
   onMessage,
   onViewShop
 }) => {
-  const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  const { startChatWithUser } = useChatContext();
+  const { user: currentUser } = useUser();
+
+  const handleMessage = () => {
+    if (!currentUser) {
+      // Redirect to login if not authenticated
+      window.location.href = '/login';
+      return;
+    }
+    
+    if (currentUser.id === user.id) {
+      alert('Bạn không thể nhắn tin cho chính mình!');
+      return;
+    }
+    
+    // Use the new chat system
+    startChatWithUser(user.id);
   };
 
   return (
@@ -33,6 +46,7 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
         {/* Profile Avatar */}
         <div className="absolute -bottom-16 left-8">
           <div className="relative">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={user.avatar || '/images/default-avatar.png'}
               alt={user.name}
@@ -51,11 +65,11 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                user.role === UserRole.SELLER 
+                user.role === 'seller' 
                   ? 'bg-green-100 text-green-800' 
                   : 'bg-blue-100 text-blue-800'
               }`}>
-                {user.role === UserRole.SELLER ? '🏪 Người bán' : '🛒 Người mua'}
+                {user.role === 'seller' ? '🏪 Người bán' : '🛒 Người mua'}
               </span>
             </div>
             <p className="text-xl text-gray-600 mb-4">@{user.username}</p>
@@ -92,12 +106,12 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
             ) : (
               <>
                 <button 
-                  onClick={onMessage}
+                  onClick={handleMessage}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
                   💬 Nhắn tin
                 </button>
-                {user.role === UserRole.SELLER && (
+                {user.role === 'seller' && (
                   <button 
                     onClick={onViewShop}
                     className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
@@ -136,7 +150,7 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
           <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
             ✅ Đã xác thực
           </span>
-          {user.role === UserRole.SELLER && (
+          {user.role === 'seller' && (
             <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
             🏆 Người bán tin cậy
             </span>
@@ -147,8 +161,8 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
         <div className="bg-gray-50 rounded-lg p-4">
           <h3 className="font-semibold text-gray-900 mb-2">Giới thiệu</h3>
           <p className="text-gray-600">
-            {user.role === UserRole.SELLER 
-              ? "Chào mừng đến với cửa hàng của tôi! Tôi chuyên bán các sản phẩm chất lượng cao với giá tốt nhất. Hãy liên hệ nếu bạn có bất kỳ câu hỏi nào!"
+            {user.role === 'seller'
+              ? user.seller?.description || "Chào mừng đến với cửa hàng của tôi! Tôi chuyên bán các sản phẩm chất lượng cao với giá tốt nhất. Hãy liên hệ nếu bạn có bất kỳ câu hỏi nào!"
               : "Người mua tích cực trên Foodee. Thích khám phá các món ăn mới và ủng hộ các cửa hàng địa phương."
             }
           </p>

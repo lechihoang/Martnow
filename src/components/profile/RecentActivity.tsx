@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { User, UserRole } from '@/types/entities';
+import { UserResponseDto } from '@/types/dtos';
 import { Clock, ShoppingBag, Star, MessageCircle, Heart } from 'lucide-react';
 
 interface Activity {
@@ -16,7 +16,7 @@ interface Activity {
 }
 
 interface RecentActivityProps {
-  user: User;
+  user: UserResponseDto;
   isOwnProfile: boolean;
 }
 

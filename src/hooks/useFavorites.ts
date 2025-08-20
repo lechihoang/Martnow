@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { favoritesApi, ApiError } from '@/lib/api';
 import { ProductResponseDto } from '@/types/dtos';
 import { useApiCache } from './useApiCache';
@@ -10,6 +10,9 @@ export const useFavorites = () => {
     ttl: 3 * 60 * 1000, // 3 minutes - shorter than products since favorites change more often
     maxSize: 5
   });
+  
+  const cacheRef = useRef(cache);
+  cacheRef.current = cache;
   
   const [favorites, setFavorites] = useState<ProductResponseDto[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +32,7 @@ export const useFavorites = () => {
     try {
       setError(null);
       const cacheKey = `favorites-user-${user.id}`;
-      const favoriteProducts = await cache.fetchWithCache(
+      const favoriteProducts = await cacheRef.current.fetchWithCache(
         cacheKey,
         () => favoritesApi.getFavorites(),
         { forceRefresh }
@@ -52,7 +55,7 @@ export const useFavorites = () => {
       
       setFavorites([]);
     }
-  }, [user, cache]);
+  }, [user]);
 
   useEffect(() => {
     fetchFavorites();
@@ -66,9 +69,9 @@ export const useFavorites = () => {
     
     // Invalidate cache to ensure fresh data next time
     if (user) {
-      cache.invalidate(`favorites-user-${user.id}`);
+      cacheRef.current.invalidate(`favorites-user-${user.id}`);
     }
-  }, [cache, user]);
+  }, [user]);
 
   const addFavorite = useCallback(async (productId: number) => {
     try {
@@ -86,7 +89,7 @@ export const useFavorites = () => {
         
         // Invalidate cache to ensure consistency
         if (user) {
-          cache.invalidate(`favorites-user-${user.id}`);
+          cacheRef.current.invalidate(`favorites-user-${user.id}`);
         }
       }
     } catch (err) {
@@ -94,7 +97,7 @@ export const useFavorites = () => {
       // Fall back to refetch with cache
       await fetchFavorites(true); // Force refresh
     }
-  }, [fetchFavorites, cache, user]);
+  }, [fetchFavorites, user]);
 
   return useMemo(() => ({
     favorites,
@@ -104,6 +107,6 @@ export const useFavorites = () => {
     removeFavorite,
     addFavorite,
     refetch: fetchFavorites,
-    invalidateCache: () => user && cache.invalidate(`favorites-user-${user.id}`)
-  }), [favorites, loading, error, getFavoritesCount, removeFavorite, addFavorite, fetchFavorites, cache, user]);
+    invalidateCache: () => user && cacheRef.current.invalidate(`favorites-user-${user.id}`)
+  }), [favorites, loading, error, getFavoritesCount, removeFavorite, addFavorite, fetchFavorites, user]);
 };

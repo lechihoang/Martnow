@@ -61,6 +61,54 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json();
 }
 
+// Profile API - Tổng hợp cho profile page
+export const profileApi = {
+  // Lấy đầy đủ thông tin profile (user + seller/buyer data nếu có)
+  async getFullProfile(userId: number): Promise<{
+    user: UserResponseDto;
+    seller?: SellerResponseDto;
+    buyer?: BuyerResponseDto;
+  }> {
+    try {
+      // Lấy thông tin user trước
+      const userData = await userApi.getProfile(userId);
+      
+      const result: {
+        user: UserResponseDto;
+        seller?: SellerResponseDto;
+        buyer?: BuyerResponseDto;
+      } = { user: userData };
+      
+      // Nếu là seller, lấy thêm thông tin seller
+      if (userData.role === 'seller' && userData.seller?.id) {
+        try {
+          const sellerData = await sellerApi.getSeller(userData.seller.id);
+          result.seller = sellerData;
+        } catch (error) {
+          console.warn('Could not fetch seller data:', error);
+          // Không throw error, chỉ log warning
+        }
+      }
+      
+      // Nếu là buyer, có thể lấy thêm thông tin buyer (nếu cần)
+      if (userData.role === 'buyer' && userData.buyer?.id) {
+        try {
+          const buyerData = await buyerApi.getBuyer(userData.buyer.id);
+          result.buyer = buyerData;
+        } catch (error) {
+          console.warn('Could not fetch buyer data:', error);
+          // Không throw error, chỉ log warning
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error fetching full profile:', error);
+      throw error;
+    }
+  },
+};
+
 // User API
 export const userApi = {
   // Get user profile with buyer/seller info
@@ -348,6 +396,33 @@ export const productApi = {
       credentials: 'include',
     });
     if (!response.ok) throw new Error('Failed to delete product');
+  },
+
+  // Search products
+  async searchProducts(query: string, limit: number = 20): Promise<ProductResponseDto[]> {
+    const response = await fetch(`${API_BASE_URL}/products/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Search failed');
+    return response.json();
+  },
+
+  // Get popular products
+  async getPopularProducts(limit: number = 10): Promise<ProductResponseDto[]> {
+    const response = await fetch(`${API_BASE_URL}/products/popular?limit=${limit}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch popular products');
+    return response.json();
+  },
+
+  // Get similar products
+  async getSimilarProducts(productId: number, limit: number = 5): Promise<ProductResponseDto[]> {
+    const response = await fetch(`${API_BASE_URL}/products/${productId}/similar?limit=${limit}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Failed to fetch similar products');
+    return response.json();
   },
 };
 
@@ -668,6 +743,60 @@ export const favoritesApi = {
       console.error('Error fetching favorite status:', error);
       return {};
     }
+  },
+};
+
+// Chat API
+export const chatApi = {
+  // Get user's chat rooms
+  async getRooms(page: number = 1, limit: number = 20) {
+    const response = await fetch(`${API_BASE_URL}/chat/rooms?page=${page}&limit=${limit}`, {
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get room by ID
+  async getRoom(roomId: number) {
+    const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}`, {
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get messages for a room
+  async getRoomMessages(roomId: number, page: number = 1, limit: number = 50) {
+    const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/messages?page=${page}&limit=${limit}`, {
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Start private chat
+  async startPrivateChat(userId: number) {
+    const response = await fetch(`${API_BASE_URL}/chat/private`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ userId }),
+    });
+    return handleResponse(response);
+  },
+
+  // Check room access
+  async checkRoomAccess(roomId: number) {
+    const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/access`, {
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get available users for chat
+  async getAvailableUsers() {
+    const response = await fetch(`${API_BASE_URL}/chat/users`, {
+      credentials: 'include',
+    });
+    return handleResponse(response);
   },
 };
 

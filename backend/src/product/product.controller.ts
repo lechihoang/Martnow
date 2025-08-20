@@ -12,6 +12,20 @@ import { UserRole } from '../auth/roles.enum';
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
+  // === SEARCH ENDPOINTS - Đặt đầu tiên để tránh conflict ===
+  
+  // 🔍 Simple search
+  @Get('search')
+  async searchProducts(
+    @Query('q') query: string,
+    @Query('limit') limit: number = 20,
+  ) {
+    if (!query || query.trim().length < 2) {
+      return [];
+    }
+    return this.productService.searchProducts(query.trim(), limit);
+  }
+
   // Lấy danh sách categories
   @Get('categories')
   async getCategories() {
@@ -43,6 +57,12 @@ export class ProductController {
     }
   }
 
+  // 🔥 Popular products
+  @Get('popular')
+  async getPopularProducts(@Query('limit') limit: number = 10) {
+    return this.productService.getPopularProducts(limit);
+  }
+
   // Cả buyer và seller đều có thể xem sản phẩm
   @Get('top-discount')
   async getTopDiscountProducts() {
@@ -52,6 +72,15 @@ export class ProductController {
   @Get(':id')
   async getProduct(@Param('id') id: number) {
     return this.productService.findOne(id);
+  }
+
+  // 🎯 Similar products - Phải đặt sau route :id
+  @Get(':id/similar')
+  async getSimilarProducts(
+    @Param('id') id: number,
+    @Query('limit') limit: number = 5,
+  ) {
+    return this.productService.getSimilarProducts(id, limit);
   }
 
   @Get()
@@ -94,36 +123,6 @@ export class ProductController {
     // Lấy sellerId từ user hiện tại
     const sellerId = await this.productService.getSellerIdByUserId(req.user.userId);
     return this.productService.deleteProduct(id, sellerId);
-  }
-
-  // === SIMPLE ENHANCED ENDPOINTS ===
-
-  // 🔍 Simple search
-  @Get('search')
-  @UseGuards(ThrottlerGuard)
-  async searchProducts(
-    @Query('q') query: string,
-    @Query('limit') limit: number = 20,
-  ) {
-    if (!query || query.trim().length < 2) {
-      return [];
-    }
-    return this.productService.searchProducts(query.trim(), limit);
-  }
-
-  // 🔥 Popular products
-  @Get('popular')
-  async getPopularProducts(@Query('limit') limit: number = 10) {
-    return this.productService.getPopularProducts(limit);
-  }
-
-  // 🎯 Similar products
-  @Get(':id/similar')
-  async getSimilarProducts(
-    @Param('id') id: number,
-    @Query('limit') limit: number = 5,
-  ) {
-    return this.productService.getSimilarProducts(id, limit);
   }
 
   // 🛠️ Generate slug utility
