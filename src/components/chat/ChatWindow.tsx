@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, X, Minus, Phone, Video, Info, Smile, Paperclip } from 'lucide-react';
+import { Send, X, Minus } from 'lucide-react';
 import useUser from '@/hooks/useUser';
 import EmojiInput from '@/components/ui/EmojiInput';
 

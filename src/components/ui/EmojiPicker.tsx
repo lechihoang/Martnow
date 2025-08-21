@@ -81,7 +81,7 @@ export default function EmojiPickerComponent({
             width={320}
             height={400}
             searchDisabled={false}
-            skinTonePickerDisabled={false}
+            skinTonesDisabled={false}
             previewConfig={{
               defaultEmoji: '1f60a',
               defaultCaption: 'Chọn emoji!',
