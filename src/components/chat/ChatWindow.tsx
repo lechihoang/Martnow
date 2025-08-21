@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, X, Minus, Phone, Video, Info, Smile, Paperclip } from 'lucide-react';
 import useUser from '@/hooks/useUser';
+import EmojiInput from '@/components/ui/EmojiInput';
 
 interface Message {
   id: number;
@@ -175,18 +176,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         
         <div className="flex items-center space-x-1">
           <button
-            className="p-1.5 text-blue-100 hover:text-white hover:bg-blue-600 rounded-full transition-colors"
-            title="Gọi thoại"
-          >
-            <Phone className="w-4 h-4" />
-          </button>
-          <button
-            className="p-1.5 text-blue-100 hover:text-white hover:bg-blue-600 rounded-full transition-colors"
-            title="Video call"
-          >
-            <Video className="w-4 h-4" />
-          </button>
-          <button
             onClick={onToggleMinimize}
             className="p-1.5 text-blue-100 hover:text-white hover:bg-blue-600 rounded-full transition-colors"
             title={isMinimized ? "Phóng to" : "Thu nhỏ"}
@@ -256,23 +245,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           {/* Input Area */}
           <div className="border-t bg-white p-3 rounded-b-lg">
             <div className="flex items-center space-x-2">
-              <button className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
-                <Paperclip className="w-4 h-4" />
-              </button>
-              <div className="flex-1 relative">
-                <input
-                  type="text"
+              <div className="flex-1">
+                <EmojiInput
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={setNewMessage}
                   onKeyPress={handleKeyPress}
-                  placeholder="Aa"
-                  className="w-full px-3 py-2 bg-gray-100 rounded-full text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  placeholder="Tin nhắn... 😊"
+                  maxLength={500}
+                  showEmojiButton={true}
+                  className="bg-gray-100 rounded-full text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 border-none"
+                  emojiButtonClassName="text-gray-400"
+                  pickerClassName="z-[60]"
                   disabled={sending}
                 />
               </div>
-              <button className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
-                <Smile className="w-4 h-4" />
-              </button>
               <button
                 onClick={sendMessage}
                 disabled={!newMessage.trim() || sending}

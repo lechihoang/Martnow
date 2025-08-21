@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, X, User, Paperclip, Image, Smile } from 'lucide-react';
 import { UserResponseDto } from '@/types/dtos';
 import useUser from '@/hooks/useUser';
+import EmojiInput from '@/components/ui/EmojiInput';
 
 interface Message {
   id: number;
@@ -248,32 +249,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div className="border-t border-gray-200 p-4">
           <div className="flex items-center space-x-2">
             <div className="flex-1 relative">
-              <textarea
+              <EmojiInput
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={setNewMessage}
                 onKeyPress={handleKeyPress}
-                placeholder="Nhập tin nhắn..."
-                className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                rows={1}
-                style={{ minHeight: '40px', maxHeight: '100px' }}
-                disabled={sending}
+                placeholder="Nhập tin nhắn... 😊"
+                maxLength={500}
+                showEmojiButton={true}
+                className="chat-input"
+                emojiButtonClassName="text-gray-400"
+                pickerClassName="z-[60]"
               />
-              <div className="absolute right-2 top-2 flex items-center space-x-1">
-                <button
-                  type="button"
-                  className="p-1 text-gray-400 hover:text-gray-600 rounded"
-                  title="Emoji (Coming soon)"
-                >
-                  <Smile className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  className="p-1 text-gray-400 hover:text-gray-600 rounded"
-                  title="Attach file (Coming soon)"
-                >
-                  <Paperclip className="w-4 h-4" />
-                </button>
-              </div>
             </div>
             <button
               onClick={sendMessage}
