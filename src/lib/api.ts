@@ -749,7 +749,7 @@ export const favoritesApi = {
 // Chat API
 export const chatApi = {
   // Get user's chat rooms
-  async getRooms(page: number = 1, limit: number = 20) {
+  async getRooms(page: number = 1, limit: number = 20): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/chat/rooms?page=${page}&limit=${limit}`, {
       credentials: 'include',
     });
@@ -765,7 +765,7 @@ export const chatApi = {
   },
 
   // Get messages for a room
-  async getRoomMessages(roomId: number, page: number = 1, limit: number = 50) {
+  async getRoomMessages(roomId: number, page: number = 1, limit: number = 50): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/messages?page=${page}&limit=${limit}`, {
       credentials: 'include',
     });
@@ -773,7 +773,7 @@ export const chatApi = {
   },
 
   // Start private chat
-  async startPrivateChat(userId: number) {
+  async startPrivateChat(userId: number): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/chat/private`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

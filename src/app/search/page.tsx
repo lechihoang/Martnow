@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProductGrid from '@/components/ProductGrid';
 import { PageState } from '@/components/ui';
 import Container from '@/components/Container';
 import { productApi } from '@/lib/api';
 import type { ProductResponseDto } from '@/types/dtos';
-const SearchPage = () => {
+
+const SearchContent = () => {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   
@@ -75,6 +76,20 @@ const SearchPage = () => {
         />
       </PageState>
     </Container>
+  );
+};
+
+const SearchPage = () => {
+  return (
+    <Suspense fallback={
+      <Container className="py-8">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </Container>
+    }>
+      <SearchContent />
+    </Suspense>
   );
 };
 
