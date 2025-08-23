@@ -1,11 +1,18 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from '../../account/user/entities/user.entity';
 import { Room } from './room.entity';
 
 export enum MessageType {
   TEXT = 'text',
   IMAGE = 'image',
-  FILE = 'file'
+  FILE = 'file',
 }
 
 @Entity('chat_messages')

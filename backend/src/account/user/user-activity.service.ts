@@ -30,13 +30,13 @@ export class UserActivityService {
   async getUserReviews(userId: number): Promise<any> {
     // Tìm buyer theo id (chính là userId)
     const buyer = await this.buyerRepository.findOne({
-      where: { id: userId }
+      where: { id: userId },
     });
-    
+
     if (!buyer) {
       return { userId, reviews: [] };
     }
-    
+
     const reviews = await this.reviewRepository.find({
       where: { buyerId: buyer.id },
       relations: ['product'],
@@ -45,7 +45,7 @@ export class UserActivityService {
 
     return {
       userId,
-      reviews: reviews.map(review => ({
+      reviews: reviews.map((review) => ({
         productId: review.productId,
         productName: review.product.name,
         rating: review.rating,
@@ -59,9 +59,9 @@ export class UserActivityService {
   async getUserOrders(userId: number): Promise<any> {
     // Tìm buyer theo id (chính là userId)
     const buyer = await this.buyerRepository.findOne({
-      where: { id: userId }
+      where: { id: userId },
     });
-    
+
     if (!buyer) {
       return { userId, orders: [] };
     }
@@ -75,18 +75,20 @@ export class UserActivityService {
     return {
       userId,
       buyerId: buyer.id,
-      orders: orders.map(order => ({
+      orders: orders.map((order) => ({
         id: order.id,
         totalPrice: order.totalPrice,
         status: order.status,
         createdAt: order.createdAt,
         itemCount: order.items ? order.items.length : 0,
-        items: order.items ? order.items.map(item => ({
-          productId: item.productId,
-          productName: item.product ? item.product.name : 'Unknown Product',
-          quantity: item.quantity,
-          price: item.price,
-        })) : [],
+        items: order.items
+          ? order.items.map((item) => ({
+              productId: item.productId,
+              productName: item.product ? item.product.name : 'Unknown Product',
+              quantity: item.quantity,
+              price: item.price,
+            }))
+          : [],
       })),
     };
   }
@@ -95,9 +97,9 @@ export class UserActivityService {
   async getUserSales(userId: number): Promise<any> {
     // Tìm seller theo id (chính là userId)
     const seller = await this.sellerRepository.findOne({
-      where: { id: userId }
+      where: { id: userId },
     });
-    
+
     if (!seller) {
       return { userId, orders: [] };
     }
@@ -115,8 +117,8 @@ export class UserActivityService {
 
     // Nhóm các order items theo orderId
     const ordersMap = new Map();
-    
-    orderItems.forEach(item => {
+
+    orderItems.forEach((item) => {
       const orderId = item.order.id;
       if (!ordersMap.has(orderId)) {
         ordersMap.set(orderId, {
@@ -128,7 +130,7 @@ export class UserActivityService {
           items: [],
         });
       }
-      
+
       const orderData = ordersMap.get(orderId);
       orderData.totalPrice += Number(item.price) * item.quantity;
       orderData.items.push({
@@ -148,8 +150,10 @@ export class UserActivityService {
 
   // Legacy method - giữ để backward compatibility
   async getSellerOrders(sellerId: number): Promise<any> {
-    console.warn('Deprecated method: getSellerOrders. Use getUserSales instead.');
-    
+    console.warn(
+      'Deprecated method: getSellerOrders. Use getUserSales instead.',
+    );
+
     // Query để lấy tất cả order items có sản phẩm thuộc về seller này
     const orderItems = await this.orderItemRepository
       .createQueryBuilder('orderItem')
@@ -163,8 +167,8 @@ export class UserActivityService {
 
     // Nhóm các order items theo orderId
     const ordersMap = new Map();
-    
-    orderItems.forEach(item => {
+
+    orderItems.forEach((item) => {
       const orderId = item.order.id;
       if (!ordersMap.has(orderId)) {
         ordersMap.set(orderId, {
@@ -176,7 +180,7 @@ export class UserActivityService {
           items: [],
         });
       }
-      
+
       const orderData = ordersMap.get(orderId);
       orderData.totalPrice += Number(item.price) * item.quantity;
       orderData.items.push({

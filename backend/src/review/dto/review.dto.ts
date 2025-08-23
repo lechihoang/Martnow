@@ -34,14 +34,14 @@ export class ReviewResponseDto {
   comment?: string;
   helpfulCount: number;
   createdAt: Date;
-  
+
   // Essential user info only
   buyerName: string;
   buyerAvatar?: string;
-  
+
   // Essential product info only
   productName: string;
-  
+
   constructor(review: any) {
     this.id = review.id;
     this.productId = review.productId;
@@ -49,11 +49,11 @@ export class ReviewResponseDto {
     this.comment = review.comment;
     this.helpfulCount = review.helpfulCount || 0;
     this.createdAt = review.createdAt;
-    
+
     // ✅ Simple buyer info from nested relation
     this.buyerName = review.buyer?.user?.name || 'Anonymous';
     this.buyerAvatar = review.buyer?.user?.avatar;
-    
+
     // ✅ Simple product info
     this.productName = review.product?.name || '';
   }
@@ -71,10 +71,10 @@ export class ReviewDetailDto extends ReviewResponseDto {
     name: string;
     seller: { id: number; shopName?: string };
   };
-  
+
   constructor(review: any) {
     super(review);
-    
+
     this.buyerId = review.buyerId;
     this.buyer = {
       id: review.buyer?.id || 0,
@@ -84,7 +84,7 @@ export class ReviewDetailDto extends ReviewResponseDto {
         email: review.buyer?.user?.email || '',
       },
     };
-    
+
     this.product = {
       id: review.product?.id || 0,
       name: review.product?.name || '',

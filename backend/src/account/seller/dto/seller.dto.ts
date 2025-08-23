@@ -86,9 +86,15 @@ export class SellerResponseDto {
         totalOrders: seller.stats.totalOrders,
         totalRevenue: seller.stats.totalRevenue,
         averageRating: seller.stats.averageRating,
-        completionRate: seller.stats.totalOrders > 0 
-          ? Number(((seller.stats.completedOrders / seller.stats.totalOrders) * 100).toFixed(2))
-          : 0,
+        completionRate:
+          seller.stats.totalOrders > 0
+            ? Number(
+                (
+                  (seller.stats.completedOrders / seller.stats.totalOrders) *
+                  100
+                ).toFixed(2),
+              )
+            : 0,
       };
     }
   }

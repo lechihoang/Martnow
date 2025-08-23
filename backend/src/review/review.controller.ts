@@ -9,7 +9,7 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
-  Request
+  Request,
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { CreateReviewDto, UpdateReviewDto } from './dto/review.dto';
@@ -29,7 +29,7 @@ export class ReviewController {
   async createReview(@Body() createReviewDto: CreateReviewDto, @Request() req) {
     // Lấy userId từ JWT payload
     const userId = req.user.userId;
-    
+
     return this.reviewService.createReview(createReviewDto, userId);
   }
 
@@ -41,7 +41,9 @@ export class ReviewController {
 
   // Lấy thống kê rating của sản phẩm
   @Get('product/:productId/stats')
-  async getProductRatingStats(@Param('productId', ParseIntPipe) productId: number) {
+  async getProductRatingStats(
+    @Param('productId', ParseIntPipe) productId: number,
+  ) {
     return this.reviewService.getProductRatingStats(productId);
   }
 
@@ -52,7 +54,7 @@ export class ReviewController {
   async updateReview(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateReviewDto: UpdateReviewDto,
-    @Request() req
+    @Request() req,
   ) {
     const userId = req.user.userId;
     return this.reviewService.updateReview(id, updateReviewDto, userId);
@@ -79,7 +81,7 @@ export class ReviewController {
   @Get('product/:productId/top')
   async getTopProductReviews(
     @Param('productId', ParseIntPipe) productId: number,
-    @Query('limit') limit: string = '5'
+    @Query('limit') limit: string = '5',
   ) {
     return this.reviewService.getTopProductReviews(productId, parseInt(limit));
   }

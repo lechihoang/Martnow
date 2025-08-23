@@ -42,7 +42,7 @@ const ProductsTab: React.FC = () => {
     setProducts(prev => 
       prev.map(product => 
         product.id === productId 
-          ? { ...product, inStock: !product.inStock }
+          ? { ...product, isAvailable: !product.isAvailable }
           : product
       )
     );
@@ -52,7 +52,7 @@ const ProductsTab: React.FC = () => {
     setProducts(prev => 
       prev.map(product => 
         product.id === productId 
-          ? { ...product, stock: newStock, inStock: newStock > 0 }
+          ? { ...product, stock: newStock, isAvailable: newStock > 0 }
           : product
       )
     );
@@ -107,7 +107,7 @@ const ProductsTab: React.FC = () => {
             <div>
               <p className="text-sm text-green-600 font-medium">Còn hàng</p>
               <p className="text-xl font-bold text-green-700">
-                {products.filter(p => p.inStock).length}
+                {products.filter(p => p.isAvailable).length}
               </p>
             </div>
           </div>
@@ -119,7 +119,7 @@ const ProductsTab: React.FC = () => {
             <div>
               <p className="text-sm text-red-600 font-medium">Hết hàng</p>
               <p className="text-xl font-bold text-red-700">
-                {products.filter(p => !p.inStock).length}
+                {products.filter(p => !p.isAvailable).length}
               </p>
             </div>
           </div>
@@ -145,11 +145,11 @@ const ProductsTab: React.FC = () => {
             {/* Product Image */}
             <div className="aspect-w-16 aspect-h-12 bg-gray-100">
               <img
-                src={product.images?.[0] || '/placeholder-product.jpg'}
+                src={product.imageUrl || product.images?.[0]?.imageData || '/placeholder-product.jpg'}
                 alt={product.name}
                 className="w-full h-48 object-cover"
               />
-              {!product.inStock && (
+              {!product.isAvailable && (
                 <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                   <span className="text-white font-bold text-lg">HẾT HÀNG</span>
                 </div>
@@ -229,12 +229,12 @@ const ProductsTab: React.FC = () => {
                 <button
                   onClick={() => toggleStock(product.id)}
                   className={`w-full py-2 px-3 rounded text-sm font-medium transition-colors ${
-                    product.inStock
+                    product.isAvailable
                       ? 'bg-green-100 text-green-800 hover:bg-green-200'
                       : 'bg-red-100 text-red-800 hover:bg-red-200'
                   }`}
                 >
-                  {product.inStock ? '✅ Còn hàng' : '❌ Hết hàng'}
+                  {product.isAvailable ? '✅ Còn hàng' : '❌ Hết hàng'}
                 </button>
               </div>
 

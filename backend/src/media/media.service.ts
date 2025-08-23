@@ -27,30 +27,33 @@ export class MediaService {
    */
   async uploadMediaFiles(dto: MediaUploadDto): Promise<MediaFile[]> {
     const { entityType, entityId, files } = dto;
-    
+
     if (!files || files.length === 0) {
       throw new Error('No files provided');
     }
-    
+
     // Upload files to Cloudinary using nestjs-cloudinary
     const uploadPromises = files.map(async (file, index) => {
       // Generate folder path for each file
       // For temporary uploads or when entityId is not provided, use a temp folder
-      const folder = entityId 
+      const folder = entityId
         ? `foodee/${entityType}/${entityId}`
         : `foodee/temp/${entityType}`;
-      
+
       // Upload options
       const uploadOptions = {
         folder: folder,
         resource_type: 'auto' as const, // auto detect image/video
         quality: 'auto',
-        fetch_format: 'auto'
+        fetch_format: 'auto',
       };
-      
+
       // Upload file using nestjs-cloudinary
-      const result = await this.cloudinaryService.uploadFile(file, uploadOptions);
-      
+      const result = await this.cloudinaryService.uploadFile(
+        file,
+        uploadOptions,
+      );
+
       return {
         fileName: file.originalname,
         publicId: result.public_id,
@@ -61,86 +64,98 @@ export class MediaService {
         isPrimary: index === 0, // First file is primary
       };
     });
-    
+
     // Wait for all uploads to complete
     const uploadResults = await Promise.all(uploadPromises);
-    
+
     // Only save to database if entityId is provided
     let savedFiles: MediaFile[] = [];
     if (entityId) {
       savedFiles = await this.mediaRepository.save(
-        uploadResults.map(result => this.mediaRepository.create(result))
-      ) as MediaFile[];
-      
+        uploadResults.map((result) => this.mediaRepository.create(result)),
+      );
+
       // If uploading avatar for user, update User entity
       if (entityType === 'user' && savedFiles.length > 0) {
-        const primaryFile = savedFiles.find(file => file.isPrimary) || savedFiles[0];
+        const primaryFile =
+          savedFiles.find((file) => file.isPrimary) || savedFiles[0];
         if (primaryFile) {
           await this.userRepository.update(
             { id: entityId },
-            { avatar: primaryFile.secureUrl }
+            { avatar: primaryFile.secureUrl },
           );
         }
       }
     } else {
       // For temporary uploads, just return the upload results with minimal structure
-      savedFiles = uploadResults.map(result => ({
+      savedFiles = uploadResults.map((result) => ({
         ...result,
         id: null, // No ID for temporary uploads
-        createdAt: new Date()
+        createdAt: new Date(),
       })) as any;
     }
-    
+
     return savedFiles;
   }
-
 
   /**
    * Get all media files for an entity
    */
-  async getMediaFiles(entityType: string, entityId: number): Promise<MediaFile[]> {
+  async getMediaFiles(
+    entityType: string,
+    entityId: number,
+  ): Promise<MediaFile[]> {
     return this.mediaRepository.find({
       where: { entityType, entityId },
-      order: { 
+      order: {
         isPrimary: 'DESC', // Primary first
-        createdAt: 'ASC'   // Then by upload order
-      }
+        createdAt: 'ASC', // Then by upload order
+      },
     });
   }
 
   /**
    * Delete all media files for an entity
    */
-  async deleteAllMediaFiles(entityType: string, entityId: number): Promise<void> {
+  async deleteAllMediaFiles(
+    entityType: string,
+    entityId: number,
+  ): Promise<void> {
     const mediaFiles = await this.mediaRepository.find({
-      where: { entityType, entityId }
+      where: { entityType, entityId },
     });
-    
+
     if (mediaFiles.length === 0) return;
-    
+
     // Get Cloudinary public_ids
-    const publicIds = mediaFiles.map(file => file.publicId);
-    
+    const publicIds = mediaFiles.map((file) => file.publicId);
+
     // Delete from database
     await this.mediaRepository.delete({ entityType, entityId });
-    
+
     // Delete from Cloudinary using cloudinary instance (async)
     // Use Promise.all to properly handle all async operations
     const deletePromises = publicIds.map(async (publicId) => {
       try {
         // Try both image and video resource types
-        await this.cloudinaryService.cloudinaryInstance.uploader.destroy(publicId, { resource_type: 'image' });
+        await this.cloudinaryService.cloudinaryInstance.uploader.destroy(
+          publicId,
+          { resource_type: 'image' },
+        );
       } catch (error) {
         try {
-          await this.cloudinaryService.cloudinaryInstance.uploader.destroy(publicId, { resource_type: 'video' });
+          await this.cloudinaryService.cloudinaryInstance.uploader.destroy(
+            publicId,
+            { resource_type: 'video' },
+          );
         } catch (videoError) {
           console.error(`Failed to delete ${publicId}:`, error.message);
         }
       }
     });
-    
+
     // Wait for all deletions to complete (but don't block the main operation)
-    Promise.all(deletePromises).catch(error => {
+    Promise.all(deletePromises).catch((error) => {
       console.error('Some Cloudinary deletions failed:', error);
     });
   }

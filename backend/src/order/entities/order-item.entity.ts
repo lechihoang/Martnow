@@ -1,4 +1,11 @@
-import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  PrimaryColumn,
+  CreateDateColumn,
+} from 'typeorm';
 import { Order } from './order.entity';
 import { Product } from '../../product/entities/product.entity';
 
@@ -6,7 +13,7 @@ import { Product } from '../../product/entities/product.entity';
 export class OrderItem {
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
-  
+
   @PrimaryColumn({ type: 'int' })
   orderId: number;
 

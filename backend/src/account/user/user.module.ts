@@ -13,7 +13,17 @@ import { UserActivityController } from './user-activity.controller';
 import { UserController } from './user.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Buyer, Seller, SellerStats, Review, Order, OrderItem])],
+  imports: [
+    TypeOrmModule.forFeature([
+      User,
+      Buyer,
+      Seller,
+      SellerStats,
+      Review,
+      Order,
+      OrderItem,
+    ]),
+  ],
   providers: [UserService, UserActivityService],
   controllers: [UserActivityController, UserController],
   exports: [UserService, UserActivityService],

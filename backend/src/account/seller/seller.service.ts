@@ -24,13 +24,17 @@ export class SellerService {
   // Tạo seller profile mới
   async createSeller(sellerData: CreateSellerDto): Promise<Seller> {
     // Kiểm tra user có tồn tại không
-    const user = await this.userRepository.findOne({ where: { id: parseInt(sellerData.userId) } });
+    const user = await this.userRepository.findOne({
+      where: { id: parseInt(sellerData.userId) },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
     // Kiểm tra user đã có seller profile chưa
-    const existingSeller = await this.sellerRepository.findOne({ where: { id: parseInt(sellerData.userId) } });
+    const existingSeller = await this.sellerRepository.findOne({
+      where: { id: parseInt(sellerData.userId) },
+    });
     if (existingSeller) {
       throw new Error('User already has a seller profile');
     }
@@ -102,9 +106,12 @@ export class SellerService {
   }
 
   // Cập nhật thông tin seller
-  async updateSeller(sellerId: number, updateData: UpdateSellerDto): Promise<Seller> {
+  async updateSeller(
+    sellerId: number,
+    updateData: UpdateSellerDto,
+  ): Promise<Seller> {
     const seller = await this.findOne(sellerId);
-    
+
     Object.assign(seller, updateData);
     return await this.sellerRepository.save(seller);
   }
@@ -112,7 +119,7 @@ export class SellerService {
   // ✅ Optimized: Lấy tất cả đơn hàng mà seller đã bán với pagination
   async getSellerOrders(
     sellerId: number,
-    options: { limit?: number; offset?: number; status?: string } = {}
+    options: { limit?: number; offset?: number; status?: string } = {},
   ): Promise<{
     sellerId: number;
     orders: any[];
@@ -120,7 +127,7 @@ export class SellerService {
     hasMore: boolean;
   }> {
     const { limit = 20, offset = 0, status } = options;
-    
+
     // Build base query
     let query = this.orderItemRepository
       .createQueryBuilder('orderItem')
@@ -150,8 +157,8 @@ export class SellerService {
 
     // Group by order and paginate
     const ordersMap = new Map();
-    
-    orderItems.forEach(item => {
+
+    orderItems.forEach((item) => {
       const orderId = item.order.id;
       if (!ordersMap.has(orderId)) {
         ordersMap.set(orderId, {
@@ -180,9 +187,11 @@ export class SellerService {
     });
 
     // Convert to array and apply pagination
-    const allOrders = Array.from(ordersMap.values())
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    
+    const allOrders = Array.from(ordersMap.values()).sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
     const paginatedOrders = allOrders.slice(offset, offset + limit);
 
     return {
@@ -212,7 +221,7 @@ export class SellerService {
         .where('product.sellerId = :sellerId', { sellerId })
         .andWhere('order.status = :status', { status: OrderStatus.PAID })
         .getRawOne(),
-      
+
       // Orders by status
       this.orderItemRepository
         .createQueryBuilder('orderItem')
@@ -222,13 +231,16 @@ export class SellerService {
         .addSelect('COUNT(DISTINCT order.id)', 'count')
         .where('product.sellerId = :sellerId', { sellerId })
         .groupBy('order.status')
-        .getRawMany()
+        .getRawMany(),
     ]);
 
-    const ordersByStatus = statusStats.reduce((acc, item) => {
-      acc[item.status] = parseInt(item.count);
-      return acc;
-    }, {} as { [key: string]: number });
+    const ordersByStatus = statusStats.reduce(
+      (acc, item) => {
+        acc[item.status] = parseInt(item.count);
+        return acc;
+      },
+      {} as { [key: string]: number },
+    );
 
     return {
       totalOrders: parseInt(orderStats?.totalOrders || '0'),

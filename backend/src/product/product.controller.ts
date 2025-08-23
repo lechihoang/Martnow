@@ -1,4 +1,15 @@
-import { Controller, Get, Query, Post, Body, Param, Patch, Delete, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Post,
+  Body,
+  Param,
+  Patch,
+  Delete,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -13,7 +24,7 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   // === SEARCH ENDPOINTS - Đặt đầu tiên để tránh conflict ===
-  
+
   // 🔍 Simple search
   @Get('search')
   async searchProducts(
@@ -38,10 +49,11 @@ export class ProductController {
   @Roles(UserRole.SELLER)
   async createProduct(@Body() body: any, @Request() req: any) {
     try {
-      
       // Lấy sellerId từ user hiện tại
-      const sellerId = await this.productService.getSellerIdByUserId(req.user.userId);
-      
+      const sellerId = await this.productService.getSellerIdByUserId(
+        req.user.userId,
+      );
+
       const createProductDto: CreateProductDto = {
         name: body.name,
         description: body.description,
@@ -91,7 +103,13 @@ export class ProductController {
     @Query('minPrice') minPrice?: number,
     @Query('maxPrice') maxPrice?: number,
   ) {
-    return this.productService.findAll({ categoryId, sellerId, type, minPrice, maxPrice });
+    return this.productService.findAll({
+      categoryId,
+      sellerId,
+      type,
+      minPrice,
+      maxPrice,
+    });
   }
 
   // Lấy products của một seller cụ thể
@@ -112,7 +130,9 @@ export class ProductController {
     @Request() req: any,
   ) {
     // Lấy sellerId từ user hiện tại
-    const sellerId = await this.productService.getSellerIdByUserId(req.user.userId);
+    const sellerId = await this.productService.getSellerIdByUserId(
+      req.user.userId,
+    );
     return this.productService.updateProduct(id, updateProductDto, sellerId);
   }
 
@@ -121,7 +141,9 @@ export class ProductController {
   @Roles(UserRole.SELLER)
   async deleteProduct(@Param('id') id: number, @Request() req: any) {
     // Lấy sellerId từ user hiện tại
-    const sellerId = await this.productService.getSellerIdByUserId(req.user.userId);
+    const sellerId = await this.productService.getSellerIdByUserId(
+      req.user.userId,
+    );
     return this.productService.deleteProduct(id, sellerId);
   }
 

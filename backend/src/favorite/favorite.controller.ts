@@ -1,4 +1,13 @@
-import { Controller, Post, Delete, Get, Param, UseGuards, Request, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Delete,
+  Get,
+  Param,
+  UseGuards,
+  Request,
+  BadRequestException,
+} from '@nestjs/common';
 import { FavoriteService } from './favorite.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,13 +27,15 @@ export class FavoriteController {
   private async getBuyerId(userId: string): Promise<number> {
     const buyer = await this.buyerRepository.findOne({
       where: { user: { id: parseInt(userId) } },
-      relations: ['user']
+      relations: ['user'],
     });
-    
+
     if (!buyer) {
-      throw new BadRequestException('Chỉ buyer mới có thể sử dụng tính năng yêu thích');
+      throw new BadRequestException(
+        'Chỉ buyer mới có thể sử dụng tính năng yêu thích',
+      );
     }
-    
+
     return buyer.id;
   }
 
@@ -35,7 +46,10 @@ export class FavoriteController {
     @Request() req: any,
   ) {
     const buyerId = await this.getBuyerId(req.user.id);
-    const favorite = await this.favoriteService.addToFavorites(buyerId, productId);
+    const favorite = await this.favoriteService.addToFavorites(
+      buyerId,
+      productId,
+    );
     return {
       message: 'Đã thêm vào danh sách yêu thích',
       data: favorite,
@@ -74,7 +88,10 @@ export class FavoriteController {
   ) {
     try {
       const buyerId = await this.getBuyerId(req.user.id);
-      const isFavorite = await this.favoriteService.isFavorite(buyerId, productId);
+      const isFavorite = await this.favoriteService.isFavorite(
+        buyerId,
+        productId,
+      );
       return { isFavorite };
     } catch (error) {
       // Nếu không phải buyer thì trả về false

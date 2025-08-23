@@ -17,15 +17,19 @@ import { MediaController } from './media.controller';
         const cloudName = configService.get('CLOUDINARY_CLOUD_NAME');
         const apiKey = configService.get('CLOUDINARY_API_KEY');
         const apiSecret = configService.get('CLOUDINARY_API_SECRET');
-        
+
         if (!cloudName || !apiKey || !apiSecret) {
           throw new Error(
-            'Cloudinary configuration is incomplete. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your environment variables.'
+            'Cloudinary configuration is incomplete. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your environment variables.',
           );
         }
-        
-        console.log('Cloudinary config:', { cloudName, apiKey: '***', apiSecret: '***' });
-        
+
+        console.log('Cloudinary config:', {
+          cloudName,
+          apiKey: '***',
+          apiSecret: '***',
+        });
+
         return {
           isGlobal: true,
           cloud_name: cloudName,

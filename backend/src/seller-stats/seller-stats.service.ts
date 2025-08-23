@@ -41,15 +41,16 @@ export class SellerStatsService {
       const totalRevenue = parseFloat(revenueResult.totalRevenue) || 0;
 
       // Tính tổng số sản phẩm
-      const totalProducts = await this.productRepository
-        .count({ where: { sellerId: parseInt(sellerId) } });
+      const totalProducts = await this.productRepository.count({
+        where: { sellerId: parseInt(sellerId) },
+      });
 
       // Bỏ logic pending orders vì không có waiting_payment status
       const pendingOrders = 0;
 
       // Lưu hoặc cập nhật thống kê
       let stats = await this.sellerStatsRepository.findOne({
-        where: { id: parseInt(sellerId) }
+        where: { id: parseInt(sellerId) },
       });
 
       if (stats) {
@@ -77,7 +78,7 @@ export class SellerStatsService {
         completedOrders: totalOrders - pendingOrders,
         averageRating: 0,
         totalReviews: 0,
-        sellerId
+        sellerId,
       });
     } catch (error) {
       console.error('Error calculating seller stats:', error);
@@ -89,7 +90,7 @@ export class SellerStatsService {
         completedOrders: 0,
         averageRating: 0,
         totalReviews: 0,
-        sellerId
+        sellerId,
       });
     }
   }

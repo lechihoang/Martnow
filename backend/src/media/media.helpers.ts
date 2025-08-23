@@ -5,7 +5,6 @@ import { MediaFile } from './entities/media-file.entity';
  * Helper functions for media handling across different entities
  */
 export class MediaHelpers {
-  
   /**
    * Upload and associate media files with a user (avatar)
    * @param mediaService MediaService instance
@@ -16,7 +15,7 @@ export class MediaHelpers {
   static async uploadUserAvatar(
     mediaService: MediaService,
     userId: number,
-    files: any[]
+    files: any[],
   ): Promise<MediaFile[]> {
     return mediaService.uploadMediaFiles({
       entityType: 'user',
@@ -35,7 +34,7 @@ export class MediaHelpers {
   static async uploadProductImages(
     mediaService: MediaService,
     productId: number,
-    files: any[]
+    files: any[],
   ): Promise<MediaFile[]> {
     return mediaService.uploadMediaFiles({
       entityType: 'product',
@@ -54,7 +53,7 @@ export class MediaHelpers {
   static async uploadSellerImages(
     mediaService: MediaService,
     sellerId: number,
-    files: any[]
+    files: any[],
   ): Promise<MediaFile[]> {
     return mediaService.uploadMediaFiles({
       entityType: 'seller',
@@ -73,10 +72,10 @@ export class MediaHelpers {
   static async getPrimaryMedia(
     mediaService: MediaService,
     entityType: string,
-    entityId: number
+    entityId: number,
   ): Promise<MediaFile | null> {
     const mediaFiles = await mediaService.getMediaFiles(entityType, entityId);
-    return mediaFiles.find(file => file.isPrimary) || mediaFiles[0] || null;
+    return mediaFiles.find((file) => file.isPrimary) || mediaFiles[0] || null;
   }
 
   /**
@@ -87,9 +86,13 @@ export class MediaHelpers {
    */
   static async getUserAvatarUrl(
     mediaService: MediaService,
-    userId: number
+    userId: number,
   ): Promise<string | null> {
-    const primaryMedia = await this.getPrimaryMedia(mediaService, 'user', userId);
+    const primaryMedia = await this.getPrimaryMedia(
+      mediaService,
+      'user',
+      userId,
+    );
     return primaryMedia?.secureUrl || null;
   }
 
@@ -101,9 +104,13 @@ export class MediaHelpers {
    */
   static async getProductPrimaryImageUrl(
     mediaService: MediaService,
-    productId: number
+    productId: number,
   ): Promise<string | null> {
-    const primaryMedia = await this.getPrimaryMedia(mediaService, 'product', productId);
+    const primaryMedia = await this.getPrimaryMedia(
+      mediaService,
+      'product',
+      productId,
+    );
     return primaryMedia?.secureUrl || null;
   }
 
@@ -116,7 +123,7 @@ export class MediaHelpers {
   static async deleteEntityMedia(
     mediaService: MediaService,
     entityType: string,
-    entityId: number
+    entityId: number,
   ): Promise<void> {
     await mediaService.deleteAllMediaFiles(entityType, entityId);
   }
@@ -143,6 +150,6 @@ export class MediaHelpers {
    * @returns Array of simple media objects
    */
   static transformMediaFilesForAPI(mediaFiles: MediaFile[]) {
-    return mediaFiles.map(file => this.transformMediaFileForAPI(file));
+    return mediaFiles.map((file) => this.transformMediaFileForAPI(file));
   }
 }

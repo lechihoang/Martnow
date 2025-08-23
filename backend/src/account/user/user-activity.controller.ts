@@ -21,8 +21,12 @@ export class UserActivityController {
   @Get('buyer/:buyerId/orders')
   async getBuyerOrders(@Param('buyerId', ParseIntPipe) buyerId: number) {
     // Tìm user từ buyerId
-    console.warn('Deprecated endpoint: /buyer/:buyerId/orders. Use /user/:userId/orders instead.');
-    return { message: 'This endpoint is deprecated. Use /user/:userId/orders instead.' };
+    console.warn(
+      'Deprecated endpoint: /buyer/:buyerId/orders. Use /user/:userId/orders instead.',
+    );
+    return {
+      message: 'This endpoint is deprecated. Use /user/:userId/orders instead.',
+    };
   }
 
   // Lấy tất cả đơn hàng mà user (role seller) đã bán
@@ -34,7 +38,9 @@ export class UserActivityController {
   // Giữ lại endpoint cũ cho seller (deprecated)
   @Get('seller/:sellerId/orders')
   async getSellerOrders(@Param('sellerId', ParseIntPipe) sellerId: number) {
-    console.warn('Deprecated endpoint: /seller/:sellerId/orders. Use /user/:userId/sales instead.');
+    console.warn(
+      'Deprecated endpoint: /seller/:sellerId/orders. Use /user/:userId/sales instead.',
+    );
     return await this.userActivityService.getSellerOrders(sellerId);
   }
 

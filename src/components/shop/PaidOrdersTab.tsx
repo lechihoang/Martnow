@@ -2,19 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { sellerApi } from '@/lib/api';
+import { OrderStatus } from '@/types/entities';
 import useUser from '@/hooks/useUser';
 
 interface PaidOrder {
   id: number;
   buyerName: string;
   totalPrice: number;
+  status: OrderStatus;
   createdAt: Date;
   itemCount: number;
-  items: Array<{
-    productName: string;
-    quantity: number;
-    price: number;
-  }>;
 }
 
 const PaidOrdersTab: React.FC = () => {
@@ -155,20 +152,12 @@ const PaidOrdersTab: React.FC = () => {
               </div>
             </div>
             
-            {/* Order Items */}
-            {order.items && order.items.length > 0 && (
-              <div className="border-t pt-3 mt-3">
-                <p className="text-sm font-medium text-gray-700 mb-2">Sản phẩm đã mua:</p>
-                <div className="space-y-1">
-                  {order.items.map((item, index) => (
-                    <div key={index} className="flex justify-between text-sm text-gray-600">
-                      <span>{item.productName} x{item.quantity}</span>
-                      <span>{(item.price * item.quantity).toLocaleString('vi-VN')}đ</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Order Summary */}
+            <div className="border-t pt-3 mt-3">
+              <p className="text-sm text-gray-600">
+                Tổng số sản phẩm: <span className="font-medium">{order.itemCount}</span>
+              </p>
+            </div>
           </div>
         ))}
       </div>

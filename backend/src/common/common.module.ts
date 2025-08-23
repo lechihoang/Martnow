@@ -8,16 +8,16 @@ import { ThrottlerModule } from '@nestjs/throttler';
     // Rate Limiting Configuration - Basic protection
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => [{
-        ttl: 60000, // 1 minute
-        limit: 100, // 100 requests per minute
-      }],
+      useFactory: (configService: ConfigService) => [
+        {
+          ttl: 60000, // 1 minute
+          limit: 100, // 100 requests per minute
+        },
+      ],
       inject: [ConfigService],
     }),
   ],
   providers: [],
-  exports: [
-    ThrottlerModule,
-  ],
+  exports: [ThrottlerModule],
 })
 export class CommonModule {}

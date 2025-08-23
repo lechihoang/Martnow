@@ -12,13 +12,7 @@ import { SellerStats } from '../seller-stats/entities/seller-stats.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Order,
-      OrderItem,
-      Product,
-      Buyer,
-      SellerStats,
-    ]),
+    TypeOrmModule.forFeature([Order, OrderItem, Product, Buyer, SellerStats]),
     PaymentModule,
   ],
   controllers: [CartController],

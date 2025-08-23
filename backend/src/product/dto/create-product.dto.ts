@@ -1,5 +1,13 @@
-import { IsString, IsNumber, IsOptional, IsBoolean, IsArray, IsPositive, Min, Max } from 'class-validator';
-
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  IsPositive,
+  Min,
+  Max,
+} from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
@@ -15,7 +23,6 @@ export class CreateProductDto {
 
   @IsNumber()
   categoryId: number;
-
 
   @IsBoolean()
   @IsOptional()
@@ -51,7 +58,7 @@ export class ProductResponseDto {
   discount: number;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Relations
   seller: {
     id: number;
@@ -67,7 +74,7 @@ export class ProductResponseDto {
     name: string;
     description?: string;
   };
-  
+
   // Optional aggregated data
   averageRating?: number;
   totalReviews?: number;
@@ -86,10 +93,10 @@ export class ProductResponseDto {
     this.discount = product.discount;
     this.createdAt = product.createdAt;
     this.updatedAt = product.updatedAt;
-    
+
     // No image URL support
     this.imageUrl = undefined;
-    
+
     // Relations
     this.seller = {
       id: product.seller?.id,
@@ -100,13 +107,13 @@ export class ProductResponseDto {
         username: product.seller?.user?.username || '',
       },
     };
-    
+
     this.category = {
       id: product.category?.id,
       name: product.category?.name || '',
       description: product.category?.description,
     };
-    
+
     // Optional aggregated data
     this.averageRating = product.averageRating || 0;
     this.totalReviews = product.totalReviews || 0;
@@ -125,7 +132,7 @@ export class ProductDetailDto extends ProductResponseDto {
   category: { id: number; name: string; description?: string };
   constructor(product: any) {
     super(product);
-    
+
     this.seller = {
       id: product.seller?.id,
       shopName: product.seller?.shopName,
@@ -135,7 +142,7 @@ export class ProductDetailDto extends ProductResponseDto {
         username: product.seller?.user?.username || '',
       },
     };
-    
+
     this.category = {
       id: product.category?.id,
       name: product.category?.name || '',

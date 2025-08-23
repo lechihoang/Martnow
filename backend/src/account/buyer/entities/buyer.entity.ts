@@ -1,4 +1,11 @@
-import { Entity, Column, OneToOne, JoinColumn, OneToMany, PrimaryColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  OneToOne,
+  JoinColumn,
+  OneToMany,
+  PrimaryColumn,
+} from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Order } from '../../../order/entities/order.entity';
 import { Review } from '../../../review/entities/review.entity';

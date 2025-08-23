@@ -23,7 +23,7 @@ export class UserService {
   ) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<UserResponseDto> {
-    return await this.dataSource.transaction(async manager => {
+    return await this.dataSource.transaction(async (manager) => {
       // Tạo user mới
       const user = new User();
       user.name = createUserDto.name;
@@ -34,7 +34,7 @@ export class UserService {
       if (createUserDto.avatar) {
         user.avatar = createUserDto.avatar;
       }
-      
+
       const savedUser = await manager.save(User, user);
 
       // Tạo buyer hoặc seller tương ứng
@@ -44,7 +44,7 @@ export class UserService {
       } else if (createUserDto.role === UserRole.SELLER) {
         const seller = manager.create(Seller, { id: savedUser.id });
         const savedSeller = await manager.save(Seller, seller);
-        
+
         // ✅ Tạo SellerStats với giá trị mặc định
         const sellerStats = manager.create(SellerStats, {
           id: savedSeller.id,
@@ -64,17 +64,17 @@ export class UserService {
       if (createUserDto.role === UserRole.BUYER) {
         userWithRelations = await manager.findOne(User, {
           where: { id: savedUser.id },
-          relations: ['buyer']
+          relations: ['buyer'],
         });
       } else if (createUserDto.role === UserRole.SELLER) {
         userWithRelations = await manager.findOne(User, {
           where: { id: savedUser.id },
-          relations: ['seller']
+          relations: ['seller'],
         });
       } else {
         userWithRelations = savedUser;
       }
-      
+
       if (!userWithRelations) {
         throw new Error('Failed to retrieve user after creation');
       }
@@ -107,13 +107,16 @@ export class UserService {
       relations.push('seller');
     }
 
-    return this.userRepository.findOne({ 
+    return this.userRepository.findOne({
       where: { id },
-      relations
+      relations,
     });
   }
 
-  async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+  async updateUser(
+    id: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new Error('User not found');
@@ -137,7 +140,7 @@ export class UserService {
 
   // ✅ Xóa user với cascade deletion
   async deleteUser(id: number): Promise<{ message: string }> {
-    return await this.dataSource.transaction(async manager => {
+    return await this.dataSource.transaction(async (manager) => {
       const user = await manager.findOne(User, { where: { id } });
       if (!user) {
         throw new Error('User not found');
@@ -166,7 +169,7 @@ export class UserService {
 
       // Cuối cùng xóa user
       await manager.delete(User, { id });
-      
+
       return { message: 'User deleted successfully' };
     });
   }

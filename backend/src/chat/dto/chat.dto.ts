@@ -1,4 +1,11 @@
-import { IsString, IsBoolean, IsOptional, IsArray, IsNumber, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsBoolean,
+  IsOptional,
+  IsArray,
+  IsNumber,
+  IsEnum,
+} from 'class-validator';
 import { MessageType } from '../entities/message.entity';
 
 // Room DTOs
@@ -42,14 +49,15 @@ export class RoomResponseDto {
     this.name = room.name;
     this.isPrivate = room.isPrivate;
     this.createdAt = room.createdAt;
-    
+
     // Format participants
-    this.participants = room.participants?.map(p => ({
-      id: p.id,
-      name: p.name,
-      username: p.username,
-      avatar: p.avatar
-    })) || [];
+    this.participants =
+      room.participants?.map((p) => ({
+        id: p.id,
+        name: p.name,
+        username: p.username,
+        avatar: p.avatar,
+      })) || [];
 
     // Get last message if available
     if (room.messages && room.messages.length > 0) {
@@ -62,14 +70,14 @@ export class RoomResponseDto {
         user: {
           id: lastMsg.user?.id,
           name: lastMsg.user?.name,
-          username: lastMsg.user?.username
-        }
+          username: lastMsg.user?.username,
+        },
       };
     }
 
     // For private rooms, set name based on other participant
     if (this.isPrivate && this.participants.length === 2 && currentUserId) {
-      const otherUser = this.participants.find(p => p.id !== currentUserId);
+      const otherUser = this.participants.find((p) => p.id !== currentUserId);
       if (otherUser) {
         this.name = otherUser.name;
       }
@@ -120,24 +128,24 @@ export class MessageResponseDto {
     this.type = message.type;
     this.metadata = message.metadata;
     this.createdAt = message.createdAt;
-    
+
     if (message.user) {
       this.user = {
         id: message.user.id,
         name: message.user.name,
         username: message.user.username,
-        avatar: message.user.avatar
+        avatar: message.user.avatar,
       };
     }
 
     // Include media files if present
     if (message.mediaFiles) {
-      this.mediaFiles = message.mediaFiles.map(file => ({
+      this.mediaFiles = message.mediaFiles.map((file) => ({
         id: file.id,
         fileName: file.fileName,
         secureUrl: file.secureUrl,
         fileType: file.fileType,
-        isPrimary: file.isPrimary
+        isPrimary: file.isPrimary,
       }));
     }
   }

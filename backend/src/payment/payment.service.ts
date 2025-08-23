@@ -22,14 +22,20 @@ export class PaymentService {
   /**
    * Tạo URL thanh toán VNPay (với DTO)
    */
-  async createPaymentUrl(orderId: number, createPaymentDto: CreatePaymentDto): Promise<PaymentResponseDto>;
-  
+  async createPaymentUrl(
+    orderId: number,
+    createPaymentDto: CreatePaymentDto,
+  ): Promise<PaymentResponseDto>;
+
   /**
    * Tạo URL thanh toán VNPay (với amount trực tiếp)
    */
   async createPaymentUrl(orderId: number, amount: number): Promise<string>;
-  
-  async createPaymentUrl(orderId: number, createPaymentDtoOrAmount: CreatePaymentDto | number): Promise<PaymentResponseDto | string> {
+
+  async createPaymentUrl(
+    orderId: number,
+    createPaymentDtoOrAmount: CreatePaymentDto | number,
+  ): Promise<PaymentResponseDto | string> {
     if (typeof createPaymentDtoOrAmount === 'number') {
       // Overload cho cart checkout
       const amount = createPaymentDtoOrAmount;
@@ -39,11 +45,14 @@ export class PaymentService {
       return this.createFullPaymentUrl(orderId, createPaymentDtoOrAmount);
     }
   }
-  
+
   /**
    * Tạo URL thanh toán đơn giản (cho cart)
    */
-  private async createSimplePaymentUrl(orderId: number, amount: number): Promise<string> {
+  private async createSimplePaymentUrl(
+    orderId: number,
+    amount: number,
+  ): Promise<string> {
     // Lấy thông tin order
     const order = await this.orderRepository.findOne({
       where: { id: orderId },
@@ -77,11 +86,14 @@ export class PaymentService {
 
     return paymentUrl;
   }
-  
+
   /**
    * Tạo URL thanh toán đầy đủ (original)
    */
-  private async createFullPaymentUrl(orderId: number, createPaymentDto: CreatePaymentDto): Promise<PaymentResponseDto> {
+  private async createFullPaymentUrl(
+    orderId: number,
+    createPaymentDto: CreatePaymentDto,
+  ): Promise<PaymentResponseDto> {
     // Lấy thông tin order
     const order = await this.orderRepository.findOne({
       where: { id: orderId },
@@ -94,12 +106,12 @@ export class PaymentService {
 
     // Tính tổng tiền (VNPay nhận VND trực tiếp, không cần nhân 100)
     const amount = Math.round(order.totalPrice);
-    
+
     console.log('Payment Debug:', {
       orderId,
       originalAmount: order.totalPrice,
       convertedAmount: amount,
-      description: `${order.totalPrice} VND -> ${amount} VND (không nhân 100)`
+      description: `${order.totalPrice} VND -> ${amount} VND (không nhân 100)`,
     });
 
     // Tạo transaction reference (unique)
@@ -136,11 +148,11 @@ export class PaymentService {
    */
   async verifyPayment(query: any) {
     const verifyResult = await this.vnpayService.verifyReturnUrl(query);
-    
+
     if (verifyResult.isSuccess) {
       const txnRef = query.vnp_TxnRef;
       this.logger.log(`✅ Payment verified successfully: ${txnRef}`);
-      
+
       const order = await this.orderRepository.findOne({
         where: { paymentReference: txnRef },
       });
@@ -164,11 +176,11 @@ export class PaymentService {
    */
   async handleIPN(query: any) {
     const ipnResult = await this.vnpayService.verifyIpnCall(query);
-    
+
     if (ipnResult.isSuccess) {
       const txnRef = query.vnp_TxnRef;
       this.logger.log(`📞 IPN received for transaction: ${txnRef}`);
-      
+
       const order = await this.orderRepository.findOne({
         where: { paymentReference: txnRef },
       });
@@ -238,7 +250,7 @@ export class PaymentService {
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const seconds = String(date.getSeconds()).padStart(2, '0');
-    
+
     return `${year}${month}${day}${hours}${minutes}${seconds}`;
   }
 }

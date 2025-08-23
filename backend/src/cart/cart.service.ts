@@ -208,7 +208,13 @@ export class CartService {
   async getCheckoutSummary(orderIds: number[]): Promise<any> {
     const orders = await this.orderRepository.find({
       where: { id: In(orderIds) },
-      relations: ['buyer', 'buyer.user', 'items', 'items.product', 'items.product.seller'],
+      relations: [
+        'buyer',
+        'buyer.user',
+        'items',
+        'items.product',
+        'items.product.seller',
+      ],
       order: { createdAt: 'DESC' },
     });
 
@@ -243,7 +249,9 @@ export class CartService {
    */
   async handleMultipleOrdersPaid(orderIds: number[]): Promise<void> {
     return this.dataSource.transaction(async (manager) => {
-      this.logger.log(`💳 Processing payment success for orders: ${orderIds.join(', ')}`);
+      this.logger.log(
+        `💳 Processing payment success for orders: ${orderIds.join(', ')}`,
+      );
 
       for (const orderId of orderIds) {
         // Lấy order với items
@@ -296,7 +304,9 @@ export class CartService {
         this.logger.log(`✅ Order ${orderId} processed successfully`);
       }
 
-      this.logger.log(`🎉 All ${orderIds.length} orders processed successfully`);
+      this.logger.log(
+        `🎉 All ${orderIds.length} orders processed successfully`,
+      );
     });
   }
 }

@@ -63,7 +63,6 @@ export class OrderBusinessService {
       // 7. Log success
       this.logger.log(`✅ Order ${orderId} processed successfully`);
       await queryRunner.commitTransaction();
-
     } catch (error) {
       await queryRunner.rollbackTransaction();
       this.logger.error(`❌ Error processing order ${orderId}:`, error);
@@ -82,7 +81,9 @@ export class OrderBusinessService {
     await queryRunner.startTransaction();
 
     try {
-      this.logger.log(`🎉 Processing multiple paid orders: ${orderIds.join(', ')}`);
+      this.logger.log(
+        `🎉 Processing multiple paid orders: ${orderIds.join(', ')}`,
+      );
 
       for (const orderId of orderIds) {
         // 1. Lấy order với đầy đủ thông tin
@@ -94,7 +95,9 @@ export class OrderBusinessService {
 
         // 2. Kiểm tra order chưa được xử lý
         if (order.status === 'paid') {
-          this.logger.warn(`Order ${orderId} already processed as paid, skipping`);
+          this.logger.warn(
+            `Order ${orderId} already processed as paid, skipping`,
+          );
           continue;
         }
 
@@ -114,9 +117,10 @@ export class OrderBusinessService {
       await this.cleanupTimeoutOrders(queryRunner);
 
       // 7. Log success
-      this.logger.log(`🎉 All ${orderIds.length} orders processed successfully`);
+      this.logger.log(
+        `🎉 All ${orderIds.length} orders processed successfully`,
+      );
       await queryRunner.commitTransaction();
-
     } catch (error) {
       await queryRunner.rollbackTransaction();
       this.logger.error(`❌ Error processing multiple orders:`, error);
@@ -129,7 +133,10 @@ export class OrderBusinessService {
   /**
    * Lấy order với đầy đủ thông tin cần thiết
    */
-  private async getOrderWithDetails(orderId: number, queryRunner: any): Promise<Order | null> {
+  private async getOrderWithDetails(
+    orderId: number,
+    queryRunner: any,
+  ): Promise<Order | null> {
     return queryRunner.manager.findOne(Order, {
       where: { id: orderId },
       relations: [
@@ -137,7 +144,7 @@ export class OrderBusinessService {
         'items.product',
         'items.product.seller',
         'buyer',
-        'buyer.user'
+        'buyer.user',
       ],
     });
   }
@@ -145,9 +152,13 @@ export class OrderBusinessService {
   /**
    * Cập nhật trạng thái order
    */
-  private async updateOrderStatus(orderId: number, status: string, queryRunner: any): Promise<void> {
+  private async updateOrderStatus(
+    orderId: number,
+    status: string,
+    queryRunner: any,
+  ): Promise<void> {
     this.logger.log(`📝 Updating order ${orderId} status to: ${status}`);
-    
+
     await queryRunner.manager.update(Order, orderId, {
       status,
       paidAt: new Date(),
@@ -157,12 +168,15 @@ export class OrderBusinessService {
   /**
    * Giảm stock của các sản phẩm trong order
    */
-  private async updateProductStock(orderItems: OrderItem[], queryRunner: any): Promise<void> {
+  private async updateProductStock(
+    orderItems: OrderItem[],
+    queryRunner: any,
+  ): Promise<void> {
     this.logger.log(`📦 Updating stock for ${orderItems.length} products`);
 
     for (const item of orderItems) {
       const product = await queryRunner.manager.findOne(Product, {
-        where: { id: item.productId }
+        where: { id: item.productId },
       });
 
       if (!product) {
@@ -173,7 +187,7 @@ export class OrderBusinessService {
       // Kiểm tra stock có đủ không
       if (product.stock < item.quantity) {
         this.logger.warn(
-          `Insufficient stock for product ${product.id}. Available: ${product.stock}, Required: ${item.quantity}`
+          `Insufficient stock for product ${product.id}. Available: ${product.stock}, Required: ${item.quantity}`,
         );
         // Có thể throw error hoặc partial fulfill tùy business requirement
         throw new Error(`Không đủ hàng cho sản phẩm ${product.name}`);
@@ -182,11 +196,11 @@ export class OrderBusinessService {
       // Giảm stock
       const newStock = product.stock - item.quantity;
       await queryRunner.manager.update(Product, product.id, {
-        stock: newStock
+        stock: newStock,
       });
 
       this.logger.log(
-        `📉 Product ${product.name} stock: ${product.stock} → ${newStock} (sold: ${item.quantity})`
+        `📉 Product ${product.name} stock: ${product.stock} → ${newStock} (sold: ${item.quantity})`,
       );
     }
   }
@@ -194,15 +208,21 @@ export class OrderBusinessService {
   /**
    * Cập nhật seller statistics
    */
-  private async updateSellerStats(order: Order, queryRunner: any): Promise<void> {
+  private async updateSellerStats(
+    order: Order,
+    queryRunner: any,
+  ): Promise<void> {
     this.logger.log(`📊 Updating seller stats for order ${order.id}`);
 
     // Tính toán stats theo seller
-    const sellerStatsMap = new Map<number, {
-      totalRevenue: number;
-      totalOrders: number;
-      productsSold: number;
-    }>();
+    const sellerStatsMap = new Map<
+      number,
+      {
+        totalRevenue: number;
+        totalOrders: number;
+        productsSold: number;
+      }
+    >();
 
     // Group theo seller
     for (const item of order.items) {
@@ -232,14 +252,17 @@ export class OrderBusinessService {
    * Cập nhật record seller_stats
    */
   private async updateSellerStatsRecord(
-    sellerId: number, 
-    orderStats: { totalRevenue: number; totalOrders: number; productsSold: number },
-    queryRunner: any
+    sellerId: number,
+    orderStats: {
+      totalRevenue: number;
+      totalOrders: number;
+      productsSold: number;
+    },
+    queryRunner: any,
   ): Promise<void> {
-    
     // Tìm stats record hiện tại
     let sellerStats = await queryRunner.manager.findOne(SellerStats, {
-      where: { id: sellerId }
+      where: { id: sellerId },
     });
 
     if (!sellerStats) {
@@ -268,7 +291,7 @@ export class OrderBusinessService {
     await queryRunner.manager.update(SellerStats, sellerId, updatedStats);
 
     this.logger.log(
-      `📊 Seller ${sellerId} stats updated: +${orderStats.totalRevenue}đ revenue, +1 completed order`
+      `📊 Seller ${sellerId} stats updated: +${orderStats.totalRevenue}đ revenue, +1 completed order`,
     );
   }
 
@@ -277,7 +300,7 @@ export class OrderBusinessService {
    */
   async handleOrderFailed(orderId: number): Promise<void> {
     this.logger.log(`❌ Processing failed order: ${orderId}`);
-    
+
     await this.orderRepository.update(orderId, {
       status: OrderStatus.CANCELLED,
     });
@@ -300,7 +323,8 @@ export class OrderBusinessService {
       orderId: order.id,
       totalAmount: order.totalPrice,
       totalItems: order.items.reduce((sum, item) => sum + item.quantity, 0),
-      sellersCount: new Set(order.items.map(item => item.product.seller.id)).size,
+      sellersCount: new Set(order.items.map((item) => item.product.seller.id))
+        .size,
       status: order.status,
       paidAt: order.paidAt,
     };
@@ -317,7 +341,9 @@ export class OrderBusinessService {
 
     try {
       // Bỏ logic cleanup timeout vì không có waiting_payment status
-      this.logger.log('🧙 Timeout cleanup skipped - no pending orders in simplified model');
+      this.logger.log(
+        '🧙 Timeout cleanup skipped - no pending orders in simplified model',
+      );
     } catch (error) {
       this.logger.error('❌ Error cleaning up timeout orders:', error);
       // Không throw error vì đây chỉ là cleanup task

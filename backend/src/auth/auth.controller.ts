@@ -33,7 +33,7 @@ export class AuthController {
     if (!loginDto || !loginDto.email || !loginDto.password) {
       throw new BadRequestException('Email and password are required');
     }
-    
+
     const user = await this.authService.validateUser(
       loginDto.email,
       loginDto.password,
@@ -71,13 +71,13 @@ export class AuthController {
     const users = await this.authService['usersService'].findAll();
     return {
       count: users.length,
-      users: users.map(user => ({
+      users: users.map((user) => ({
         id: user.id,
         email: user.email,
         username: user.username,
         role: user.role,
-        hasPassword: !!user.password
-      }))
+        hasPassword: !!user.password,
+      })),
     };
   }
 }

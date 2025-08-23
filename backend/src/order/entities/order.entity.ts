@@ -1,4 +1,13 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Buyer } from '../../account/buyer/entities/buyer.entity';
 import { OrderItem } from './order-item.entity';
 import { OrderStatus } from '../../shared/enums';
@@ -23,10 +32,10 @@ export class Order {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   totalPrice: number;
 
-  @Column({ 
-    type: 'enum', 
-    enum: OrderStatus, 
-    default: OrderStatus.PAID 
+  @Column({
+    type: 'enum',
+    enum: OrderStatus,
+    default: OrderStatus.PAID,
   })
   status: OrderStatus;
 

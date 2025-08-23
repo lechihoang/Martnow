@@ -32,7 +32,10 @@ export class CartController {
    */
   @Post('checkout')
   @Roles(UserRole.BUYER)
-  async checkoutCart(@Body() cartCheckoutDto: CartCheckoutDto, @Req() req: any) {
+  async checkoutCart(
+    @Body() cartCheckoutDto: CartCheckoutDto,
+    @Req() req: any,
+  ) {
     try {
       const userId = req.user.userId;
 
@@ -91,7 +94,9 @@ export class CartController {
   async getCheckoutSummary(@Param('orderIds') orderIdsParam: string) {
     try {
       // Parse order IDs từ string "1,2,3" thành array [1,2,3]
-      const orderIds = orderIdsParam.split(',').map((id) => parseInt(id.trim()));
+      const orderIds = orderIdsParam
+        .split(',')
+        .map((id) => parseInt(id.trim()));
 
       const summary = await this.cartService.getCheckoutSummary(orderIds);
 
@@ -147,7 +152,7 @@ export class CartController {
     const testCartData: CartCheckoutDto = {
       items: [
         { productId: 1, quantity: 2, price: 50000 }, // Seller 1
-        { productId: 2, quantity: 1, price: 30000 }, // Seller 2 
+        { productId: 2, quantity: 1, price: 30000 }, // Seller 2
         { productId: 3, quantity: 3, price: 25000 }, // Seller 1
       ],
       note: 'Test multiple sellers checkout',

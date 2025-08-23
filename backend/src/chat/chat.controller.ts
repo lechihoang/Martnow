@@ -1,18 +1,18 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Put, 
-  Delete, 
-  Body, 
-  Param, 
-  Query, 
-  UseGuards, 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
   Request,
   UseInterceptors,
   UploadedFiles,
   BadRequestException,
-  ParseIntPipe 
+  ParseIntPipe,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -76,7 +76,11 @@ export class ChatController {
     @Param('userId', ParseIntPipe) participantId: number,
     @Request() req,
   ) {
-    await this.chatService.removeParticipant(roomId, participantId, req.user.id);
+    await this.chatService.removeParticipant(
+      roomId,
+      participantId,
+      req.user.id,
+    );
     return { message: 'Participant removed successfully' };
   }
 
@@ -85,12 +89,12 @@ export class ChatController {
   @Post('messages')
   async createMessage(
     @Body() data: { roomId: number; content: string },
-    @Request() req
+    @Request() req,
   ) {
     return this.chatService.createMessage({
       roomId: data.roomId,
       userId: req.user.id,
-      content: data.content
+      content: data.content,
     });
   }
 
@@ -109,19 +113,19 @@ export class ChatController {
   async sendMessageWithMedia(
     @UploadedFiles() files: any[],
     @Body() data: { roomId: string; content?: string },
-    @Request() req
+    @Request() req,
   ) {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files provided');
     }
 
     const roomId = parseInt(data.roomId);
-    
+
     return this.chatService.createMessageWithMedia(
-      roomId, 
-      files, 
-      data.content || '', 
-      req.user.id
+      roomId,
+      files,
+      data.content || '',
+      req.user.id,
     );
   }
 
@@ -130,19 +134,19 @@ export class ChatController {
   async sendQuickImage(
     @UploadedFiles() files: any[],
     @Body() data: { roomId: string },
-    @Request() req
+    @Request() req,
   ) {
     if (!files || files.length === 0) {
       throw new BadRequestException('No image provided');
     }
 
     const roomId = parseInt(data.roomId);
-    
+
     return this.chatService.createMessageWithMedia(
-      roomId, 
-      files, 
+      roomId,
+      files,
       '', // No text content
-      req.user.id
+      req.user.id,
     );
   }
 
@@ -162,8 +166,14 @@ export class ChatController {
 
   // Check room access (utility endpoint)
   @Get('rooms/:id/access')
-  async checkRoomAccess(@Param('id', ParseIntPipe) roomId: number, @Request() req) {
-    const hasAccess = await this.chatService.checkRoomAccess(roomId, req.user.id);
+  async checkRoomAccess(
+    @Param('id', ParseIntPipe) roomId: number,
+    @Request() req,
+  ) {
+    const hasAccess = await this.chatService.checkRoomAccess(
+      roomId,
+      req.user.id,
+    );
     return { hasAccess };
   }
 }

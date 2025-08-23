@@ -1,4 +1,11 @@
-import { IsNumber, IsString, IsOptional, IsArray, IsEnum, Min } from 'class-validator';
+import {
+  IsNumber,
+  IsString,
+  IsOptional,
+  IsArray,
+  IsEnum,
+  Min,
+} from 'class-validator';
 import { OrderStatus } from '../../shared/enums';
 
 export class CreateOrderDto {

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Blog } from './entities/blog.entity';
@@ -20,7 +24,10 @@ export class BlogService {
   ) {}
 
   // Blog CRUD
-  async createBlog(createBlogDto: CreateBlogDto, authorId: number): Promise<Blog> {
+  async createBlog(
+    createBlogDto: CreateBlogDto,
+    authorId: number,
+  ): Promise<Blog> {
     const blog = this.blogRepository.create({
       ...createBlogDto,
       authorId,
@@ -40,7 +47,14 @@ export class BlogService {
   async findBlogById(id: number, userId?: number): Promise<Blog> {
     const blog = await this.blogRepository.findOne({
       where: { id },
-      relations: ['author', 'comments', 'comments.user', 'comments.replies', 'comments.replies.user', 'votes'],
+      relations: [
+        'author',
+        'comments',
+        'comments.user',
+        'comments.replies',
+        'comments.replies.user',
+        'votes',
+      ],
     });
 
     if (!blog) {
@@ -50,9 +64,13 @@ export class BlogService {
     return this.enrichBlogWithVoteData(blog, userId);
   }
 
-  async updateBlog(id: number, updateBlogDto: UpdateBlogDto, userId: number): Promise<Blog> {
+  async updateBlog(
+    id: number,
+    updateBlogDto: UpdateBlogDto,
+    userId: number,
+  ): Promise<Blog> {
     const blog = await this.findBlogById(id);
-    
+
     if (blog.authorId !== userId) {
       throw new ForbiddenException('You can only update your own blogs');
     }
@@ -63,7 +81,7 @@ export class BlogService {
 
   async deleteBlog(id: number, userId: number): Promise<void> {
     const blog = await this.findBlogById(id);
-    
+
     if (blog.authorId !== userId) {
       throw new ForbiddenException('You can only delete your own blogs');
     }
@@ -78,7 +96,7 @@ export class BlogService {
     userId: number,
   ): Promise<BlogComment> {
     const blog = await this.findBlogById(blogId);
-    
+
     const comment = this.commentRepository.create({
       ...createCommentDto,
       blogId,
@@ -111,11 +129,11 @@ export class BlogService {
       where: { id },
       relations: ['user'],
     });
-    
+
     if (!updatedComment) {
       throw new NotFoundException('Comment not found after update');
     }
-    
+
     return updatedComment;
   }
 
@@ -145,7 +163,11 @@ export class BlogService {
   }
 
   // Voting methods
-  async voteBlog(blogId: number, voteBlogDto: VoteBlogDto, userId: number): Promise<VoteResponseDto> {
+  async voteBlog(
+    blogId: number,
+    voteBlogDto: VoteBlogDto,
+    userId: number,
+  ): Promise<VoteResponseDto> {
     const blog = await this.findBlogById(blogId);
 
     // Check if user already voted
@@ -159,7 +181,9 @@ export class BlogService {
         await this.voteRepository.delete(existingVote.id);
       } else {
         // Different vote type, update
-        await this.voteRepository.update(existingVote.id, { voteType: voteBlogDto.voteType });
+        await this.voteRepository.update(existingVote.id, {
+          voteType: voteBlogDto.voteType,
+        });
       }
     } else {
       // Create new vote
@@ -179,15 +203,20 @@ export class BlogService {
     return this.getVoteStats(blogId, userId);
   }
 
-  async getVoteStats(blogId: number, userId?: number): Promise<VoteResponseDto> {
+  async getVoteStats(
+    blogId: number,
+    userId?: number,
+  ): Promise<VoteResponseDto> {
     const votes = await this.voteRepository.find({ where: { blogId } });
-    
-    const upvoteCount = votes.filter(v => v.voteType === VoteType.UP).length;
-    const downvoteCount = votes.filter(v => v.voteType === VoteType.DOWN).length;
-    
+
+    const upvoteCount = votes.filter((v) => v.voteType === VoteType.UP).length;
+    const downvoteCount = votes.filter(
+      (v) => v.voteType === VoteType.DOWN,
+    ).length;
+
     let userVote: 'up' | 'down' | null = null;
     if (userId) {
-      const userVoteEntity = votes.find(v => v.userId === userId);
+      const userVoteEntity = votes.find((v) => v.userId === userId);
       userVote = userVoteEntity ? userVoteEntity.voteType : null;
     }
 
@@ -196,23 +225,27 @@ export class BlogService {
 
   // Helper methods
   private enrichBlogWithVoteData(blog: Blog, userId?: number): Blog {
-    const upvoteCount = blog.votes ? blog.votes.filter(v => v.voteType === VoteType.UP).length : 0;
-    const downvoteCount = blog.votes ? blog.votes.filter(v => v.voteType === VoteType.DOWN).length : 0;
-    
+    const upvoteCount = blog.votes
+      ? blog.votes.filter((v) => v.voteType === VoteType.UP).length
+      : 0;
+    const downvoteCount = blog.votes
+      ? blog.votes.filter((v) => v.voteType === VoteType.DOWN).length
+      : 0;
+
     let userVote: 'up' | 'down' | null = null;
     if (userId && blog.votes) {
-      const userVoteEntity = blog.votes.find(v => v.userId === userId);
+      const userVoteEntity = blog.votes.find((v) => v.userId === userId);
       userVote = userVoteEntity ? userVoteEntity.voteType : null;
     }
 
     blog.upvoteCount = upvoteCount;
     blog.downvoteCount = downvoteCount;
     blog.userVote = userVote;
-    
+
     return blog;
   }
 
   private enrichBlogsWithVoteData(blogs: Blog[], userId?: number): Blog[] {
-    return blogs.map(blog => this.enrichBlogWithVoteData(blog, userId));
+    return blogs.map((blog) => this.enrichBlogWithVoteData(blog, userId));
   }
 }

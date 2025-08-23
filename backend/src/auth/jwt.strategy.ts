@@ -14,10 +14,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           // Fallback to Authorization header for API clients
           const authHeader = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
           return cookieToken || authHeader;
-        }
+        },
       ]),
       ignoreExpiration: false,
-      secretOrKey: configService?.get<string>('JWT_SECRET') || 'Y8ufqDLSWniFhqWyym3Tfji842KS5b8cVdFVC8AU9ag',
+      secretOrKey:
+        configService?.get<string>('JWT_SECRET') ||
+        'Y8ufqDLSWniFhqWyym3Tfji842KS5b8cVdFVC8AU9ag',
     });
   }
 

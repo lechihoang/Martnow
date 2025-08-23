@@ -18,9 +18,7 @@ import { MediaUploadDto } from './dto/media-upload.dto';
 
 @Controller('media')
 export class MediaController {
-  constructor(
-    private readonly mediaService: MediaService,
-  ) {}
+  constructor(private readonly mediaService: MediaService) {}
 
   /**
    * Upload media files for an entity
@@ -42,7 +40,7 @@ export class MediaController {
     };
 
     const mediaFiles = await this.mediaService.uploadMediaFiles(uploadDto);
-    
+
     return {
       status: 'success',
       message: `Successfully uploaded ${mediaFiles.length} files`,
@@ -58,8 +56,11 @@ export class MediaController {
     @Param('entityType') entityType: string,
     @Param('entityId', ParseIntPipe) entityId: number,
   ) {
-    const mediaFiles = await this.mediaService.getMediaFiles(entityType, entityId);
-    
+    const mediaFiles = await this.mediaService.getMediaFiles(
+      entityType,
+      entityId,
+    );
+
     return {
       status: 'success',
       data: mediaFiles,
@@ -75,7 +76,7 @@ export class MediaController {
     @Param('entityId', ParseIntPipe) entityId: number,
   ) {
     await this.mediaService.deleteAllMediaFiles(entityType, entityId);
-    
+
     return {
       status: 'success',
       message: 'All media files deleted successfully',

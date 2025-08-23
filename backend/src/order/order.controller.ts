@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Body, UseGuards, Req, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  UseGuards,
+  Req,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { OrderService } from './order.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -8,9 +17,7 @@ import { CreateOrderDto } from './dto/order.dto';
 
 @Controller('orders')
 export class OrderController {
-  constructor(
-    private readonly orderService: OrderService,
-  ) {}
+  constructor(private readonly orderService: OrderService) {}
 
   // Chỉ buyer mới có thể tạo đơn hàng
   @Post()
@@ -23,7 +30,7 @@ export class OrderController {
   }
 
   // 🎯 API để track orders chờ thanh toán
-  
+
   // Bỏ API getPendingOrders vì không còn có pending status
 
   /**

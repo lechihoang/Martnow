@@ -13,7 +13,7 @@ import { AuthModule } from '../auth/auth.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem, Buyer, Product, SellerStats]),
-    AuthModule
+    AuthModule,
   ],
   controllers: [OrderController],
   providers: [OrderService, OrderBusinessService],

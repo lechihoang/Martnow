@@ -2,7 +2,11 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../account/user/user.service';
 import { UserRole } from './roles.enum';
-import { RegisterDto, LoginResponseDto, LogoutResponseDto } from './dto/auth.dto';
+import {
+  RegisterDto,
+  LoginResponseDto,
+  LogoutResponseDto,
+} from './dto/auth.dto';
 import { CreateUserDto, UserResponseDto } from '../account/user/dto/user.dto';
 import * as bcrypt from 'bcrypt';
 
@@ -43,7 +47,11 @@ export class AuthService {
     throw new UnauthorizedException('Invalid credentials');
   }
 
-  async login(user: any, request: any, response: any): Promise<LoginResponseDto> {
+  async login(
+    user: any,
+    request: any,
+    response: any,
+  ): Promise<LoginResponseDto> {
     // Tạo JWT payload
     const payload = {
       sub: user.id, // Subject (user ID)
@@ -65,18 +73,22 @@ export class AuthService {
     });
 
     // Optional: Set user info cookie cho frontend (không nhạy cảm)
-    response.cookie('user_info', JSON.stringify({
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      email: user.email,
-    }), {
-      httpOnly: false, // Frontend có thể đọc
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000,
-      path: '/',
-    });
+    response.cookie(
+      'user_info',
+      JSON.stringify({
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        email: user.email,
+      }),
+      {
+        httpOnly: false, // Frontend có thể đọc
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000,
+        path: '/',
+      },
+    );
 
     return {
       user: await this.buildAuthUserResponse(user),
@@ -86,7 +98,7 @@ export class AuthService {
   async logout(request: any, response: any): Promise<LogoutResponseDto> {
     // Với JWT, chúng ta chỉ cần xóa cookies
     // JWT sẽ tự động hết hạn theo thời gian cấu hình
-    
+
     // Clear JWT cookie
     response.clearCookie('access_token', {
       path: '/',
@@ -94,7 +106,7 @@ export class AuthService {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
     });
-    
+
     // Clear user info cookie
     response.clearCookie('user_info', {
       path: '/',
@@ -106,12 +118,14 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    const existingUserByEmail = await this.usersService.findByEmail?.(registerDto.email);
+    const existingUserByEmail = await this.usersService.findByEmail?.(
+      registerDto.email,
+    );
     if (existingUserByEmail) {
       throw new UnauthorizedException('Email already exists');
     }
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-    
+
     // Tạo CreateUserDto từ RegisterDto
     const createUserDto: CreateUserDto = {
       name: registerDto.name,
@@ -121,16 +135,18 @@ export class AuthService {
       password: hashedPassword,
       avatar: registerDto.avatar,
     };
-    
+
     return this.usersService.createUser(createUserDto);
   }
 
   async getProfile(userId: string): Promise<UserResponseDto> {
-    const user = await this.usersService.findByIdWithRelations(parseInt(userId, 10));
+    const user = await this.usersService.findByIdWithRelations(
+      parseInt(userId, 10),
+    );
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
-    
+
     return new UserResponseDto(user);
   }
 
@@ -157,11 +173,11 @@ export class AuthService {
   private async buildAuthUserResponse(user: any): Promise<UserResponseDto> {
     // Lấy full user với relations nếu cần
     const fullUser = await this.usersService.findByIdWithRelations(user.id);
-    
+
     if (!fullUser) {
       throw new UnauthorizedException('User not found');
     }
-    
+
     return new UserResponseDto(fullUser);
   }
 }

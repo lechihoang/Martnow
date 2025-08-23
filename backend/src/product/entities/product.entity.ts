@@ -1,4 +1,12 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+  Index,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Seller } from '../../account/seller/entities/seller.entity';
 import { Category } from './category.entity';
 import { Review } from '../../review/entities/review.entity';
@@ -14,7 +22,7 @@ import { ProductStatus } from '../../shared/enums';
 export class Product {
   @PrimaryGeneratedColumn()
   id: number;
-  
+
   @Column({ type: 'int' })
   sellerId: number;
 
@@ -38,17 +46,16 @@ export class Product {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number;
 
-
   @Column({ type: 'boolean', default: true })
   isAvailable: boolean;
-  
-  // @Column({ 
-  //   type: 'enum', 
-  //   enum: ProductStatus, 
-  //   default: ProductStatus.IN_STOCK 
+
+  // @Column({
+  //   type: 'enum',
+  //   enum: ProductStatus,
+  //   default: ProductStatus.IN_STOCK
   // })
   // status: ProductStatus;
-  
+
   @Column({ type: 'int', default: 0 })
   stock: number;
 

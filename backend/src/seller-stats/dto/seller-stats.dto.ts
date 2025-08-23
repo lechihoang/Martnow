@@ -10,7 +10,7 @@ export class SellerStatsDto {
   averageRating: number;
   totalReviews: number;
   completionRate: number; // ✅ Computed once when creating DTO
-  
+
   constructor(stats: any) {
     this.id = stats.id || 0;
     this.sellerId = stats.sellerId || '';
@@ -21,10 +21,11 @@ export class SellerStatsDto {
     this.completedOrders = stats.completedOrders || 0;
     this.averageRating = Number(stats.averageRating || 0);
     this.totalReviews = stats.totalReviews || 0;
-    
+
     // ✅ Calculate completion rate once in constructor
-    this.completionRate = this.totalOrders > 0 
-      ? Number(((this.completedOrders / this.totalOrders) * 100).toFixed(2))
-      : 0;
+    this.completionRate =
+      this.totalOrders > 0
+        ? Number(((this.completedOrders / this.totalOrders) * 100).toFixed(2))
+        : 0;
   }
 }

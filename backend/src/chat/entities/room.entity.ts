@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany, ManyToMany, JoinTable } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  OneToMany,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
 import { User } from '../../account/user/entities/user.entity';
 import { Message } from './message.entity';
 
@@ -21,7 +29,7 @@ export class Room {
   @JoinTable({
     name: 'room_participants',
     joinColumn: { name: 'roomId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'userId', referencedColumnName: 'id' }
+    inverseJoinColumn: { name: 'userId', referencedColumnName: 'id' },
   })
   participants: User[];
 

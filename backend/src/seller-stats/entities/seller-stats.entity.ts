@@ -30,5 +30,4 @@ export class SellerStats {
 
   @Column({ type: 'int', default: 0 })
   totalReviews: number;
-
 }

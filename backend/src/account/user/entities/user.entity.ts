@@ -7,7 +7,7 @@ import { Seller } from '../../seller/entities/seller.entity';
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
-  
+
   @Column({ type: 'varchar', length: 100 })
   name: string;
 

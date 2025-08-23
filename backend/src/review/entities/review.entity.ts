@@ -1,4 +1,12 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  Index,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+} from 'typeorm';
 import { Buyer } from '../../account/buyer/entities/buyer.entity';
 import { Product } from '../../product/entities/product.entity';
 
@@ -11,7 +19,7 @@ export class Review {
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
-  
+
   @Column({ type: 'int' })
   buyerId: number; // Reference to Buyer.id
 

@@ -39,8 +39,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleConnection(client: AuthenticatedSocket) {
     try {
       // Get token from handshake auth or query
-      const token = client.handshake.auth?.token || client.handshake.query?.token;
-      
+      const token =
+        client.handshake.auth?.token || client.handshake.query?.token;
+
       if (!token) {
         client.disconnect();
         return;
@@ -49,7 +50,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // Verify JWT token
       const payload = this.jwtService.verify(token);
       const userId = payload.sub;
-      
+
       if (!userId) {
         client.disconnect();
         return;
@@ -65,16 +66,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.connectedUsers.get(userId)!.push(client.id);
 
       console.log(`User ${userId} connected with socket ${client.id}`);
-      
+
       // Notify others that user is online
-      client.broadcast.emit('userOnline', { userId, username: payload.username });
+      client.broadcast.emit('userOnline', {
+        userId,
+        username: payload.username,
+      });
 
       // Join user to their rooms
       const userRooms = await this.chatService.getUserRooms(userId);
-      userRooms.forEach(room => {
+      userRooms.forEach((room) => {
         client.join(`room_${room.id}`);
       });
-
     } catch (error) {
       console.error('Connection authentication failed:', error);
       client.disconnect();
@@ -86,12 +89,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (client.userId) {
       const userId = client.userId;
       const socketIds = this.connectedUsers.get(userId);
-      
+
       if (socketIds) {
         const index = socketIds.indexOf(client.id);
         if (index !== -1) {
           socketIds.splice(index, 1);
-          
+
           // If no more connections for this user, mark as offline
           if (socketIds.length === 0) {
             this.connectedUsers.delete(userId);
@@ -118,7 +121,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // Check if user has access to this room
       const hasAccess = await this.chatService.checkRoomAccess(roomId, userId);
-      
+
       if (!hasAccess) {
         client.emit('error', { message: 'Access denied to this room' });
         return;
@@ -126,13 +129,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // Join the socket to the room
       client.join(`room_${roomId}`);
-      
+
       // Load recent messages for this room
-      const messages = await this.chatService.getRoomMessages(roomId, userId, 1, 50);
-      
-      client.emit('joinedRoom', { 
-        roomId, 
-        messages 
+      const messages = await this.chatService.getRoomMessages(
+        roomId,
+        userId,
+        1,
+        50,
+      );
+
+      client.emit('joinedRoom', {
+        roomId,
+        messages,
       });
 
       // Notify others in the room that user joined
@@ -141,7 +149,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         username: client.user.username,
         roomId,
       });
-
     } catch (error) {
       client.emit('error', { message: error.message });
     }
@@ -154,9 +161,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
     const { roomId } = data;
-    
+
     client.leave(`room_${roomId}`);
-    
+
     // Notify others in the room that user left
     client.to(`room_${roomId}`).emit('userLeftRoom', {
       userId: client.userId,
@@ -190,7 +197,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // Return confirmation to sender
       return { success: true, message };
-
     } catch (error) {
       client.emit('error', { message: error.message });
       return { success: false, error: error.message };
@@ -204,7 +210,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
     const { roomId, isTyping } = data;
-    
+
     // Broadcast typing status to others in the room (excluding sender)
     client.to(`room_${roomId}`).emit('userTyping', {
       userId: client.userId,
@@ -226,13 +232,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       if (!userId) return;
 
-      const updatedMessage = await this.chatService.editMessage(messageId, content, userId);
+      const updatedMessage = await this.chatService.editMessage(
+        messageId,
+        content,
+        userId,
+      );
 
       // Broadcast to all users in the room
-      this.server.to(`room_${updatedMessage.roomId}`).emit('messageEdited', updatedMessage);
+      this.server
+        .to(`room_${updatedMessage.roomId}`)
+        .emit('messageEdited', updatedMessage);
 
       return { success: true, message: updatedMessage };
-
     } catch (error) {
       client.emit('error', { message: error.message });
       return { success: false, error: error.message };
@@ -251,16 +262,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       if (!userId) return;
 
-      const deletedMessage = await this.chatService.deleteMessage(messageId, userId);
+      const deletedMessage = await this.chatService.deleteMessage(
+        messageId,
+        userId,
+      );
 
       // Broadcast to all users in the room
-      this.server.to(`room_${deletedMessage.roomId}`).emit('messageDeleted', { 
+      this.server.to(`room_${deletedMessage.roomId}`).emit('messageDeleted', {
         messageId,
-        roomId: deletedMessage.roomId 
+        roomId: deletedMessage.roomId,
       });
 
       return { success: true };
-
     } catch (error) {
       client.emit('error', { message: error.message });
       return { success: false, error: error.message };

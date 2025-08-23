@@ -21,7 +21,7 @@ const CATEGORIES = [
   { name: 'Đồ uống', description: 'Nước uống, trà, cà phê' },
   { name: 'Bánh ngọt', description: 'Bánh kem, bánh bông lan, bánh su kem' },
   { name: 'Món chính', description: 'Cơm, phở, bún' },
-  { name: 'Snack', description: 'Đồ ăn vặt, kẹo, bánh quy' }
+  { name: 'Snack', description: 'Đồ ăn vặt, kẹo, bánh quy' },
 ];
 
 const USERS = [
@@ -32,7 +32,7 @@ const USERS = [
     role: UserRole.BUYER,
     avatar: '/images/avatars/buyer-avatar.jpg',
     address: '123 Nguyễn Văn Cừ, Phường 3, Quận 5, TP.HCM',
-    phone: '0912345678'
+    phone: '0912345678',
   },
   {
     name: 'Trần Thị Bình',
@@ -46,8 +46,8 @@ const USERS = [
       shopName: 'Quán Ăn Ngon Bình',
       shopAddress: '123 Đường Nguyễn Huệ, Quận 1, TP.HCM',
       shopPhone: '0901234567',
-      description: 'Quán ăn gia đình với các món ăn truyền thống Việt Nam.'
-    }
+      description: 'Quán ăn gia đình với các món ăn truyền thống Việt Nam.',
+    },
   },
   {
     name: 'Lê Văn Cường',
@@ -56,7 +56,7 @@ const USERS = [
     role: UserRole.BUYER,
     avatar: '/images/avatars/cuong-avatar.jpg',
     address: '456 Trần Hưng Đạo, Phường Bến Nghé, Quận 1, TP.HCM',
-    phone: '0987654321'
+    phone: '0987654321',
   },
   {
     name: 'Phạm Thị Dung',
@@ -70,27 +70,98 @@ const USERS = [
       shopName: 'Bánh Ngọt Dung',
       shopAddress: '456 Đường Lê Lợi, Quận 3, TP.HCM',
       shopPhone: '0907654321',
-      description: 'Chuyên bánh ngọt handmade, bánh sinh nhật và các loại bánh Âu'
-    }
-  }
+      description:
+        'Chuyên bánh ngọt handmade, bánh sinh nhật và các loại bánh Âu',
+    },
+  },
 ];
 
 const PRODUCTS = [
-  { name: 'Bánh mì thịt nướng', description: 'Bánh mì thịt nướng thơm ngon, ăn kèm rau sống', price: 25000, categoryName: 'Bánh mì', stock: 50, sellerUsername: 'seller_binh' },
-  { name: 'Bánh mì pate', description: 'Bánh mì pate truyền thống với chả lụa', price: 20000, categoryName: 'Bánh mì', stock: 40, sellerUsername: 'seller_binh' },
-  { name: 'Bánh mì chả cá', description: 'Bánh mì chả cá Nha Trang đặc biệt', price: 30000, categoryName: 'Bánh mì', stock: 35, sellerUsername: 'seller_binh' },
-  { name: 'Trà sữa trân châu', description: 'Trà sữa trân châu đường đen thơm ngon', price: 35000, categoryName: 'Đồ uống', stock: 60, sellerUsername: 'seller_binh' },
-  { name: 'Cà phê đen đá', description: 'Cà phê phin truyền thống', price: 15000, categoryName: 'Đồ uống', stock: 80, sellerUsername: 'seller_binh' },
-  { name: 'Bánh flan', description: 'Bánh flan caramel mềm mịn', price: 12000, categoryName: 'Bánh ngọt', stock: 25, sellerUsername: 'seller_dung' },
-  { name: 'Bánh tiramisu', description: 'Bánh tiramisu Ý chính hiệu', price: 45000, categoryName: 'Bánh ngọt', stock: 20, sellerUsername: 'seller_dung' },
-  { name: 'Cơm tấm sườn nướng', description: 'Cơm tấm sườn nướng đặc biệt', price: 55000, categoryName: 'Món chính', stock: 40, sellerUsername: 'seller_binh' },
-  { name: 'Phở bò tái', description: 'Phở bò tái truyền thống Hà Nội', price: 50000, categoryName: 'Món chính', stock: 35, sellerUsername: 'seller_binh' },
-  { name: 'Bánh tráng nướng', description: 'Bánh tráng nướng Đà Lạt', price: 8000, categoryName: 'Snack', stock: 100, sellerUsername: 'seller_binh' },
+  {
+    name: 'Bánh mì thịt nướng',
+    description: 'Bánh mì thịt nướng thơm ngon, ăn kèm rau sống',
+    price: 25000,
+    categoryName: 'Bánh mì',
+    stock: 50,
+    sellerUsername: 'seller_binh',
+  },
+  {
+    name: 'Bánh mì pate',
+    description: 'Bánh mì pate truyền thống với chả lụa',
+    price: 20000,
+    categoryName: 'Bánh mì',
+    stock: 40,
+    sellerUsername: 'seller_binh',
+  },
+  {
+    name: 'Bánh mì chả cá',
+    description: 'Bánh mì chả cá Nha Trang đặc biệt',
+    price: 30000,
+    categoryName: 'Bánh mì',
+    stock: 35,
+    sellerUsername: 'seller_binh',
+  },
+  {
+    name: 'Trà sữa trân châu',
+    description: 'Trà sữa trân châu đường đen thơm ngon',
+    price: 35000,
+    categoryName: 'Đồ uống',
+    stock: 60,
+    sellerUsername: 'seller_binh',
+  },
+  {
+    name: 'Cà phê đen đá',
+    description: 'Cà phê phin truyền thống',
+    price: 15000,
+    categoryName: 'Đồ uống',
+    stock: 80,
+    sellerUsername: 'seller_binh',
+  },
+  {
+    name: 'Bánh flan',
+    description: 'Bánh flan caramel mềm mịn',
+    price: 12000,
+    categoryName: 'Bánh ngọt',
+    stock: 25,
+    sellerUsername: 'seller_dung',
+  },
+  {
+    name: 'Bánh tiramisu',
+    description: 'Bánh tiramisu Ý chính hiệu',
+    price: 45000,
+    categoryName: 'Bánh ngọt',
+    stock: 20,
+    sellerUsername: 'seller_dung',
+  },
+  {
+    name: 'Cơm tấm sườn nướng',
+    description: 'Cơm tấm sườn nướng đặc biệt',
+    price: 55000,
+    categoryName: 'Món chính',
+    stock: 40,
+    sellerUsername: 'seller_binh',
+  },
+  {
+    name: 'Phở bò tái',
+    description: 'Phở bò tái truyền thống Hà Nội',
+    price: 50000,
+    categoryName: 'Món chính',
+    stock: 35,
+    sellerUsername: 'seller_binh',
+  },
+  {
+    name: 'Bánh tráng nướng',
+    description: 'Bánh tráng nướng Đà Lạt',
+    price: 8000,
+    categoryName: 'Snack',
+    stock: 100,
+    sellerUsername: 'seller_binh',
+  },
 ];
 
 const seedDirect = async () => {
   console.log('🌱 Starting database seeding (direct mode)...');
-  
+
   const dataSource = new DataSource({
     type: 'postgres',
     host: process.env.DB_HOST,
@@ -101,7 +172,19 @@ const seedDirect = async () => {
     ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     synchronize: false,
     logging: false,
-    entities: [User, Buyer, Seller, Category, Product, SellerStats, Review, Order, OrderItem, Favorite, MediaFile]
+    entities: [
+      User,
+      Buyer,
+      Seller,
+      Category,
+      Product,
+      SellerStats,
+      Review,
+      Order,
+      OrderItem,
+      Favorite,
+      MediaFile,
+    ],
   });
 
   try {
@@ -112,11 +195,15 @@ const seedDirect = async () => {
     // Clear existing data
     console.log('🧹 Clearing existing data...');
     await dataSource.query('TRUNCATE TABLE "product" RESTART IDENTITY CASCADE');
-    await dataSource.query('TRUNCATE TABLE "seller_stats" RESTART IDENTITY CASCADE');
+    await dataSource.query(
+      'TRUNCATE TABLE "seller_stats" RESTART IDENTITY CASCADE',
+    );
     await dataSource.query('TRUNCATE TABLE "seller" RESTART IDENTITY CASCADE');
     await dataSource.query('TRUNCATE TABLE "buyer" RESTART IDENTITY CASCADE');
     await dataSource.query('TRUNCATE TABLE "user" RESTART IDENTITY CASCADE');
-    await dataSource.query('TRUNCATE TABLE "category" RESTART IDENTITY CASCADE');
+    await dataSource.query(
+      'TRUNCATE TABLE "category" RESTART IDENTITY CASCADE',
+    );
     console.log('✅ Tables cleared');
 
     console.log('📂 Seeding categories...');
@@ -131,15 +218,17 @@ const seedDirect = async () => {
     const sellerStatsRepo = dataSource.getRepository(SellerStats);
 
     const hashedPassword = await bcrypt.hash('password123', 10);
-    
+
     for (const userData of USERS) {
       // Create user
       const user = userRepo.create({
         ...userData,
-        password: hashedPassword
+        password: hashedPassword,
       });
       const savedUser = await userRepo.save(user);
-      console.log(`   ✅ Created user: ${savedUser.username} (${savedUser.role})`);
+      console.log(
+        `   ✅ Created user: ${savedUser.username} (${savedUser.role})`,
+      );
 
       // Create buyer/seller profile
       if (userData.role === UserRole.BUYER) {
@@ -152,10 +241,12 @@ const seedDirect = async () => {
           shopName: userData.sellerInfo?.shopName,
           shopAddress: userData.sellerInfo?.shopAddress,
           shopPhone: userData.sellerInfo?.shopPhone,
-          description: userData.sellerInfo?.description
+          description: userData.sellerInfo?.description,
         });
         await sellerRepo.save(seller);
-        console.log(`      ↳ Created seller profile: ${userData.sellerInfo?.shopName}`);
+        console.log(
+          `      ↳ Created seller profile: ${userData.sellerInfo?.shopName}`,
+        );
 
         // Create seller stats
         const sellerStats = sellerStatsRepo.create({
@@ -166,7 +257,7 @@ const seedDirect = async () => {
           pendingOrders: 0,
           completedOrders: 0,
           averageRating: 0,
-          totalReviews: 0
+          totalReviews: 0,
         });
         await sellerStatsRepo.save(sellerStats);
         console.log(`      ↳ Created seller stats`);
@@ -175,18 +266,20 @@ const seedDirect = async () => {
 
     console.log('🍽️ Seeding products...');
     const productRepo = dataSource.getRepository(Product);
-    
+
     for (const productData of PRODUCTS) {
       // Find category
-      const category = categories.find(c => c.name === productData.categoryName);
+      const category = categories.find(
+        (c) => c.name === productData.categoryName,
+      );
       if (!category) {
         console.log(`   ❌ Category not found: ${productData.categoryName}`);
         continue;
       }
 
       // Find seller
-      const seller = await userRepo.findOne({ 
-        where: { username: productData.sellerUsername } 
+      const seller = await userRepo.findOne({
+        where: { username: productData.sellerUsername },
       });
       if (!seller) {
         console.log(`   ❌ Seller not found: ${productData.sellerUsername}`);
@@ -205,7 +298,7 @@ const seedDirect = async () => {
         averageRating: 0,
         totalReviews: 0,
         totalSold: 0,
-        viewCount: 0
+        viewCount: 0,
       });
 
       await productRepo.save(product);
@@ -215,7 +308,9 @@ const seedDirect = async () => {
     console.log('📊 Updating seller stats...');
     const sellers = await sellerRepo.find();
     for (const seller of sellers) {
-      const productCount = await productRepo.count({ where: { sellerId: seller.id } });
+      const productCount = await productRepo.count({
+        where: { sellerId: seller.id },
+      });
       await sellerStatsRepo.update(seller.id, { totalProducts: productCount });
     }
 
@@ -225,7 +320,6 @@ const seedDirect = async () => {
     console.log('   🏪 Seller: seller@foodee.com / password123');
     console.log('   👤 Buyer 2: cuong@foodee.com / password123');
     console.log('   🏪 Seller 2: dung@foodee.com / password123\n');
-
   } catch (error) {
     console.error('❌ Error during seeding:', error);
     process.exit(1);

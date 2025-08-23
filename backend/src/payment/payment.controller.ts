@@ -1,4 +1,12 @@
-import { Controller, Post, Get, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  Query,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto, PaymentCallbackDto } from './dto/payment.dto';
 
@@ -14,7 +22,10 @@ export class PaymentController {
     @Param('orderId', ParseIntPipe) orderId: number,
     @Body() createPaymentDto: CreatePaymentDto,
   ) {
-    const result = await this.paymentService.createPaymentUrl(orderId, createPaymentDto);
+    const result = await this.paymentService.createPaymentUrl(
+      orderId,
+      createPaymentDto,
+    );
     return {
       message: 'Payment URL created successfully',
       data: result,
@@ -27,7 +38,7 @@ export class PaymentController {
   @Get('vnpay-return')
   async handleReturn(@Query() query: PaymentCallbackDto) {
     const result = await this.paymentService.verifyPayment(query);
-    
+
     if (result.isSuccess) {
       // Chuyển hướng đến trang thành công
       return {
@@ -49,7 +60,7 @@ export class PaymentController {
   @Post('vnpay-ipn')
   async handleIPN(@Body() query: PaymentCallbackDto) {
     const result = await this.paymentService.handleIPN(query);
-    
+
     // Phản hồi theo format yêu cầu của VNPay
     if (result.isSuccess) {
       return { RspCode: '00', Message: 'Confirm Success' };
@@ -89,8 +100,14 @@ export class PaymentController {
    * Hoàn tiền
    */
   @Post('refund')
-  async refundPayment(@Body() body: { txnRef: string; amount: number; reason: string }) {
-    const result = await this.paymentService.refundPayment(body.txnRef, body.amount, body.reason);
+  async refundPayment(
+    @Body() body: { txnRef: string; amount: number; reason: string },
+  ) {
+    const result = await this.paymentService.refundPayment(
+      body.txnRef,
+      body.amount,
+      body.reason,
+    );
     return {
       message: 'Refund request completed',
       data: result,

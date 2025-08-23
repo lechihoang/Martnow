@@ -67,7 +67,11 @@ export class BlogController {
     @Body() createCommentDto: CreateCommentDto,
     @Request() req,
   ) {
-    return this.blogService.createComment(+blogId, createCommentDto, req.user.id);
+    return this.blogService.createComment(
+      +blogId,
+      createCommentDto,
+      req.user.id,
+    );
   }
 
   @Put('comments/:commentId')
@@ -77,15 +81,16 @@ export class BlogController {
     @Body() updateCommentDto: UpdateCommentDto,
     @Request() req,
   ) {
-    return this.blogService.updateComment(+commentId, updateCommentDto, req.user.id);
+    return this.blogService.updateComment(
+      +commentId,
+      updateCommentDto,
+      req.user.id,
+    );
   }
 
   @Delete('comments/:commentId')
   @UseGuards(JwtAuthGuard)
-  async deleteComment(
-    @Param('commentId') commentId: string,
-    @Request() req,
-  ) {
+  async deleteComment(@Param('commentId') commentId: string, @Request() req) {
     return this.blogService.deleteComment(+commentId, req.user.id);
   }
 
@@ -102,10 +107,7 @@ export class BlogController {
 
   @Delete(':id/vote')
   @UseGuards(JwtAuthGuard)
-  async unvoteBlog(
-    @Param('id') blogId: string,
-    @Request() req,
-  ) {
+  async unvoteBlog(@Param('id') blogId: string, @Request() req) {
     return this.blogService.unvoteBlog(+blogId, req.user.id);
   }
 

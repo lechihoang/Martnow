@@ -48,15 +48,17 @@ export class FavoriteService {
     const favorites = await this.favoriteRepository.find({
       where: { buyerId },
       relations: [
-        'product', 
-        'product.seller', 
+        'product',
+        'product.seller',
         'product.seller.user',
-        'product.category'
+        'product.category',
       ],
     });
 
     // Convert to ProductResponseDto array
-    return favorites.map(favorite => new ProductResponseDto(favorite.product));
+    return favorites.map(
+      (favorite) => new ProductResponseDto(favorite.product),
+    );
   }
 
   // Kiểm tra sản phẩm có trong danh sách yêu thích không

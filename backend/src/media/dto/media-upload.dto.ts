@@ -8,7 +8,7 @@ export class MediaUploadDto {
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  @Transform(({ value }) => value ? parseInt(value) : null)
+  @Transform(({ value }) => (value ? parseInt(value) : null))
   entityId?: number;
 
   // Files will be handled by multer, not validated here

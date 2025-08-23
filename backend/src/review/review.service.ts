@@ -1,10 +1,19 @@
-import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Review } from './entities/review.entity';
 import { Product } from '../product/entities/product.entity';
 import { Buyer } from '../account/buyer/entities/buyer.entity';
-import { CreateReviewDto, UpdateReviewDto, ReviewResponseDto } from './dto/review.dto';
+import {
+  CreateReviewDto,
+  UpdateReviewDto,
+  ReviewResponseDto,
+} from './dto/review.dto';
 
 @Injectable()
 export class ReviewService {
@@ -17,11 +26,14 @@ export class ReviewService {
     private buyerRepository: Repository<Buyer>,
   ) {}
 
-  async createReview(createReviewDto: CreateReviewDto, userId: string): Promise<ReviewResponseDto> {
+  async createReview(
+    createReviewDto: CreateReviewDto,
+    userId: string,
+  ): Promise<ReviewResponseDto> {
     // Tìm buyer từ userId (buyer.id chính là userId)
     const buyer = await this.buyerRepository.findOne({
       where: { id: parseInt(userId) },
-      relations: ['user']
+      relations: ['user'],
     });
     if (!buyer) {
       throw new NotFoundException('Không tìm thấy thông tin buyer');
@@ -30,14 +42,14 @@ export class ReviewService {
     // ✅ Optimized: Bulk check product existence and existing review
     const [product, existingReview] = await Promise.all([
       this.productRepository.findOne({
-        where: { id: createReviewDto.productId }
+        where: { id: createReviewDto.productId },
       }),
       this.reviewRepository.findOne({
         where: {
           productId: createReviewDto.productId,
-          buyerId: buyer.id
-        }
-      })
+          buyerId: buyer.id,
+        },
+      }),
     ]);
 
     if (!product) {
@@ -51,18 +63,18 @@ export class ReviewService {
     // Tạo review mới (không cần userId nữa)
     const review = this.reviewRepository.create({
       ...createReviewDto,
-      buyerId: buyer.id
+      buyerId: buyer.id,
     });
 
     const savedReview = await this.reviewRepository.save(review);
-    
+
     // ✅ Cập nhật product statistics
     await this.updateProductStatistics(createReviewDto.productId);
-    
+
     // Lấy review với relations để trả về
     const reviewWithRelations = await this.reviewRepository.findOne({
       where: { id: savedReview.id },
-      relations: ['buyer', 'buyer.user', 'product', 'product.seller']
+      relations: ['buyer', 'buyer.user', 'product', 'product.seller'],
     });
 
     return new ReviewResponseDto(reviewWithRelations);
@@ -72,17 +84,21 @@ export class ReviewService {
     const reviews = await this.reviewRepository.find({
       where: { productId },
       relations: ['buyer', 'buyer.user', 'product', 'product.seller'],
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
 
-    return reviews.map(review => new ReviewResponseDto(review));
+    return reviews.map((review) => new ReviewResponseDto(review));
   }
 
-  async updateReview(id: number, updateReviewDto: UpdateReviewDto, userId: string): Promise<ReviewResponseDto> {
+  async updateReview(
+    id: number,
+    updateReviewDto: UpdateReviewDto,
+    userId: string,
+  ): Promise<ReviewResponseDto> {
     // ✅ Fixed: Remove userId from where clause and check ownership through buyer relation
     const review = await this.reviewRepository.findOne({
       where: { id },
-      relations: ['buyer', 'buyer.user', 'product', 'product.seller']
+      relations: ['buyer', 'buyer.user', 'product', 'product.seller'],
     });
 
     if (!review) {
@@ -103,17 +119,17 @@ export class ReviewService {
     }
 
     const updatedReview = await this.reviewRepository.save(review);
-    
+
     // ✅ Cập nhật product statistics khi review được update
     await this.updateProductStatistics(review.productId);
-    
+
     return new ReviewResponseDto(updatedReview);
   }
 
   async deleteReview(id: number, userId: string): Promise<void> {
     const review = await this.reviewRepository.findOne({
       where: { id },
-      relations: ['buyer']
+      relations: ['buyer'],
     });
 
     if (!review) {
@@ -122,12 +138,14 @@ export class ReviewService {
 
     // Verify ownership by checking buyer.id (which is userId)
     if (review.buyer.id !== parseInt(userId)) {
-      throw new UnauthorizedException('Bạn chỉ có thể xóa review của chính mình');
+      throw new UnauthorizedException(
+        'Bạn chỉ có thể xóa review của chính mình',
+      );
     }
 
     const productId = review.productId; // Lưu lại productId trước khi xóa
     await this.reviewRepository.remove(review);
-    
+
     // ✅ Cập nhật product statistics sau khi xóa review
     await this.updateProductStatistics(productId);
   }
@@ -138,7 +156,7 @@ export class ReviewService {
     ratingDistribution: { [key: number]: number };
   }> {
     const reviews = await this.reviewRepository.find({
-      where: { productId }
+      where: { productId },
     });
 
     const totalReviews = reviews.length;
@@ -146,7 +164,7 @@ export class ReviewService {
       return {
         averageRating: 0,
         totalReviews: 0,
-        ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+        ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
       };
     }
 
@@ -154,67 +172,75 @@ export class ReviewService {
     const averageRating = Number((totalRating / totalReviews).toFixed(1));
 
     const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    reviews.forEach(review => {
+    reviews.forEach((review) => {
       ratingDistribution[review.rating]++;
     });
 
     return {
       averageRating,
       totalReviews,
-      ratingDistribution
+      ratingDistribution,
     };
   }
 
   // ✅ Tăng helpful count cho review
-  async incrementHelpfulCount(reviewId: number): Promise<{ helpfulCount: number }> {
+  async incrementHelpfulCount(
+    reviewId: number,
+  ): Promise<{ helpfulCount: number }> {
     const result = await this.reviewRepository.increment(
       { id: reviewId },
       'helpfulCount',
-      1
+      1,
     );
 
     const review = await this.reviewRepository.findOne({
-      where: { id: reviewId }
+      where: { id: reviewId },
     });
 
     return {
-      helpfulCount: review?.helpfulCount || 0
+      helpfulCount: review?.helpfulCount || 0,
     };
   }
 
   // ✅ Lấy top reviews theo helpful count
-  async getTopProductReviews(productId: number, limit: number = 5): Promise<ReviewResponseDto[]> {
+  async getTopProductReviews(
+    productId: number,
+    limit: number = 5,
+  ): Promise<ReviewResponseDto[]> {
     const reviews = await this.reviewRepository.find({
       where: { productId },
       relations: ['buyer', 'buyer.user', 'product', 'product.seller'],
-      order: { 
+      order: {
         helpfulCount: 'DESC',
-        createdAt: 'DESC' 
+        createdAt: 'DESC',
       },
-      take: limit
+      take: limit,
     });
 
-    return reviews.map(review => new ReviewResponseDto(review));
+    return reviews.map((review) => new ReviewResponseDto(review));
   }
 
   // ✅ Cập nhật product statistics tự động
   private async updateProductStatistics(productId: number): Promise<void> {
     const reviews = await this.reviewRepository.find({
-      where: { productId }
+      where: { productId },
     });
 
     const totalReviews = reviews.length;
     let averageRating = 0;
 
     if (totalReviews > 0) {
-      const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+      const totalRating = reviews.reduce(
+        (sum, review) => sum + review.rating,
+        0,
+      );
       averageRating = Number((totalRating / totalReviews).toFixed(2));
     }
 
     // Cập nhật cached statistics trong product entity
     await this.productRepository.update(productId, {
       averageRating,
-      totalReviews
+      totalReviews,
     });
   }
 }

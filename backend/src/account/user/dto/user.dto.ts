@@ -92,7 +92,7 @@ export class UserResponseDto {
     if (!user) {
       throw new Error('User data is required for UserResponseDto constructor');
     }
-    
+
     this.id = user.id;
     this.name = user.name;
     this.username = user.username;

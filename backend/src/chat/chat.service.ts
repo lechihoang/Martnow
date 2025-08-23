@@ -1,16 +1,21 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Room } from './entities/room.entity';
 import { Message } from './entities/message.entity';
 import { User } from '../account/user/entities/user.entity';
 import { MediaService } from '../media/media.service';
-import { 
-  CreateRoomDto, 
-  UpdateRoomDto, 
+import {
+  CreateRoomDto,
+  UpdateRoomDto,
   RoomResponseDto,
   CreateMessageDto,
-  MessageResponseDto 
+  MessageResponseDto,
 } from './dto/chat.dto';
 import { MessageType } from './entities/message.entity';
 
@@ -27,9 +32,12 @@ export class ChatService {
   ) {}
 
   // Room Management
-  async createRoom(createRoomDto: CreateRoomDto, createdBy: number): Promise<RoomResponseDto> {
+  async createRoom(
+    createRoomDto: CreateRoomDto,
+    createdBy: number,
+  ): Promise<RoomResponseDto> {
     const { participantIds, ...roomData } = createRoomDto;
-    
+
     // Validate participants exist
     const participants = await this.userRepository
       .createQueryBuilder('user')
@@ -52,7 +60,9 @@ export class ChatService {
         .where('room.isPrivate = :isPrivate', { isPrivate: true })
         .andWhere('participant.id IN (:...participantIds)', { participantIds })
         .groupBy('room.id')
-        .having('COUNT(participant.id) = :count', { count: participantIds.length })
+        .having('COUNT(participant.id) = :count', {
+          count: participantIds.length,
+        })
         .getOne();
 
       if (existingRoom) {
@@ -77,7 +87,11 @@ export class ChatService {
     return this.getRoomById(savedRoom.id, createdBy);
   }
 
-  async getUserRooms(userId: number, page: number = 1, limit: number = 20): Promise<RoomResponseDto[]> {
+  async getUserRooms(
+    userId: number,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<RoomResponseDto[]> {
     // First, get rooms with participants
     const rooms = await this.roomRepository
       .createQueryBuilder('room')
@@ -99,13 +113,13 @@ export class ChatService {
           .orderBy('message.createdAt', 'DESC')
           .limit(1)
           .getOne();
-        
+
         return {
           ...room,
           messages: latestMessage ? [latestMessage] : [],
-          lastMessage: latestMessage
+          lastMessage: latestMessage,
         };
-      })
+      }),
     );
 
     // Sort rooms by latest message timestamp
@@ -115,14 +129,14 @@ export class ChatService {
       return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
 
-    return roomsWithMessages.map(room => new RoomResponseDto(room, userId));
+    return roomsWithMessages.map((room) => new RoomResponseDto(room, userId));
   }
 
   async getRoomById(roomId: number, userId: number): Promise<RoomResponseDto> {
     const room = await this.roomRepository.findOne({
       where: { id: roomId },
       relations: ['participants', 'messages', 'messages.user'],
-      order: { messages: { createdAt: 'DESC' } }
+      order: { messages: { createdAt: 'DESC' } },
     });
 
     if (!room) {
@@ -130,7 +144,7 @@ export class ChatService {
     }
 
     // Check if user is participant
-    const isParticipant = room.participants.some(p => p.id === userId);
+    const isParticipant = room.participants.some((p) => p.id === userId);
     if (!isParticipant) {
       throw new ForbiddenException('You are not a participant in this room');
     }
@@ -138,7 +152,11 @@ export class ChatService {
     return new RoomResponseDto(room, userId);
   }
 
-  async updateRoom(roomId: number, updateRoomDto: UpdateRoomDto, userId: number): Promise<RoomResponseDto> {
+  async updateRoom(
+    roomId: number,
+    updateRoomDto: UpdateRoomDto,
+    userId: number,
+  ): Promise<RoomResponseDto> {
     const room = await this.roomRepository.findOne({
       where: { id: roomId },
       relations: ['participants'],
@@ -149,13 +167,15 @@ export class ChatService {
     }
 
     // Check if user is participant and creator (for now, only creator can update)
-    const isParticipant = room.participants.some(p => p.id === userId);
+    const isParticipant = room.participants.some((p) => p.id === userId);
     if (!isParticipant) {
-      throw new ForbiddenException('You are not authorized to update this room');
+      throw new ForbiddenException(
+        'You are not authorized to update this room',
+      );
     }
 
     await this.roomRepository.update(roomId, updateRoomDto);
-    
+
     return this.getRoomById(roomId, userId);
   }
 
@@ -170,19 +190,23 @@ export class ChatService {
     }
 
     // Check if user is creator
-    const isCreator = room.participants.some(p => p.id === userId); // Anyone in the room can delete for now
+    const isCreator = room.participants.some((p) => p.id === userId); // Anyone in the room can delete for now
     if (!isCreator) {
       throw new ForbiddenException('Only room creator can delete the room');
     }
 
     // Delete messages first
     await this.messageRepository.delete({ roomId });
-    
+
     // Delete room
     await this.roomRepository.delete(roomId);
   }
 
-  async addParticipant(roomId: number, participantId: number, userId: number): Promise<void> {
+  async addParticipant(
+    roomId: number,
+    participantId: number,
+    userId: number,
+  ): Promise<void> {
     const room = await this.roomRepository.findOne({
       where: { id: roomId },
       relations: ['participants'],
@@ -193,19 +217,23 @@ export class ChatService {
     }
 
     // Check if user is participant
-    const isParticipant = room.participants.some(p => p.id === userId);
+    const isParticipant = room.participants.some((p) => p.id === userId);
     if (!isParticipant) {
       throw new ForbiddenException('You are not a participant in this room');
     }
 
     // Check if target user exists
-    const targetUser = await this.userRepository.findOne({ where: { id: participantId } });
+    const targetUser = await this.userRepository.findOne({
+      where: { id: participantId },
+    });
     if (!targetUser) {
       throw new NotFoundException('User not found');
     }
 
     // Check if target user is already participant
-    const isAlreadyParticipant = room.participants.some(p => p.id === participantId);
+    const isAlreadyParticipant = room.participants.some(
+      (p) => p.id === participantId,
+    );
     if (isAlreadyParticipant) {
       throw new BadRequestException('User is already a participant');
     }
@@ -221,7 +249,11 @@ export class ChatService {
     // System messages are disabled in simplified version
   }
 
-  async removeParticipant(roomId: number, participantId: number, userId: number): Promise<void> {
+  async removeParticipant(
+    roomId: number,
+    participantId: number,
+    userId: number,
+  ): Promise<void> {
     const room = await this.roomRepository.findOne({
       where: { id: roomId },
       relations: ['participants'],
@@ -232,11 +264,13 @@ export class ChatService {
     }
 
     // Check if user is participant and either creator or removing themselves
-    const isParticipant = room.participants.some(p => p.id === userId);
+    const isParticipant = room.participants.some((p) => p.id === userId);
     const isSelfRemoval = participantId === userId;
 
     if (!isParticipant && !isSelfRemoval) {
-      throw new ForbiddenException('You are not authorized to remove this participant');
+      throw new ForbiddenException(
+        'You are not authorized to remove this participant',
+      );
     }
 
     // Remove participant
@@ -251,9 +285,14 @@ export class ChatService {
   }
 
   // Message Management
-  async createMessage(createMessageDto: CreateMessageDto): Promise<MessageResponseDto> {
+  async createMessage(
+    createMessageDto: CreateMessageDto,
+  ): Promise<MessageResponseDto> {
     // Check room access
-    const hasAccess = await this.checkRoomAccess(createMessageDto.roomId, createMessageDto.userId);
+    const hasAccess = await this.checkRoomAccess(
+      createMessageDto.roomId,
+      createMessageDto.userId,
+    );
     if (!hasAccess) {
       throw new ForbiddenException('You are not a participant in this room');
     }
@@ -274,7 +313,12 @@ export class ChatService {
     return new MessageResponseDto(fullMessage);
   }
 
-  async getRoomMessages(roomId: number, userId: number, page: number = 1, limit: number = 50): Promise<MessageResponseDto[]> {
+  async getRoomMessages(
+    roomId: number,
+    userId: number,
+    page: number = 1,
+    limit: number = 50,
+  ): Promise<MessageResponseDto[]> {
     // Check room access
     const hasAccess = await this.checkRoomAccess(roomId, userId);
     if (!hasAccess) {
@@ -282,8 +326,8 @@ export class ChatService {
     }
 
     const messages = await this.messageRepository.find({
-      where: { 
-        roomId
+      where: {
+        roomId,
       },
       relations: ['user'],
       order: { createdAt: 'DESC' },
@@ -294,18 +338,28 @@ export class ChatService {
     // Load media files for messages that have media
     const messagesWithMedia = await Promise.all(
       messages.map(async (message) => {
-        if (message.type === MessageType.IMAGE || message.type === MessageType.FILE) {
-          const mediaFiles = await this.mediaService.getMediaFiles('chat_message', message.id);
+        if (
+          message.type === MessageType.IMAGE ||
+          message.type === MessageType.FILE
+        ) {
+          const mediaFiles = await this.mediaService.getMediaFiles(
+            'chat_message',
+            message.id,
+          );
           return { ...message, mediaFiles };
         }
         return message;
-      })
+      }),
     );
 
-    return messagesWithMedia.map(message => new MessageResponseDto(message));
+    return messagesWithMedia.map((message) => new MessageResponseDto(message));
   }
 
-  async editMessage(messageId: number, content: string, userId: number): Promise<MessageResponseDto> {
+  async editMessage(
+    messageId: number,
+    content: string,
+    userId: number,
+  ): Promise<MessageResponseDto> {
     const message = await this.messageRepository.findOne({
       where: { id: messageId },
       relations: ['user'],
@@ -323,8 +377,8 @@ export class ChatService {
     // System messages cannot be edited
     // No system messages in simplified version
 
-    await this.messageRepository.update(messageId, { 
-      content 
+    await this.messageRepository.update(messageId, {
+      content,
     });
 
     const updatedMessage = await this.messageRepository.findOne({
@@ -335,7 +389,10 @@ export class ChatService {
     return new MessageResponseDto(updatedMessage);
   }
 
-  async deleteMessage(messageId: number, userId: number): Promise<MessageResponseDto> {
+  async deleteMessage(
+    messageId: number,
+    userId: number,
+  ): Promise<MessageResponseDto> {
     const message = await this.messageRepository.findOne({
       where: { id: messageId },
       relations: ['user'],
@@ -361,7 +418,12 @@ export class ChatService {
   }
 
   // Message with Media
-  async createMessageWithMedia(roomId: number, files: any[], content: string, userId: number): Promise<MessageResponseDto> {
+  async createMessageWithMedia(
+    roomId: number,
+    files: any[],
+    content: string,
+    userId: number,
+  ): Promise<MessageResponseDto> {
     // Check room access
     const hasAccess = await this.checkRoomAccess(roomId, userId);
     if (!hasAccess) {
@@ -369,12 +431,22 @@ export class ChatService {
     }
 
     // Validate files
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/avi', 'video/mov'];
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'video/mp4',
+      'video/avi',
+      'video/mov',
+    ];
     const maxFileSize = 10 * 1024 * 1024; // 10MB
 
     for (const file of files) {
       if (!allowedTypes.includes(file.mimetype)) {
-        throw new BadRequestException(`File type ${file.mimetype} is not allowed`);
+        throw new BadRequestException(
+          `File type ${file.mimetype} is not allowed`,
+        );
       }
       if (file.size > maxFileSize) {
         throw new BadRequestException(`File size exceeds 10MB limit`);
@@ -383,7 +455,7 @@ export class ChatService {
 
     // Determine message type
     const messageType = this.determineMessageType(files);
-    
+
     // Create message
     const message = this.messageRepository.create({
       roomId,
@@ -392,8 +464,8 @@ export class ChatService {
       type: messageType,
       metadata: {
         fileCount: files.length,
-        totalSize: files.reduce((sum, file) => sum + file.size, 0)
-      }
+        totalSize: files.reduce((sum, file) => sum + file.size, 0),
+      },
     });
 
     const savedMessage = await this.messageRepository.save(message);
@@ -403,20 +475,20 @@ export class ChatService {
       const mediaFiles = await this.mediaService.uploadMediaFiles({
         entityType: 'chat_message',
         entityId: savedMessage.id,
-        files: files
+        files: files,
       });
 
       // Update message metadata with media info
       await this.messageRepository.update(savedMessage.id, {
         metadata: {
           ...savedMessage.metadata,
-          mediaFiles: mediaFiles.map(file => ({
+          mediaFiles: mediaFiles.map((file) => ({
             id: file.id,
             fileName: file.fileName,
             secureUrl: file.secureUrl,
-            fileType: file.fileType
-          }))
-        }
+            fileType: file.fileType,
+          })),
+        },
       });
 
       // Update room's last activity
@@ -429,7 +501,6 @@ export class ChatService {
       });
 
       return new MessageResponseDto({ ...messageWithMedia, mediaFiles });
-
     } catch (error) {
       // If upload fails, delete the message
       await this.messageRepository.delete(savedMessage.id);
@@ -438,9 +509,14 @@ export class ChatService {
   }
 
   // Start Private Chat
-  async startPrivateChat(currentUserId: number, targetUserId: number): Promise<RoomResponseDto> {
+  async startPrivateChat(
+    currentUserId: number,
+    targetUserId: number,
+  ): Promise<RoomResponseDto> {
     // Validate target user exists
-    const targetUser = await this.userRepository.findOne({ where: { id: targetUserId } });
+    const targetUser = await this.userRepository.findOne({
+      where: { id: targetUserId },
+    });
     if (!targetUser) {
       throw new NotFoundException('Target user not found');
     }
@@ -456,13 +532,13 @@ export class ChatService {
       .innerJoin('room.participants', 'p1')
       .innerJoin('room.participants', 'p2')
       .where('room.isPrivate = :isPrivate', { isPrivate: true })
-      .andWhere('p1.id = :user1 AND p2.id = :user2', { 
-        user1: currentUserId, 
-        user2: targetUserId 
+      .andWhere('p1.id = :user1 AND p2.id = :user2', {
+        user1: currentUserId,
+        user2: targetUserId,
       })
-      .orWhere('p1.id = :user2 AND p2.id = :user1', { 
-        user1: currentUserId, 
-        user2: targetUserId 
+      .orWhere('p1.id = :user2 AND p2.id = :user1', {
+        user1: currentUserId,
+        user2: targetUserId,
       })
       .getOne();
 
@@ -494,11 +570,11 @@ export class ChatService {
 
   private determineMessageType(files: any[]): MessageType {
     if (files.length === 0) return MessageType.TEXT;
-    
-    const hasImage = files.some(file => file.mimetype.startsWith('image/'));
-    
+
+    const hasImage = files.some((file) => file.mimetype.startsWith('image/'));
+
     if (hasImage) return MessageType.IMAGE;
-    
+
     return MessageType.FILE;
   }
 
@@ -513,18 +589,25 @@ export class ChatService {
       }
       return `📎 Sent a file: ${file.originalname}`;
     }
-    
-    const imageCount = files.filter(f => f.mimetype.startsWith('image/')).length;
-    const videoCount = files.filter(f => f.mimetype.startsWith('video/')).length;
+
+    const imageCount = files.filter((f) =>
+      f.mimetype.startsWith('image/'),
+    ).length;
+    const videoCount = files.filter((f) =>
+      f.mimetype.startsWith('video/'),
+    ).length;
     const otherCount = files.length - imageCount - videoCount;
-    
-    let caption = '📁 Sent files: ';
+
+    const caption = '📁 Sent files: ';
     const parts: string[] = [];
-    
-    if (imageCount > 0) parts.push(`${imageCount} image${imageCount > 1 ? 's' : ''}`);
-    if (videoCount > 0) parts.push(`${videoCount} video${videoCount > 1 ? 's' : ''}`);
-    if (otherCount > 0) parts.push(`${otherCount} other file${otherCount > 1 ? 's' : ''}`);
-    
+
+    if (imageCount > 0)
+      parts.push(`${imageCount} image${imageCount > 1 ? 's' : ''}`);
+    if (videoCount > 0)
+      parts.push(`${videoCount} video${videoCount > 1 ? 's' : ''}`);
+    if (otherCount > 0)
+      parts.push(`${otherCount} other file${otherCount > 1 ? 's' : ''}`);
+
     return caption + parts.join(', ');
   }
 }

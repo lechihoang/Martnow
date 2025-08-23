@@ -41,7 +41,9 @@ export class BlogComment {
   blogId: number;
 
   // Self-referencing for replies
-  @ManyToOne(() => BlogComment, (comment) => comment.replies, { nullable: true })
+  @ManyToOne(() => BlogComment, (comment) => comment.replies, {
+    nullable: true,
+  })
   @JoinColumn({ name: 'parentId' })
   parent: BlogComment;
 

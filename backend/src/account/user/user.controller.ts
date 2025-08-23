@@ -22,7 +22,9 @@ export class UserController {
    * Get user profile by ID (public endpoint)
    */
   @Get(':id')
-  async getUser(@Param('id', ParseIntPipe) id: number): Promise<UserResponseDto> {
+  async getUser(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<UserResponseDto> {
     const user = await this.userService.findByIdWithRelations(id);
     if (!user) {
       throw new UnauthorizedException('User not found');

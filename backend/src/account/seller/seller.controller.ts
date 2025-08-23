@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Patch, Body, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { SellerService } from './seller.service';
 import { CreateSellerDto, UpdateSellerDto } from './dto/seller.dto';
 
@@ -28,7 +36,7 @@ export class SellerController {
   @Patch(':id')
   async updateSeller(
     @Param('id', ParseIntPipe) sellerId: number,
-    @Body() sellerData: UpdateSellerDto
+    @Body() sellerData: UpdateSellerDto,
   ) {
     return await this.sellerService.updateSeller(sellerId, sellerData);
   }
@@ -39,4 +47,3 @@ export class SellerController {
     return await this.sellerService.getSellerOrders(sellerId);
   }
 }
- 
