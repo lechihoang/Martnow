@@ -27,7 +27,7 @@ const CheckoutPage: React.FC = () => {
     // Load cart from localStorage hoặc từ API
     const loadCart = () => {
       try {
-        const savedCart = localStorage.getItem('cart');
+        const savedCart = localStorage.getItem('shopping-cart');
         if (savedCart) {
           const parsedCart = JSON.parse(savedCart);
           setCartItems(parsedCart);
@@ -56,18 +56,18 @@ const CheckoutPage: React.FC = () => {
     );
     
     setCartItems(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
+    localStorage.setItem('shopping-cart', JSON.stringify(updatedCart));
   };
 
   const removeItem = (productId: number) => {
     const updatedCart = cartItems.filter(item => item.productId !== productId);
     setCartItems(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
+    localStorage.setItem('shopping-cart', JSON.stringify(updatedCart));
   };
 
   const clearCart = () => {
     setCartItems([]);
-    localStorage.removeItem('cart');
+    localStorage.removeItem('shopping-cart');
   };
 
   const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);

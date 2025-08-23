@@ -65,7 +65,12 @@ const OrdersPage: React.FC = () => {
         console.log('Dữ liệu đơn hàng:', ordersData);
         
         if (ordersData && ordersData.orders) {
-          const orders: Order[] = ordersData.orders.map(orderData => ({
+          // Chỉ lấy các đơn hàng đã thanh toán thành công
+          const paidOrdersData = ordersData.orders.filter(orderData => 
+            orderData.status.toLowerCase() === 'paid'
+          );
+          
+          const orders: Order[] = paidOrdersData.map(orderData => ({
             id: orderData.id,
             buyerId: ordersData.buyerId,
             addressId: undefined,
@@ -88,7 +93,63 @@ const OrdersPage: React.FC = () => {
               reviews: [],
               addresses: []
             },
-            items: [], // Sẽ được load riêng nếu cần
+            // Map items từ backend response
+            items: orderData.items ? orderData.items.map(item => ({
+              id: item.productId, // Tạm thời dùng productId làm id
+              orderId: orderData.id,
+              productId: item.productId,
+              quantity: item.quantity,
+              price: item.price,
+              createdAt: new Date(orderData.createdAt),
+              updatedAt: new Date(orderData.createdAt),
+              product: {
+                id: item.productId,
+                name: item.productName,
+                imageUrl: '/images/banhmi.jpeg', // Default image
+                description: '',
+                price: item.price,
+                stock: 0,
+                sellerId: 0,
+                categoryId: 0,
+                isAvailable: true,
+                images: [], // Add missing field
+                averageRating: 0, // Add missing field
+                totalReviews: 0, // Add missing field
+                totalSold: 0, // Add missing field
+                viewCount: 0, // Add missing field
+                seller: {
+                  id: 0,
+                  userId: 0,
+                  shopName: '',
+                  shopAddress: '',
+                  shopPhone: '',
+                  description: '',
+                  user: {
+                    id: 0,
+                    name: '',
+                    username: '',
+                    email: '',
+                    password: '',
+                    role: UserRole.SELLER,
+                    avatar: '',
+                    reviews: [],
+                    buyer: undefined,
+                    seller: undefined
+                  },
+                  products: [],
+                  stats: undefined
+                },
+                category: {
+                  id: 0,
+                  name: '',
+                  description: '',
+                  products: []
+                },
+                reviews: [],
+                orderItems: []
+              },
+              order: {} as any // Sẽ được set sau
+            })) : [],
             address: undefined
           }));
           

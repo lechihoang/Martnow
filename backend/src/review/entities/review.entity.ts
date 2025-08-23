@@ -12,14 +12,14 @@ export class Review {
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
   
-  @Column()
+  @Column({ type: 'int' })
   buyerId: number; // Reference to Buyer.id
 
   @ManyToOne(() => Buyer, (buyer) => buyer.reviews)
   @JoinColumn({ name: 'buyerId' })
   buyer: Buyer;
 
-  @Column()
+  @Column({ type: 'int' })
   productId: number;
 
   @ManyToOne(() => Product, (product) => product.reviews)

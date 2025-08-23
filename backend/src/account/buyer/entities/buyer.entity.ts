@@ -6,7 +6,7 @@ import { Favorite } from '../../../favorite/entities/favorite.entity';
 
 @Entity()
 export class Buyer {
-  @PrimaryColumn() // Sử dụng userId làm PK luôn
+  @PrimaryColumn({ type: 'int' }) // Sử dụng userId làm PK luôn
   id: number; // Chính là userId
 
   @OneToOne(() => User, (user) => user.buyer)

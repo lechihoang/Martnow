@@ -470,7 +470,11 @@ export const uploadApi = {
       credentials: 'include',
       body: formData,
     });
-    if (!response.ok) throw new Error('Failed to upload file');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Upload failed:', errorText);
+      throw new Error(`Failed to upload file: ${response.status} ${response.statusText}`);
+    }
     return response.json();
   },
 
@@ -851,4 +855,121 @@ export const paymentApi = {
 
     return response.json();
   }
+};
+
+// Blog API
+export const blogApi = {
+  // Get all blogs
+  async getBlogs(): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/blogs`, {
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get blog by ID
+  async getBlog(id: number): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/blogs/${id}`, {
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Create blog
+  async createBlog(blogData: { title: string; content: string; imageUrl?: string; featuredImage?: string }): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/blogs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(blogData),
+    });
+    return handleResponse(response);
+  },
+
+  // Update blog
+  async updateBlog(id: number, blogData: { title?: string; content?: string; imageUrl?: string; featuredImage?: string }): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/blogs/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(blogData),
+    });
+    return handleResponse(response);
+  },
+
+  // Delete blog
+  async deleteBlog(id: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/blogs/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    await handleResponse(response);
+  },
+
+  // Get comments for blog
+  async getComments(blogId: number): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/blogs/${blogId}/comments`, {
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Create comment
+  async createComment(blogId: number, commentData: { content: string; parentId?: number }): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/blogs/${blogId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(commentData),
+    });
+    return handleResponse(response);
+  },
+
+  // Update comment
+  async updateComment(commentId: number, commentData: { content: string }): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/blogs/comments/${commentId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(commentData),
+    });
+    return handleResponse(response);
+  },
+
+  // Delete comment
+  async deleteComment(commentId: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/blogs/comments/${commentId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    await handleResponse(response);
+  },
+
+  // Vote blog
+  async voteBlog(blogId: number, voteType: 'up' | 'down'): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/blogs/${blogId}/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ voteType }),
+    });
+    return handleResponse(response);
+  },
+
+  // Remove vote
+  async unvoteBlog(blogId: number): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/blogs/${blogId}/vote`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get vote stats
+  async getVoteStats(blogId: number): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/blogs/${blogId}/vote-stats`, {
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
 };

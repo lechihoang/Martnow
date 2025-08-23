@@ -5,7 +5,7 @@ import { SellerStats } from '../../../seller-stats/entities/seller-stats.entity'
 
 @Entity('seller')
 export class Seller {
-  @PrimaryColumn()
+  @PrimaryColumn({ type: 'int' })
   id: number; // This is the userId from User table
 
   @OneToOne(() => User, (user) => user.seller)

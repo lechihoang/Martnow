@@ -14,6 +14,16 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, userRole = 'buyer' 
   // Định nghĩa các tabs theo role
   const getTabsForRole = (role: string) => {
     if (role === 'buyer') {
+      // Nếu chỉ có đơn hàng paid, chỉ hiển thị tab "Tất cả"
+      const hasPaidOrdersOnly = orders.every(order => order.status.toLowerCase() === 'paid');
+      
+      if (hasPaidOrdersOnly && orders.length > 0) {
+        return [
+          { key: 'all', label: 'Đơn hàng đã mua', count: orders.length },
+        ];
+      }
+      
+      // Fallback cho trường hợp có nhiều trạng thái
       return [
         { key: 'all', label: 'Tất cả', count: orders.length },
         { key: 'pending', label: 'Chờ xác nhận', count: orders.filter(order => order.status.toLowerCase() === 'pending').length },
@@ -22,7 +32,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, userRole = 'buyer' 
         { key: 'delivering', label: 'Đang giao hàng', count: orders.filter(order => ['delivering', 'shipping'].includes(order.status.toLowerCase())).length },
         { key: 'completed', label: 'Đã nhận hàng', count: orders.filter(order => ['completed', 'delivered'].includes(order.status.toLowerCase())).length },
         { key: 'cancelled', label: 'Đã hủy', count: orders.filter(order => order.status.toLowerCase() === 'cancelled').length },
-      ];
+        { key: 'paid', label: 'Đã thanh toán', count: orders.filter(order => order.status.toLowerCase() === 'paid').length },
+      ].filter(tab => tab.count > 0 || tab.key === 'all'); // Chỉ hiển thị tab có đơn hàng
     } else {
       return [
         { key: 'all', label: 'Tất cả', count: orders.length },
@@ -55,6 +66,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, userRole = 'buyer' 
         return orders.filter(order => ['completed', 'delivered'].includes(order.status.toLowerCase()));
       case 'cancelled':
         return orders.filter(order => order.status.toLowerCase() === 'cancelled');
+      case 'paid':
+        return orders.filter(order => order.status.toLowerCase() === 'paid');
       default:
         return orders;
     }
@@ -75,6 +88,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, userRole = 'buyer' 
         return 'bg-green-100 text-green-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
+      case 'paid':
+        return 'bg-green-100 text-green-800';
       // Legacy status mappings
       case 'shipping':
         return 'bg-purple-100 text-purple-800';
@@ -103,6 +118,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, userRole = 'buyer' 
           return 'Đã nhận hàng';
         case 'cancelled':
           return 'Đã hủy';
+        case 'paid':
+          return 'Đã thanh toán';
         // Legacy status
         case 'shipping':
           return 'Đang giao hàng';
@@ -170,7 +187,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, userRole = 'buyer' 
       <ProfileCard title="Lịch sử đơn hàng">
         <div className="text-center py-8">
           <div className="text-gray-400 text-6xl mb-4">📦</div>
-          <p className="text-gray-500">Bạn chưa có đơn hàng nào</p>
+          <p className="text-gray-500">Bạn chưa có đơn hàng nào đã thanh toán</p>
+          <p className="text-xs text-gray-400 mt-2">Các đơn hàng chờ thanh toán sẽ không được hiển thị ở đây</p>
         </div>
       </ProfileCard>
     );
@@ -214,7 +232,10 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, userRole = 'buyer' 
           <div className="text-center py-8">
             <div className="text-gray-400 text-6xl mb-4">📦</div>
             <p className="text-gray-500">
-              Không có đơn hàng nào ở trạng thái {tabs.find(tab => tab.key === activeTab)?.label.toLowerCase()}
+              Không có đơn hàng nào đã thanh toán
+            </p>
+            <p className="text-xs text-gray-400 mt-2">
+              Chỉ hiển thị các đơn hàng đã hoàn tất thanh toán
             </p>
           </div>
         ) : (
@@ -236,22 +257,44 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ orders, userRole = 'buyer' 
               </div>
             </div>
             
+            {/* Chi tiết sản phẩm */}
             <div className="space-y-2">
-              {order.items.map((item, index) => (
-                <div key={index} className="flex items-center gap-3 text-sm">
-                  <img
-                    src={item.product.imageUrl || '/images/banhmi.jpeg'}
-                    alt={item.product.name}
-                    className="w-12 h-12 rounded object-cover"
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{item.product.name}</p>
-                    <p className="text-gray-500">
-                      Số lượng: {item.quantity} × {formatPrice(item.price)}
+              {order.items && order.items.length > 0 ? (
+                <>
+                  {order.items.map((item, index) => (
+                    <div key={index} className="flex items-center gap-3 text-sm bg-gray-50 p-3 rounded-lg">
+                      <img
+                        src={item.product.imageUrl || '/images/banhmi.jpeg'}
+                        alt={item.product.name}
+                        className="w-12 h-12 rounded object-cover"
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{item.product.name}</p>
+                        <p className="text-gray-500">
+                          {item.quantity} x {formatPrice(item.price)} = <span className="font-semibold text-gray-700">{formatPrice(item.quantity * item.price)}</span>
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Tổng kết sản phẩm */}
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <p className="text-sm text-gray-600">
+                      <strong>Tổng cộng:</strong> {order.items.reduce((total, item) => total + item.quantity, 0)} sản phẩm
+                      {order.items.length > 1 && (
+                        <span className="ml-2 text-gray-500">({order.items.length} loại khác nhau)</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Chi tiết: {order.items.map(item => `${item.product.name} x${item.quantity}`).join(', ')}
                     </p>
                   </div>
+                </>
+              ) : (
+                <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                  <p>Không có thông tin chi tiết sản phẩm</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         ))}

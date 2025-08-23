@@ -31,10 +31,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
     if (user.role === 'seller') {
       return [
         ...baseItems,
-        { href: `/profile/${user.id}/products`, label: "Quản lý sản phẩm", icon: "🛍️" },
-        { href: `/manage-orders`, label: "Quản lý đơn hàng", icon: "📋" },
-        { href: `/profile/${user.id}/sales-history`, label: "Lịch sử bán hàng", icon: "📈" },
-        { href: `/profile/${user.id}/analytics`, label: "Thống kê", icon: "📊" },
+        { href: `/shop-dashboard`, label: "Cửa hàng của tôi", icon: "🏪" },
         { href: "/add", label: "Thêm sản phẩm", icon: "➕" }
       ];
     }

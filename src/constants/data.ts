@@ -2,7 +2,7 @@ export const headerData = [
   { title: "Trang chủ", href: "/" },
   { title: "Sản phẩm", href: "/shop" },
   { title: "Giới thiệu", href: "/introduction" },
-  { title: "Blog", href: "/blog" },
+  { title: "Blog", href: "/blogs" },
   // { title: "Khuyến Mãi Nổi Bật", href: "/deal" },
   //   { title: "Contact", href: "/contact" },
 ];

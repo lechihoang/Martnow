@@ -20,8 +20,8 @@ export class MediaFile {
   @Column({ type: 'varchar', length: 50 })
   entityType: string; // product, user, seller
 
-  @Column()
-  entityId: number; // ID của entity (productId, userId, etc.)
+  @Column('int', { nullable: true })
+  entityId: number; // ID của entity (productId, userId, etc.) - null for temporary uploads
 
   @Column({ type: 'boolean', default: false })
   isPrimary: boolean; // Ảnh chính hay không

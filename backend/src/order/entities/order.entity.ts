@@ -1,6 +1,7 @@
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Buyer } from '../../account/buyer/entities/buyer.entity';
 import { OrderItem } from './order-item.entity';
+import { OrderStatus } from '../../shared/enums';
 
 @Entity()
 export class Order {
@@ -12,7 +13,7 @@ export class Order {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
-  @Column()
+  @Column({ type: 'int' })
   buyerId: number;
 
   @ManyToOne(() => Buyer, (buyer) => buyer.orders)
@@ -22,8 +23,12 @@ export class Order {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   totalPrice: number;
 
-  @Column({ type: 'varchar', length: 50 })
-  status: string; // Buyer: đã thanh toán | Seller: đang bán, đã bán hết | Nội bộ: chờ thanh toán, cancelled
+  @Column({ 
+    type: 'enum', 
+    enum: OrderStatus, 
+    default: OrderStatus.PAID 
+  })
+  status: OrderStatus;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   note: string;

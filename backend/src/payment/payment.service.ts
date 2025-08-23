@@ -20,9 +20,68 @@ export class PaymentService {
   ) {}
 
   /**
-   * Tạo URL thanh toán VNPay
+   * Tạo URL thanh toán VNPay (với DTO)
    */
-  async createPaymentUrl(orderId: number, createPaymentDto: CreatePaymentDto): Promise<PaymentResponseDto> {
+  async createPaymentUrl(orderId: number, createPaymentDto: CreatePaymentDto): Promise<PaymentResponseDto>;
+  
+  /**
+   * Tạo URL thanh toán VNPay (với amount trực tiếp)
+   */
+  async createPaymentUrl(orderId: number, amount: number): Promise<string>;
+  
+  async createPaymentUrl(orderId: number, createPaymentDtoOrAmount: CreatePaymentDto | number): Promise<PaymentResponseDto | string> {
+    if (typeof createPaymentDtoOrAmount === 'number') {
+      // Overload cho cart checkout
+      const amount = createPaymentDtoOrAmount;
+      return this.createSimplePaymentUrl(orderId, amount);
+    } else {
+      // Original method
+      return this.createFullPaymentUrl(orderId, createPaymentDtoOrAmount);
+    }
+  }
+  
+  /**
+   * Tạo URL thanh toán đơn giản (cho cart)
+   */
+  private async createSimplePaymentUrl(orderId: number, amount: number): Promise<string> {
+    // Lấy thông tin order
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['buyer', 'buyer.user', 'items', 'items.product'],
+    });
+
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    // Tạo transaction reference (unique)
+    const txnRef = `ORDER_${orderId}_${Date.now()}`;
+
+    // Build payment URL
+    const paymentUrl = this.vnpayService.buildPaymentUrl({
+      vnp_Amount: Math.round(amount),
+      vnp_CreateDate: parseInt(this.formatDate(new Date())),
+      vnp_CurrCode: 'VND' as any,
+      vnp_IpAddr: '127.0.0.1',
+      vnp_Locale: 'vn' as any,
+      vnp_OrderInfo: order.note || `Thanh toán đơn hàng #${order.id}`,
+      vnp_OrderType: 'other' as any,
+      vnp_ReturnUrl: this.configService.get('VNPAY_RETURN_URL') || '',
+      vnp_TxnRef: txnRef,
+    });
+
+    // Cập nhật order với transaction reference
+    await this.orderRepository.update(orderId, {
+      paymentReference: txnRef,
+    });
+
+    return paymentUrl;
+  }
+  
+  /**
+   * Tạo URL thanh toán đầy đủ (original)
+   */
+  private async createFullPaymentUrl(orderId: number, createPaymentDto: CreatePaymentDto): Promise<PaymentResponseDto> {
     // Lấy thông tin order
     const order = await this.orderRepository.findOne({
       where: { id: orderId },

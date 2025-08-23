@@ -4,6 +4,7 @@ import { Category } from './category.entity';
 import { Review } from '../../review/entities/review.entity';
 import { OrderItem } from '../../order/entities/order-item.entity';
 import { Favorite } from '../../favorite/entities/favorite.entity';
+import { ProductStatus } from '../../shared/enums';
 
 @Entity()
 @Index(['sellerId']) // Index cho việc lấy products của seller
@@ -14,14 +15,14 @@ export class Product {
   @PrimaryGeneratedColumn()
   id: number;
   
-  @Column()
+  @Column({ type: 'int' })
   sellerId: number;
 
   @ManyToOne(() => Seller, (seller) => seller.products)
   @JoinColumn({ name: 'sellerId' })
   seller: Seller;
 
-  @Column()
+  @Column({ type: 'int' })
   categoryId: number;
 
   @ManyToOne(() => Category, (category) => category.products)
@@ -40,6 +41,13 @@ export class Product {
 
   @Column({ type: 'boolean', default: true })
   isAvailable: boolean;
+  
+  // @Column({ 
+  //   type: 'enum', 
+  //   enum: ProductStatus, 
+  //   default: ProductStatus.IN_STOCK 
+  // })
+  // status: ProductStatus;
   
   @Column({ type: 'int', default: 0 })
   stock: number;

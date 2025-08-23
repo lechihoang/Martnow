@@ -8,7 +8,7 @@ import { User } from '../account/user/entities/user.entity';
 
 export interface MediaUploadServiceDto {
   entityType: string;
-  entityId: number;
+  entityId?: number;
   files: any[];
 }
 
@@ -35,7 +35,10 @@ export class MediaService {
     // Upload files to Cloudinary using nestjs-cloudinary
     const uploadPromises = files.map(async (file, index) => {
       // Generate folder path for each file
-      const folder = `foodee/${entityType}/${entityId}`;
+      // For temporary uploads or when entityId is not provided, use a temp folder
+      const folder = entityId 
+        ? `foodee/${entityType}/${entityId}`
+        : `foodee/temp/${entityType}`;
       
       // Upload options
       const uploadOptions = {
@@ -54,7 +57,7 @@ export class MediaService {
         secureUrl: result.secure_url,
         fileType: this.getFileType(file.mimetype),
         entityType,
-        entityId,
+        entityId: entityId, // EntityId can be undefined which will be stored as null
         isPrimary: index === 0, // First file is primary
       };
     });
@@ -62,20 +65,30 @@ export class MediaService {
     // Wait for all uploads to complete
     const uploadResults = await Promise.all(uploadPromises);
     
-    // Save media files to database
-    const savedFiles = await this.mediaRepository.save(
-      uploadResults.map(result => this.mediaRepository.create(result))
-    ) as MediaFile[];
-    
-    // If uploading avatar for user, update User entity
-    if (entityType === 'user' && savedFiles.length > 0) {
-      const primaryFile = savedFiles.find(file => file.isPrimary) || savedFiles[0];
-      if (primaryFile) {
-        await this.userRepository.update(
-          { id: entityId },
-          { avatar: primaryFile.secureUrl }
-        );
+    // Only save to database if entityId is provided
+    let savedFiles: MediaFile[] = [];
+    if (entityId) {
+      savedFiles = await this.mediaRepository.save(
+        uploadResults.map(result => this.mediaRepository.create(result))
+      ) as MediaFile[];
+      
+      // If uploading avatar for user, update User entity
+      if (entityType === 'user' && savedFiles.length > 0) {
+        const primaryFile = savedFiles.find(file => file.isPrimary) || savedFiles[0];
+        if (primaryFile) {
+          await this.userRepository.update(
+            { id: entityId },
+            { avatar: primaryFile.secureUrl }
+          );
+        }
       }
+    } else {
+      // For temporary uploads, just return the upload results with minimal structure
+      savedFiles = uploadResults.map(result => ({
+        ...result,
+        id: null, // No ID for temporary uploads
+        createdAt: new Date()
+      })) as any;
     }
     
     return savedFiles;

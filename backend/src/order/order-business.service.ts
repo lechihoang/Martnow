@@ -5,6 +5,7 @@ import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { Product } from '../product/entities/product.entity';
 import { SellerStats } from '../seller-stats/entities/seller-stats.entity';
+import { OrderStatus } from '../shared/enums';
 
 @Injectable()
 export class OrderBusinessService {
@@ -56,13 +57,69 @@ export class OrderBusinessService {
       // 5. Cập nhật seller stats
       await this.updateSellerStats(order, queryRunner);
 
-      // 6. Log success
+      // 6. Cleanup old timeout orders (chỉ chạy khi có order mới thành công)
+      await this.cleanupTimeoutOrders(queryRunner);
+
+      // 7. Log success
       this.logger.log(`✅ Order ${orderId} processed successfully`);
       await queryRunner.commitTransaction();
 
     } catch (error) {
       await queryRunner.rollbackTransaction();
       this.logger.error(`❌ Error processing order ${orderId}:`, error);
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * Xử lý nhiều orders cùng lúc (cho multiple sellers checkout)
+   */
+  async handleMultipleOrdersPaid(orderIds: number[]): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      this.logger.log(`🎉 Processing multiple paid orders: ${orderIds.join(', ')}`);
+
+      for (const orderId of orderIds) {
+        // 1. Lấy order với đầy đủ thông tin
+        const order = await this.getOrderWithDetails(orderId, queryRunner);
+        if (!order) {
+          this.logger.error(`Order ${orderId} not found, skipping`);
+          continue;
+        }
+
+        // 2. Kiểm tra order chưa được xử lý
+        if (order.status === 'paid') {
+          this.logger.warn(`Order ${orderId} already processed as paid, skipping`);
+          continue;
+        }
+
+        // 3. Cập nhật order status
+        await this.updateOrderStatus(orderId, 'paid', queryRunner);
+
+        // 4. Giảm stock sản phẩm
+        await this.updateProductStock(order.items, queryRunner);
+
+        // 5. Cập nhật seller stats
+        await this.updateSellerStats(order, queryRunner);
+
+        this.logger.log(`✅ Order ${orderId} processed successfully`);
+      }
+
+      // 6. Cleanup old timeout orders (chỉ chạy khi có order mới thành công)
+      await this.cleanupTimeoutOrders(queryRunner);
+
+      // 7. Log success
+      this.logger.log(`🎉 All ${orderIds.length} orders processed successfully`);
+      await queryRunner.commitTransaction();
+
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(`❌ Error processing multiple orders:`, error);
       throw error;
     } finally {
       await queryRunner.release();
@@ -222,7 +279,7 @@ export class OrderBusinessService {
     this.logger.log(`❌ Processing failed order: ${orderId}`);
     
     await this.orderRepository.update(orderId, {
-      status: 'cancelled',
+      status: OrderStatus.CANCELLED,
     });
   }
 
@@ -249,5 +306,21 @@ export class OrderBusinessService {
     };
 
     return stats;
+  }
+
+  /**
+   * Xóa các đơn hàng timeout (quá 30 phút chưa thanh toán)
+   */
+  private async cleanupTimeoutOrders(queryRunner: any): Promise<void> {
+    const thirtyMinutesAgo = new Date();
+    thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 30);
+
+    try {
+      // Bỏ logic cleanup timeout vì không có waiting_payment status
+      this.logger.log('🧙 Timeout cleanup skipped - no pending orders in simplified model');
+    } catch (error) {
+      this.logger.error('❌ Error cleaning up timeout orders:', error);
+      // Không throw error vì đây chỉ là cleanup task
+    }
   }
 }

@@ -7,14 +7,14 @@ export class OrderItem {
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
   
-  @PrimaryColumn()
+  @PrimaryColumn({ type: 'int' })
   orderId: number;
 
   @ManyToOne(() => Order, (order) => order.items)
   @JoinColumn({ name: 'orderId' })
   order: Order;
 
-  @PrimaryColumn()
+  @PrimaryColumn({ type: 'int' })
   productId: number;
 
   @ManyToOne(() => Product, (product) => product.orderItems)

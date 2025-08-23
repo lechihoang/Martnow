@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import Container from '@/components/Container';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { useCart } from '@/hooks/useCart';
 import useUser from '@/hooks/useUser';
 import { UserRole } from '@/types/entities';
 import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
-import PaymentButton from '@/components/PaymentButton';
 import { useState } from 'react';
 
 const CartPage: React.FC = () => {
@@ -16,7 +16,7 @@ const CartPage: React.FC = () => {
   const { user } = useUser();
   const { items, removeFromCart, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCart();
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-  const [orderId, setOrderId] = useState<number | null>(null);
+  const [checkoutResult, setCheckoutResult] = useState<any>(null);
   const [showPayment, setShowPayment] = useState(false);
 
   const formatCurrency = (amount: number) => {
@@ -31,64 +31,54 @@ const CartPage: React.FC = () => {
 
     try {
       setIsCreatingOrder(true);
-
-      // Group items by seller để tạo multiple orders nếu cần
-      const ordersBySeller = items.reduce((acc, item) => {
-        if (!acc[item.sellerId]) {
-          acc[item.sellerId] = [];
-        }
-        acc[item.sellerId].push(item);
-        return acc;
-      }, {} as Record<number, typeof items>);
-
-      // Tạo đơn hàng đầu tiên (demo - có thể extend để handle multiple sellers)
-      const firstSellerItems = Object.values(ordersBySeller)[0];
       
-      const orderData = {
-        items: firstSellerItems.map(item => ({
+      if (!user) {
+        toast.error('Vui lòng đăng nhập để tạo đơn hàng');
+        return;
+      }
+
+      if (user.role !== UserRole.BUYER) {
+        toast.error('Chỉ buyer mới có thể tạo đơn hàng');
+        return;
+      }
+
+      // Chuẩn bị data cho cart checkout API mới
+      const cartData = {
+        items: items.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
           price: item.price
         })),
         note: 'Đơn hàng từ giỏ hàng'
       };
-
-      console.log('User:', user);
-      console.log('User role:', user?.role);
       
-      if (!user) {
-        throw new Error('Vui lòng đăng nhập để tạo đơn hàng');
-      }
-
-      if (user.role !== UserRole.BUYER) {
-        throw new Error('Chỉ buyer mới có thể tạo đơn hàng');
-      }
-      
-      const response = await fetch('http://localhost:3001/orders', {
+      const response = await fetch('http://localhost:3001/cart/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-          // Không gửi Authorization header - chỉ dựa vào cookies
         },
-        credentials: 'include', // Cookies sẽ được gửi tự động
-        body: JSON.stringify(orderData)
+        credentials: 'include',
+        body: JSON.stringify(cartData)
       });
 
-      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const errorData = await response.json();
-        console.log('Error response:', errorData);
-        throw new Error(errorData.message || 'Không thể tạo đơn hàng');
+        toast.error(errorData.message || 'Không thể tạo đơn hàng');
+        return;
       }
 
-      const { id: newOrderId } = await response.json();
-      setOrderId(newOrderId);
-      setShowPayment(true);
+      const result = await response.json();
+      
+  setCheckoutResult(result.data);
+  setShowPayment(true);
+  toast.success('Tạo đơn hàng thành công!');
+  // Clear cart after successful checkout
+  clearCart();
 
     } catch (error) {
-      console.error('Order creation error:', error);
-      alert('Có lỗi xảy ra khi tạo đơn hàng: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      console.error('Cart checkout error:', error);
+      toast.error('Có lỗi xảy ra khi tạo đơn hàng: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsCreatingOrder(false);
     }
@@ -219,17 +209,36 @@ const CartPage: React.FC = () => {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6 border sticky top-4">
-              <h3 className="text-lg font-semibold mb-4">Tóm tắt đơn hàng</h3>
+              <h3 className="text-lg font-semibold mb-4">Tóm tắc đơn hàng</h3>
+              
+              {/* Hiển thị thông tin sellers */}
+              {(() => {
+                const uniqueSellers = new Set(items.map(item => item.sellerName));
+                const sellerCount = uniqueSellers.size;
+                
+                return sellerCount > 1 && (
+                  <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg mb-4">
+                    <div className="text-sm text-yellow-800">
+                      📝 <strong>Lưu ý:</strong> Bạn có sản phẩm từ {sellerCount} người bán khác nhau:
+                      <ul className="mt-2 space-y-1">
+                        {Array.from(uniqueSellers).map((sellerName, index) => (
+                          <li key={index} className="text-xs">• {sellerName}</li>
+                        ))}
+                      </ul>
+                      <p className="text-xs mt-2 italic">
+                        Chúng tôi sẽ tạo riêng đơn hàng cho mỗi người bán.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
               
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm">
                   <span>Tạm tính:</span>
                   <span>{formatCurrency(getTotalPrice())}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>Phí vận chuyển:</span>
-                  <span className="text-green-600">Miễn phí</span>
-                </div>
+                
                 <div className="border-t pt-3">
                   <div className="flex justify-between text-lg font-bold">
                     <span>Tổng cộng:</span>
@@ -255,21 +264,70 @@ const CartPage: React.FC = () => {
                 </Button>
               ) : (
                 <>
-                  <div className="text-center text-green-600 font-medium mb-3">
-                    ✓ Đơn hàng #{orderId} đã được tạo thành công!
-                  </div>
-                  
-                  <PaymentButton
-                    orderId={orderId!}
-                    amount={getTotalPrice()}
-                    onPaymentStart={() => {
-                      console.log('Payment started');
-                    }}
-                    onPaymentError={(error) => {
-                      alert('Lỗi thanh toán: ' + error);
-                    }}
-                    className="w-full mb-3"
-                  />
+                  {checkoutResult && (
+                    <>
+                      <div className="text-center text-green-600 font-medium mb-4">
+                        ✓ Đã tạo thành công {checkoutResult.orders.length} đơn hàng!
+                      </div>
+                      
+                      {/* Hiển thị thông tin các orders */}
+                      <div className="space-y-2 mb-4">
+                        {checkoutResult.orders.map((order: any, index: number) => (
+                          <div key={order.id} className="bg-gray-50 p-3 rounded-lg text-sm">
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">Đơn hàng #{order.id}</span>
+                              <span className="text-blue-600 font-bold">
+                                {formatCurrency(order.totalPrice)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {checkoutResult.sellerCount > 1 && (
+                        <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800 mb-4">
+                          📝 Bạn có sản phẩm từ {checkoutResult.sellerCount} người bán khác nhau nên đã tạo {checkoutResult.orders.length} đơn hàng riêng biệt.
+                        </div>
+                      )}
+                      
+                      <div className="space-y-2 mb-4">
+                        <div className="flex justify-between text-lg font-bold">
+                          <span>Tổng tiền:</span>
+                          <span className="text-green-600">
+                            {formatCurrency(checkoutResult.totalAmount)}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Nút thanh toán cho tất cả orders */}
+                      <button
+                        onClick={() => {
+                          if (checkoutResult.primaryPaymentUrl) {
+                            window.location.href = checkoutResult.primaryPaymentUrl;
+                          }
+                        }}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg mb-3"
+                      >
+                        Thanh toán tất cả đơn hàng
+                      </button>
+                      
+                      {/* Hiển thị các payment links riêng lẻ nếu cần */}
+                      {checkoutResult.paymentInfos && checkoutResult.paymentInfos.length > 1 && (
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600 text-center">Hoặc thanh toán từng đơn:</p>
+                          {checkoutResult.paymentInfos.map((payment: any, index: number) => (
+                            <button
+                              key={payment.orderId}
+                              onClick={() => window.location.href = payment.paymentUrl}
+                              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm py-2 px-3 rounded"
+                            >
+                              Thanh toán đơn #{payment.orderId} - {formatCurrency(payment.amount)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </>
               )}
 

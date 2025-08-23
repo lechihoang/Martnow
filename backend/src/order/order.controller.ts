@@ -24,24 +24,17 @@ export class OrderController {
 
   // 🎯 API để track orders chờ thanh toán
   
-  /**
-   * Lấy tất cả đơn hàng chờ thanh toán (Admin only)
-   */
-  @Get('pending')
-  @UseGuards(JwtAuthGuard)
-  async getPendingOrders() {
-    return this.orderService.getPendingOrders();
-  }
+  // Bỏ API getPendingOrders vì không còn có pending status
 
   /**
-   * Lấy đơn hàng đã thanh toán của buyer hiện tại
+   * Lấy đơn hàng của buyer hiện tại
    */
   @Get('my-orders')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.BUYER)
-  async getMyPaidOrders(@Req() req: any) {
+  async getMyOrders(@Req() req: any) {
     const buyerId = req.user.buyerId;
-    return this.orderService.getPaidOrdersByBuyer(buyerId);
+    return this.orderService.getOrdersByBuyer(buyerId);
   }
 
   /**
@@ -53,14 +46,7 @@ export class OrderController {
     return this.orderService.getOrderStatistics();
   }
 
-  /**
-   * Lấy đơn hàng timeout (Admin only)
-   */
-  @Get('timeout')
-  @UseGuards(JwtAuthGuard)
-  async getTimeoutOrders() {
-    return this.orderService.getTimeoutOrders();
-  }
+  // Bỏ API getTimeoutOrders vì không còn có timeout logic
 
   /**
    * Tìm đơn hàng theo payment reference

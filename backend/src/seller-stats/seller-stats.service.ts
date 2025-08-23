@@ -44,14 +44,8 @@ export class SellerStatsService {
       const totalProducts = await this.productRepository
         .count({ where: { sellerId: parseInt(sellerId) } });
 
-      // Tính số đơn hàng đang chờ xử lý
-      const pendingOrders = await this.orderRepository
-        .createQueryBuilder('order')
-        .innerJoin('order.items', 'orderItem')
-        .innerJoin('orderItem.product', 'product')
-        .where('product.sellerId = :sellerId', { sellerId: parseInt(sellerId) })
-        .andWhere('order.status = :status', { status: OrderStatus.WAITING_PAYMENT })
-        .getCount();
+      // Bỏ logic pending orders vì không có waiting_payment status
+      const pendingOrders = 0;
 
       // Lưu hoặc cập nhật thống kê
       let stats = await this.sellerStatsRepository.findOne({

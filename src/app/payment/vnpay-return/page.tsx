@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import Container from '@/components/Container';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Container from "@/components/Container";
+import { Button } from "@/components/ui/button";
+import { useCart } from "@/hooks/useCart";
 
 interface PaymentResult {
   success: boolean;
@@ -16,6 +17,7 @@ interface PaymentResult {
 const PaymentReturnContent: React.FC = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { clearCart } = useCart();
   const [result, setResult] = useState<PaymentResult | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,32 +34,36 @@ const PaymentReturnContent: React.FC = () => {
         const response = await fetch(
           `http://localhost:3001/payment/vnpay-return?${params.toString()}`,
           {
-            method: 'GET',
-            credentials: 'include'
+            method: "GET",
+            credentials: "include",
           }
         );
 
         const data = await response.json();
-        
+
         if (response.ok) {
           setResult({
             success: true,
-            message: data.message || 'Thanh toán thành công!',
+            message: data.message || "Thanh toán thành công!",
             orderId: data.orderId,
             amount: data.amount,
-            transactionId: data.transactionId
+            transactionId: data.transactionId,
           });
+
+          // Clear cart sau khi thanh toán thành công
+          clearCart();
+          console.log("✅ Cart cleared after successful payment");
         } else {
           setResult({
             success: false,
-            message: data.message || 'Thanh toán thất bại!'
+            message: data.message || "Thanh toán thất bại!",
           });
         }
       } catch (error) {
-        console.error('Payment processing error:', error);
+        console.error("Payment processing error:", error);
         setResult({
           success: false,
-          message: 'Có lỗi xảy ra khi xử lý thanh toán'
+          message: "Có lỗi xảy ra khi xử lý thanh toán",
         });
       } finally {
         setLoading(false);
@@ -68,9 +74,9 @@ const PaymentReturnContent: React.FC = () => {
   }, [searchParams]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
@@ -80,7 +86,9 @@ const PaymentReturnContent: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-lg text-gray-600">Đang xử lý kết quả thanh toán...</p>
+            <p className="text-lg text-gray-600">
+              Đang xử lý kết quả thanh toán...
+            </p>
           </div>
         </div>
       </Container>
@@ -114,19 +122,20 @@ const PaymentReturnContent: React.FC = () => {
                   Thanh toán thành công!
                 </h2>
                 <p className="text-gray-600 mb-4">{result.message}</p>
-                
+
                 {/* Success details */}
                 <div className="text-sm text-gray-500 mb-4">
-                  ✅ Đơn hàng đã được xác nhận<br/>
-                  ✅ Kho hàng đã được cập nhật<br/>
-                  ✅ Thống kê seller đã được cập nhật
+                  ✅ Đơn hàng đã được xác nhận
+                  <br />
+                  ✅ Kho hàng đã được cập nhật
+                  <br />✅ Thống kê seller đã được cập nhật
                 </div>
-                
+
                 {result.orderId && (
                   <div className="bg-gray-50 rounded-lg p-4 mb-4">
                     <p className="text-sm text-gray-600">Mã đơn hàng:</p>
                     <p className="font-semibold">#{result.orderId}</p>
-                    
+
                     {result.amount && (
                       <>
                         <p className="text-sm text-gray-600 mt-2">Số tiền:</p>
@@ -135,11 +144,15 @@ const PaymentReturnContent: React.FC = () => {
                         </p>
                       </>
                     )}
-                    
+
                     {result.transactionId && (
                       <>
-                        <p className="text-sm text-gray-600 mt-2">Mã giao dịch:</p>
-                        <p className="font-mono text-xs">{result.transactionId}</p>
+                        <p className="text-sm text-gray-600 mt-2">
+                          Mã giao dịch:
+                        </p>
+                        <p className="font-mono text-xs">
+                          {result.transactionId}
+                        </p>
                       </>
                     )}
                   </div>
@@ -172,16 +185,16 @@ const PaymentReturnContent: React.FC = () => {
 
             <div className="flex space-x-3">
               <Button
-                onClick={() => router.push('/shop')}
+                onClick={() => router.push("/shop")}
                 variant="outline"
                 className="flex-1"
               >
                 Tiếp tục mua sắm
               </Button>
-              
+
               {result?.success ? (
                 <Button
-                  onClick={() => router.push('/manage-orders')}
+                  onClick={() => router.push("/manage-orders")}
                   className="flex-1 bg-blue-600 hover:bg-blue-700"
                 >
                   Xem đơn hàng
@@ -204,15 +217,17 @@ const PaymentReturnContent: React.FC = () => {
 
 const PaymentReturnPage: React.FC = () => {
   return (
-    <Suspense fallback={
-      <Container>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="text-lg">Đang xử lý kết quả thanh toán...</div>
+    <Suspense
+      fallback={
+        <Container>
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <div className="text-lg">Đang xử lý kết quả thanh toán...</div>
+            </div>
           </div>
-        </div>
-      </Container>
-    }>
+        </Container>
+      }
+    >
       <PaymentReturnContent />
     </Suspense>
   );

@@ -74,12 +74,13 @@ export class OrderService {
         });
       }
 
-      // Create order
+      // Create order - mặc định là PAID vì đây là đơn giản hóa
       const order = manager.create(Order, {
         buyerId,
         note: createOrderDto.note,
         totalPrice,
-        status: OrderStatus.WAITING_PAYMENT,
+        status: OrderStatus.PAID,
+        paidAt: new Date(), // Set ngay thời gian tạo
       });
 
       const savedOrder = await manager.save(Order, order);
@@ -96,10 +97,8 @@ export class OrderService {
 
       await manager.save(OrderItem, orderItems);
 
-      // ✅ Bulk update product stock
-      for (const item of validItems) {
-        await manager.decrement(Product, { id: item.productId }, 'stock', item.quantity);
-      }
+      // 🔄 Reserve stock (không trừ thật, chỉ kiểm tra và lock)
+      // Stock sẽ được trừ thật khi thanh toán thành công trong order-business.service.ts
 
       return savedOrder;
     });
@@ -127,25 +126,16 @@ export class OrderService {
 
   // 🎯 Các methods để quản lý orders
   
-  /**
-   * Lấy tất cả đơn hàng chờ thanh toán (dành cho admin)
-   */
-  async getPendingOrders(): Promise<Order[]> {
-    return this.orderRepository.find({
-      where: { status: OrderStatus.WAITING_PAYMENT },
-      relations: ['buyer', 'buyer.user', 'items', 'items.product'],
-      order: { createdAt: 'DESC' },
-    });
-  }
+  // Bỏ method getPendingOrders vì không có waiting_payment status
   
   /**
-   * Lấy đơn hàng đã thanh toán của buyer
+   * Lấy đơn hàng của buyer
    */
-  async getPaidOrdersByBuyer(buyerId: number): Promise<Order[]> {
+  async getOrdersByBuyer(buyerId: number): Promise<Order[]> {
     return this.orderRepository.find({
       where: { 
         buyerId,
-        status: OrderStatus.PAID 
+        status: OrderStatus.PAID
       },
       relations: ['buyer', 'buyer.user', 'items', 'items.product'],
       order: { createdAt: 'DESC' },
@@ -153,7 +143,7 @@ export class OrderService {
   }
   
   /**
-   * Lấy đơn hàng của seller (đang bán + đã bán hết)
+   * Lấy đơn hàng của seller (chỉ lấy các đơn đã thanh toán)
    */
   async getOrdersBySeller(sellerId: number): Promise<Order[]> {
     return this.orderRepository
@@ -163,26 +153,12 @@ export class OrderService {
       .leftJoinAndSelect('order.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
       .where('product.sellerId = :sellerId', { sellerId })
-      .andWhere('order.status IN (:...statuses)', { 
-        statuses: [OrderStatus.SELLING, OrderStatus.SOLD_OUT] 
-      })
+      .andWhere('order.status = :status', { status: OrderStatus.PAID })
       .orderBy('order.createdAt', 'DESC')
       .getMany();
   }
 
-  /**
-   * Lấy đơn hàng chờ thanh toán của một buyer cụ thể
-   */
-  async getPendingOrdersByBuyer(buyerId: number): Promise<Order[]> {
-    return this.orderRepository.find({
-      where: { 
-        buyerId,
-        status: OrderStatus.WAITING_PAYMENT 
-      },
-      relations: ['buyer', 'buyer.user', 'items', 'items.product'],
-      order: { createdAt: 'DESC' },
-    });
-  }
+  // Bỏ method getPendingOrdersByBuyer vì không có waiting_payment status
 
   /**
    * Tìm đơn hàng theo payment reference
@@ -218,38 +194,20 @@ export class OrderService {
    * Lấy statistics đơn hàng
    */
   async getOrderStatistics() {
-    const [total, waiting, paid, cancelled] = await Promise.all([
+    const [total, paid, cancelled] = await Promise.all([
       this.orderRepository.count(),
-      this.orderRepository.count({ where: { status: OrderStatus.WAITING_PAYMENT } }),
       this.orderRepository.count({ where: { status: OrderStatus.PAID } }),
       this.orderRepository.count({ where: { status: OrderStatus.CANCELLED } }),
     ]);
 
     return {
       total,
-      waiting_payment: waiting,
       paid,
       cancelled,
-      waitingPercentage: total > 0 ? Math.round((waiting / total) * 100) : 0,
     };
   }
 
-  /**
-   * Lấy đơn hàng bị timeout (quá 30 phút chưa thanh toán)
-   */
-  async getTimeoutOrders(): Promise<Order[]> {
-    const thirtyMinutesAgo = new Date();
-    thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 30);
-
-    return this.orderRepository
-      .createQueryBuilder('order')
-      .leftJoinAndSelect('order.buyer', 'buyer')
-      .leftJoinAndSelect('buyer.user', 'user')
-      .where('order.status = :status', { status: OrderStatus.WAITING_PAYMENT })
-      .andWhere('order.createdAt < :timeout', { timeout: thirtyMinutesAgo })
-      .orderBy('order.createdAt', 'ASC')
-      .getMany();
-  }
+  // Bỏ method getTimeoutOrders vì không có waiting_payment status
 
   async remove(id: number): Promise<void> {
     const order = await this.findOne(id);

@@ -4,10 +4,10 @@ import { Product } from '../../product/entities/product.entity';
 
 @Entity()
 export class Favorite {
-  @PrimaryColumn()
+  @PrimaryColumn({ type: 'int' })
   buyerId: number;
 
-  @PrimaryColumn()
+  @PrimaryColumn({ type: 'int' })
   productId: number;
 
   @ManyToOne(() => Buyer, (buyer) => buyer.favorites)

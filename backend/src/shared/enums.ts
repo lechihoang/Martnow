@@ -1,24 +1,17 @@
+// User roles - đơn giản chỉ 2 role chính
 export enum UserRole {
   BUYER = 'buyer',
   SELLER = 'seller',
-  BOTH = 'both',
 }
 
+// Order status - chỉ 2 trạng thái quan trọng
 export enum OrderStatus {
-  // Trạng thái cho Buyer (chỉ hiển thị đơn đã thanh toán)
-  PAID = 'đã thanh toán',
-  
-  // Trạng thái cho Seller
-  SELLING = 'đang bán',
-  SOLD_OUT = 'đã bán hết',
-  
-  // Trạng thái nội bộ (không hiển thị cho user)
-  WAITING_PAYMENT = 'chờ thanh toán',
-  CANCELLED = 'cancelled',
+  PAID = 'paid',        // Đã thanh toán (hiển thị cho cả buyer và seller)
+  CANCELLED = 'cancelled', // Đã hủy
 }
 
+// Product status - chỉ cần biết còn hàng hay hết hàng
 export enum ProductStatus {
-  AVAILABLE = 'available',
-  OUT_OF_STOCK = 'out_of_stock',
-  DISCONTINUED = 'discontinued',
+  IN_STOCK = 'in_stock',     // Còn hàng
+  OUT_OF_STOCK = 'out_of_stock', // Hết hàng
 }

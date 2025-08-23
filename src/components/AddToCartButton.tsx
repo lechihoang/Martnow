@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/hooks/useCart";
+import { calculateDiscountedPrice } from "@/lib/productUtils";
 
 interface Props {
   product: Product | ProductResponseDto;
@@ -31,7 +32,7 @@ const AddToCartButton = ({ product, className, showSuccessMessage = true }: Prop
       addToCart({
         productId: product.id,
         productName: product.name,
-        price: product.price,
+        price: calculateDiscountedPrice(product.price, product.discount ?? 0),
         imageUrl: product.imageUrl,
         sellerId: product.sellerId,
         sellerName: product.seller?.user?.name || 'Unknown Seller',
