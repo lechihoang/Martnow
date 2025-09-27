@@ -4,8 +4,8 @@ import { Product } from '../../product/entities/product.entity';
 
 @Entity()
 export class Favorite {
-  @PrimaryColumn({ type: 'int' })
-  buyerId: number;
+  @PrimaryColumn({ type: 'varchar' })
+  buyerId: string;
 
   @PrimaryColumn({ type: 'int' })
   productId: number;

@@ -1,357 +1,285 @@
-"use client";
+'use client';
 
-import React from 'react';
-import toast from 'react-hot-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { userApi, orderApi, getUserProfile } from '@/lib/api';
+import useStore from '@/stores/store';
 import { useRouter } from 'next/navigation';
-import Container from '@/components/Container';
-import { Button } from '@/components/ui/button';
-import { useCart } from '@/hooks/useCart';
-import useUser from '@/hooks/useUser';
-import { UserRole } from '@/types/entities';
-import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import CartItem from '@/components/CartItem';
+import CartEmpty from '@/components/CartEmpty';
+import { ShoppingBag, ArrowLeft, Trash2 } from 'lucide-react';
+import PriceFormatter from '@/components/PriceFormatter';
+import { toast } from 'react-hot-toast';
 
-const CartPage: React.FC = () => {
+export default function CartPage() {
+  const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { cartItems, getCartTotalPrice, clearCart } = useStore();
   const router = useRouter();
-  const { user } = useUser();
-  const { items, removeFromCart, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCart();
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-  const [checkoutResult, setCheckoutResult] = useState<any>(null);
-  const [showPayment, setShowPayment] = useState(false);
 
+  // Format currency helper
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
-      currency: 'VND'
+      currency: 'VND',
+      minimumFractionDigits: 0
     }).format(amount);
   };
 
-  const handleCreateOrder = async () => {
-    if (items.length === 0) return;
+  // Fetch user profile when user changes (same pattern as favorites page)
+  useEffect(() => {
+    console.log('🔍 Cart: Auth state changed, user:', user?.id || 'null');
+    setProfileLoading(true);
 
-    try {
-      setIsCreatingOrder(true);
-      
-      if (!user) {
-        toast.error('Vui lòng đăng nhập để tạo đơn hàng');
-        return;
-      }
-
-      if (user.role !== UserRole.BUYER) {
-        toast.error('Chỉ buyer mới có thể tạo đơn hàng');
-        return;
-      }
-
-      // Chuẩn bị data cho cart checkout API mới
-      const cartData = {
-        items: items.map(item => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price
-        })),
-        note: 'Đơn hàng từ giỏ hàng'
-      };
-      
-      const response = await fetch('http://localhost:3001/cart/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(cartData)
+    if (user) {
+      console.log('🔍 Cart: User found, fetching profile...', user.id);
+      getUserProfile().then(profile => {
+        console.log('🔍 Cart: Profile received:', profile);
+        setUserProfile(profile);
+        setProfileLoading(false);
+      }).catch(error => {
+        console.error('❌ Cart: Error fetching user profile:', error);
+        setUserProfile(null);
+        setProfileLoading(false);
       });
-
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(errorData.message || 'Không thể tạo đơn hàng');
-        return;
-      }
-
-      const result = await response.json();
-      
-  setCheckoutResult(result.data);
-  setShowPayment(true);
-  toast.success('Tạo đơn hàng thành công!');
-  // Clear cart after successful checkout
-  clearCart();
-
-    } catch (error) {
-      console.error('Cart checkout error:', error);
-      toast.error('Có lỗi xảy ra khi tạo đơn hàng: ' + (error instanceof Error ? error.message : 'Unknown error'));
-    } finally {
-      setIsCreatingOrder(false);
+    } else {
+      console.log('🔍 Cart: No user, setting userProfile to null');
+      setUserProfile(null);
+      setProfileLoading(false);
     }
-  };
+  }, [user]);
 
-  if (items.length === 0) {
+  // Show loading state while fetching user data (same as favorites)
+  if (profileLoading) {
     return (
-      <Container>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <ShoppingBag className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Giỏ hàng trống</h2>
-            <p className="text-gray-600 mb-6">Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
-            <Button
-              onClick={() => router.push('/shop')}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Tiếp tục mua sắm
-            </Button>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Đang tải...
+          </h2>
+          <p className="text-gray-600">
+            Đang tải giỏ hàng của bạn
+          </p>
         </div>
-      </Container>
+      </div>
     );
   }
 
+  // Show access denied if not logged in or not a buyer (same as favorites)
+  if (!user || !userProfile || userProfile.role !== 'BUYER') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Truy cập bị từ chối
+          </h2>
+          <p className="text-gray-600">
+            Chỉ khách hàng mới có thể xem giỏ hàng
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const total = getCartTotalPrice();
+  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  const handleCheckout = async () => {
+    if (cartItems.length === 0) {
+      toast.error('Giỏ hàng của bạn đang trống');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Prepare checkout data
+      const checkoutItems = cartItems.map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity,
+        price: item.product.price,
+      }));
+
+      console.log('🛒 Starting direct checkout from cart:', checkoutItems);
+
+      // Call checkout API
+      const result = await orderApi.checkout(checkoutItems, 'Thanh toán từ giỏ hàng');
+      console.log('✅ Checkout result:', result);
+
+      if (result.data.paymentRequired && result.data.primaryPaymentUrl) {
+        const paymentUrl = result.data.primaryPaymentUrl;
+        console.log('🔗 VNPay Payment URL:', paymentUrl);
+
+        // Clear cart before redirect
+        clearCart();
+        toast.success('Đang chuyển đến VNPay...');
+
+        // Redirect to VNPay
+        window.location.href = paymentUrl;
+      } else {
+        // No payment required (free orders)
+        clearCart();
+        toast.success('Đặt hàng thành công!');
+        router.push('/');
+      }
+    } catch (error: any) {
+      console.error('❌ Direct checkout failed:', error);
+      toast.error(error.message || 'Thanh toán thất bại. Vui lòng thử lại.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleClearCart = () => {
+    if (confirm('Bạn có chắc chắn muốn xóa tất cả sản phẩm trong giỏ hàng?')) {
+      clearCart();
+      toast.success('Đã xóa tất cả sản phẩm khỏi giỏ hàng');
+    }
+  };
+
+  const handleContinueShopping = () => {
+    router.push('/shop');
+  };
+
+  // Empty cart
+  if (cartItems.length === 0) {
+    return <CartEmpty onContinueShopping={handleContinueShopping} />;
+  }
+
+  // Calculate unique sellers
+  const uniqueSellers = new Set(cartItems.map(item =>
+    item.product.seller?.user?.name || item.product.seller?.shopName || 'Unknown Seller'
+  ));
+  const sellerCount = uniqueSellers.size;
+
   return (
-    <Container>
-      <div className="max-w-6xl mx-auto py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Giỏ hàng ({getTotalItems()} sản phẩm)
-          </h1>
-          <Button
-            onClick={clearCart}
-            variant="outline"
-            className="text-red-600 border-red-600 hover:bg-red-50"
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => router.push('/shop')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
           >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Xóa tất cả
-          </Button>
+            <ArrowLeft className="w-4 h-4" />
+            Tiếp tục mua sắm
+          </button>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                <ShoppingBag className="w-8 h-8 text-blue-600" />
+                Giỏ hàng của bạn
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Xin chào, {userProfile.name || userProfile.username}! Bạn có {itemCount} sản phẩm trong giỏ
+              </p>
+            </div>
+
+            {cartItems.length > 0 && (
+              <button
+                onClick={handleClearCart}
+                className="flex items-center gap-2 text-red-600 hover:text-red-700 border border-red-300 hover:border-red-400 px-4 py-2 rounded-lg transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                Xóa tất cả
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-4">
-            {items.map((item) => (
-              <div key={item.productId} className="bg-white rounded-lg shadow-md p-6 border">
-                <div className="flex items-center space-x-4">
-                  {/* Product Image */}
-                  <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                    {item.imageUrl ? (
-                      <img
-                        src={item.imageUrl}
-                        alt={item.productName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                        <ShoppingBag className="w-8 h-8 text-gray-400" />
-                      </div>
-                    )}
+          <div className="lg:col-span-2">
+            {/* Seller Notice */}
+            {sellerCount > 1 && (
+              <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mb-6">
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-yellow-800 text-xs font-bold">!</span>
                   </div>
-
-                  {/* Product Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">
-                      {item.productName}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Bán bởi: {item.sellerName}
+                  <div>
+                    <h4 className="font-medium text-yellow-800">Thông báo</h4>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      Bạn có sản phẩm từ {sellerCount} người bán khác nhau. Chúng tôi sẽ tạo riêng đơn hàng cho mỗi người bán:
                     </p>
-                    <p className="text-lg font-bold text-blue-600">
-                      {formatCurrency(item.price)}
-                    </p>
-                  </div>
-
-                  {/* Quantity Controls */}
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                      disabled={item.quantity <= 1}
-                    >
-                      <Minus className="w-4 h-4" />
-                    </Button>
-                    
-                    <span className="w-12 text-center font-medium">
-                      {item.quantity}
-                    </span>
-                    
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                      disabled={item.quantity >= item.stock}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  {/* Item Total */}
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-gray-900">
-                      {formatCurrency(item.price * item.quantity)}
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeFromCart(item.productId)}
-                      className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <ul className="mt-2 space-y-1">
+                      {Array.from(uniqueSellers).map((sellerName, index) => (
+                        <li key={index} className="text-xs text-yellow-700">• {sellerName}</li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
-
-                {/* Stock Warning */}
-                {item.quantity >= item.stock && (
-                  <div className="mt-2 text-sm text-amber-600 bg-amber-50 p-2 rounded">
-                    ⚠️ Đã đạt số lượng tối đa trong kho ({item.stock} sản phẩm)
-                  </div>
-                )}
               </div>
-            ))}
+            )}
+
+            {/* Cart Items List */}
+            <div className="space-y-4">
+              {cartItems.map((item) => (
+                <CartItem
+                  key={item.product.id}
+                  item={item}
+                  formatCurrency={formatCurrency}
+                />
+              ))}
+            </div>
           </div>
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 border sticky top-4">
-              <h3 className="text-lg font-semibold mb-4">Tóm tắc đơn hàng</h3>
-              
-              {/* Hiển thị thông tin sellers */}
-              {(() => {
-                const uniqueSellers = new Set(items.map(item => item.sellerName));
-                const sellerCount = uniqueSellers.size;
-                
-                return sellerCount > 1 && (
-                  <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg mb-4">
-                    <div className="text-sm text-yellow-800">
-                      📝 <strong>Lưu ý:</strong> Bạn có sản phẩm từ {sellerCount} người bán khác nhau:
-                      <ul className="mt-2 space-y-1">
-                        {Array.from(uniqueSellers).map((sellerName, index) => (
-                          <li key={index} className="text-xs">• {sellerName}</li>
-                        ))}
-                      </ul>
-                      <p className="text-xs mt-2 italic">
-                        Chúng tôi sẽ tạo riêng đơn hàng cho mỗi người bán.
-                      </p>
-                    </div>
-                  </div>
-                );
-              })()}
-              
-              <div className="space-y-3 mb-4">
+            <div className="bg-white rounded-lg shadow-md p-6 sticky top-8">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Tóm tắt đơn hàng</h3>
+
+              <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-sm">
-                  <span>Tạm tính:</span>
-                  <span>{formatCurrency(getTotalPrice())}</span>
+                  <span className="text-gray-600">Số sản phẩm:</span>
+                  <span className="font-medium">{itemCount}</span>
                 </div>
-                
+
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Tạm tính:</span>
+                  <PriceFormatter amount={total} />
+                </div>
+
                 <div className="border-t pt-3">
                   <div className="flex justify-between text-lg font-bold">
                     <span>Tổng cộng:</span>
-                    <span className="text-blue-600">{formatCurrency(getTotalPrice())}</span>
+                    <PriceFormatter amount={total} className="text-blue-600" />
                   </div>
                 </div>
               </div>
 
-              {!showPayment ? (
-                <Button
-                  onClick={handleCreateOrder}
-                  disabled={isCreatingOrder || items.length === 0}
-                  className="w-full bg-green-600 hover:bg-green-700 mb-3"
-                >
-                  {isCreatingOrder ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Đang tạo đơn hàng...</span>
-                    </div>
-                  ) : (
-                    'Tạo đơn hàng'
-                  )}
-                </Button>
-              ) : (
-                <>
-                  {checkoutResult && (
-                    <>
-                      <div className="text-center text-green-600 font-medium mb-4">
-                        ✓ Đã tạo thành công {checkoutResult.orders.length} đơn hàng!
-                      </div>
-                      
-                      {/* Hiển thị thông tin các orders */}
-                      <div className="space-y-2 mb-4">
-                        {checkoutResult.orders.map((order: any, index: number) => (
-                          <div key={order.id} className="bg-gray-50 p-3 rounded-lg text-sm">
-                            <div className="flex justify-between items-center">
-                              <span className="font-medium">Đơn hàng #{order.id}</span>
-                              <span className="text-blue-600 font-bold">
-                                {formatCurrency(order.totalPrice)}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      {checkoutResult.sellerCount > 1 && (
-                        <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800 mb-4">
-                          📝 Bạn có sản phẩm từ {checkoutResult.sellerCount} người bán khác nhau nên đã tạo {checkoutResult.orders.length} đơn hàng riêng biệt.
-                        </div>
-                      )}
-                      
-                      <div className="space-y-2 mb-4">
-                        <div className="flex justify-between text-lg font-bold">
-                          <span>Tổng tiền:</span>
-                          <span className="text-green-600">
-                            {formatCurrency(checkoutResult.totalAmount)}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* Nút thanh toán cho tất cả orders */}
-                      <button
-                        onClick={() => {
-                          if (checkoutResult.primaryPaymentUrl) {
-                            window.location.href = checkoutResult.primaryPaymentUrl;
-                          }
-                        }}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg mb-3"
-                      >
-                        Thanh toán tất cả đơn hàng
-                      </button>
-                      
-                      {/* Hiển thị các payment links riêng lẻ nếu cần */}
-                      {checkoutResult.paymentInfos && checkoutResult.paymentInfos.length > 1 && (
-                        <div className="space-y-2">
-                          <p className="text-sm text-gray-600 text-center">Hoặc thanh toán từng đơn:</p>
-                          {checkoutResult.paymentInfos.map((payment: any, index: number) => (
-                            <button
-                              key={payment.orderId}
-                              onClick={() => window.location.href = payment.paymentUrl}
-                              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm py-2 px-3 rounded"
-                            >
-                              Thanh toán đơn #{payment.orderId} - {formatCurrency(payment.amount)}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </>
-              )}
-
-              <Button
-                onClick={() => router.push('/shop')}
-                variant="outline"
-                className="w-full"
+              <button
+                onClick={handleCheckout}
+                disabled={isProcessing}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
               >
-                Tiếp tục mua sắm
-              </Button>
-
-              <div className="mt-4 text-xs text-gray-500 text-center">
-                {!showPayment ? (
-                  'Nhấn "Tạo đơn hàng" để tạo đơn hàng và thanh toán'
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Đang xử lý...
+                  </>
                 ) : (
-                  'Nhấn "Thanh toán" để chuyển đến VNPay'
+                  <>
+                    <ShoppingBag className="w-5 h-5" />
+                    Thanh toán VNPay
+                  </>
                 )}
+              </button>
+
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-xs text-blue-800 text-center">
+                  🔒 Thanh toán an toàn qua VNPay
+                </p>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </Container>
+    </div>
   );
-};
-
-export default CartPage;
+}

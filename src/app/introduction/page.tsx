@@ -1,92 +1,212 @@
 import React from "react";
 import Container from "@/components/Container";
 import { Button } from "@/components/ui/button";
+import { 
+  ShoppingBag, 
+  Users, 
+  Shield, 
+  Truck, 
+  Star, 
+  Heart,
+  CheckCircle,
+  ArrowRight
+} from "lucide-react";
+import Link from "next/link";
 
 const IntroductionPage = () => {
+  const features = [
+    {
+      icon: ShoppingBag,
+      title: "Mua sắm tiện lợi",
+      description: "Khám phá hàng nghìn sản phẩm chất lượng từ các cửa hàng uy tín"
+    },
+    {
+      icon: Users,
+      title: "Cộng đồng đáng tin cậy",
+      description: "Kết nối với người bán và người mua trong môi trường an toàn"
+    },
+    {
+      icon: Shield,
+      title: "Bảo mật tuyệt đối",
+      description: "Thông tin cá nhân và thanh toán được bảo vệ an toàn"
+    },
+    {
+      icon: Truck,
+      title: "Giao hàng nhanh chóng",
+      description: "Dịch vụ giao hàng đáng tin cậy với thời gian giao hàng linh hoạt"
+    },
+    {
+      icon: Star,
+      title: "Đánh giá chất lượng",
+      description: "Hệ thống đánh giá và nhận xét giúp bạn chọn sản phẩm tốt nhất"
+    },
+    {
+      icon: Heart,
+      title: "Dịch vụ khách hàng",
+      description: "Hỗ trợ 24/7 với đội ngũ chăm sóc khách hàng chuyên nghiệp"
+    }
+  ];
+
+  const stats = [
+    { number: "10,000+", label: "Sản phẩm" },
+    { number: "500+", label: "Cửa hàng" },
+    { number: "50,000+", label: "Khách hàng" },
+    { number: "99%", label: "Hài lòng" }
+  ];
+
+  const benefits = [
+    "Không phí ẩn, giá cả minh bạch",
+    "Thanh toán an toàn qua VNPay",
+    "Hoàn tiền 100% nếu không hài lòng",
+    "Giao hàng toàn quốc",
+    "Hỗ trợ đổi trả trong 7 ngày",
+    "Tích điểm thưởng cho mỗi đơn hàng"
+  ];
+
   return (
-    <div className="flex flex-col w-full">
-      {/* Section 1: Hero Giới thiệu */}
-      <section className="relative w-full min-h-[380px] md:min-h-[480px] flex items-center bg-shop_dark_green text-white">
-        {/* Ảnh nền có thể thêm sau */}
-        <div className="absolute inset-0 w-full h-full bg-black/40 z-0" style={{ pointerEvents: 'none' }} />
-        <Container className="relative z-10 py-16 flex flex-col md:flex-row items-center gap-10">
-          <div className="flex-1 flex flex-col gap-4 md:gap-6">
-            <h1 className="text-3xl md:text-5xl font-bold mb-2">Chúng tôi là ai?</h1>
-            <p className="text-lg md:text-xl max-w-xl text-white/90">
-              <span className="font-semibold text-shop_orange">Foodee</span> là nền tảng thương mại điện tử về đồ ăn, hoạt động từ năm 2020, kết nối hàng ngàn người bán và người mua trên toàn quốc. Chúng tôi mang đến trải nghiệm mua bán thực phẩm tiện lợi, an toàn và đa dạng.
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="relative py-16 px-6 md:px-16 lg:px-32" style={{backgroundColor: '#E6E9F2'}}>
+        <div className="text-center max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-5xl font-medium text-gray-900 mb-6">
+            Chào mừng đến với{" "}
+            <span className="text-orange-600">MartNow</span>
+          </h1>
+            <p className="text-base text-gray-600 mb-8 leading-relaxed">
+              Nền tảng mua sắm trực tuyến hàng đầu Việt Nam, kết nối người mua và người bán
+              trong môi trường an toàn, minh bạch và tiện lợi.
             </p>
-            <div className="flex flex-wrap gap-6 mt-4">
-              <div className="flex flex-col items-center">
-                <span className="text-2xl md:text-3xl font-bold text-shop_light_green">5+</span>
-                <span className="text-sm md:text-base">Năm hoạt động</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-2xl md:text-3xl font-bold text-shop_light_green">50.000+</span>
-                <span className="text-sm md:text-base">Khách hàng</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-2xl md:text-3xl font-bold text-shop_light_green">2.000+</span>
-                <span className="text-sm md:text-base">Nhà bán hàng</span>
-              </div>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/shop">
+                <button className="btn-primary px-8 py-3 flex items-center justify-center gap-2 group">
+                  Khám phá ngay
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </Link>
+              <Link href="/auth/register">
+                <button className="btn-outline px-8 py-3">
+                  Đăng ký miễn phí
+                </button>
+              </Link>
             </div>
           </div>
-          {/* Ảnh hero, có thể thêm sau */}
-          <div className="flex-1 flex justify-center items-center">
-            <div className="w-[260px] h-[260px] md:w-[340px] md:h-[340px] rounded-2xl overflow-hidden bg-shop_light_pink border-4 border-shop_light_pink shadow-xl flex items-center justify-center">
-              {/* <Image src="/images/banhmi.jpeg" alt="Foodee" fill className="object-cover object-center" /> */}
-              {/* Để trống, bạn có thể thêm ảnh sau */}
-            </div>
-          </div>
-        </Container>
       </section>
 
-      {/* Section 2: Sứ mệnh & Giá trị */}
-      <section className="w-full bg-white py-16">
-        <Container className="flex flex-col md:flex-row items-center gap-12">
-          {/* Ảnh minh họa, có thể thêm sau */}
-          <div className="flex-1 flex flex-col gap-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-shop_dark_green mb-2">Nhiệm vụ của chúng tôi</h2>
-            <ul className="list-disc pl-5 text-base text-darkColor/80 space-y-2">
-              <li><span className="font-semibold text-shop_light_green">Kết nối cộng đồng yêu ẩm thực</span> trên khắp cả nước.</li>
-              <li><span className="font-semibold text-shop_light_green">Thúc đẩy kinh doanh địa phương</span> và hỗ trợ các nhà bán hàng nhỏ lẻ.</li>
-              <li><span className="font-semibold text-shop_light_green">Đảm bảo chất lượng, minh bạch, an toàn</span> cho từng sản phẩm.</li>
-              <li><span className="font-semibold text-shop_light_green">Trải nghiệm mua sắm tiện lợi, hiện đại</span> cho mọi khách hàng.</li>
-            </ul>
-          </div>
-          <div className="flex-1 flex flex-col gap-6">
-            <div className="w-full h-[220px] md:h-[320px] rounded-2xl bg-shop_light_pink border-4 border-shop_light_pink shadow-xl flex items-center justify-center">
-              {/* <Image src="/images/mission.jpg" alt="Sứ mệnh Foodee" fill className="object-cover object-center" /> */}
+      {/* Stats Section */}
+      <section className="py-16 px-6 md:px-16 lg:px-32">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          {stats.map((stat, index) => (
+            <div key={index} className="text-center">
+              <div className="text-2xl md:text-3xl font-semibold text-orange-600 mb-2">
+                {stat.number}
+              </div>
+              <div className="text-gray-600 text-sm">
+                {stat.label}
+              </div>
             </div>
-          </div>
-        </Container>
+          ))}
+        </div>
       </section>
 
-      {/* Section 3: Vì sao chọn Foodee? */}
-      <section className="w-full bg-shop_dark_green py-16 text-white">
-        <Container className="flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1 flex flex-col gap-8">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2 text-shop_orange">Tại sao lại là Foodee?</h2>
-            <p className="text-lg md:text-xl text-white/90 max-w-xl">
-              Foodee không chỉ là nơi mua bán thực phẩm, mà còn là nơi truyền cảm hứng ẩm thực, kết nối cộng đồng và lan tỏa giá trị bền vững. Mỗi đơn hàng là một trải nghiệm, mỗi sản phẩm là một câu chuyện.
+      {/* Features Section */}
+      <section className="py-16 px-6 md:px-16 lg:px-32">
+        <div className="text-center mb-12">
+          <h2 className="text-2xl font-medium text-gray-900 mb-4">
+            Tại sao chọn MartNow?
+          </h2>
+          <p className="text-base text-gray-600 max-w-2xl mx-auto">
+            Chúng tôi cam kết mang đến trải nghiệm mua sắm tốt nhất với những tính năng độc đáo
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature, index) => (
+            <div key={index} className="card-quickcart p-6">
+              <div className="w-12 h-12 bg-gray-500/10 rounded-full flex items-center justify-center mb-4">
+                <feature.icon className="w-6 h-6 text-orange-600" />
+              </div>
+              <h3 className="text-base font-semibold text-gray-900 mb-3">
+                {feature.title}
+              </h3>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {feature.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-16 px-6 md:px-16 lg:px-32">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 className="text-2xl font-medium text-gray-900 mb-4">
+              Lợi ích khi sử dụng MartNow
+            </h2>
+            <p className="text-base text-gray-600 mb-6 leading-relaxed">
+              Chúng tôi cam kết mang đến những lợi ích thiết thực nhất cho người dùng,
+              từ việc mua sắm an toàn đến dịch vụ hậu mãi chu đáo.
             </p>
-            <ul className="list-disc pl-5 text-base space-y-2">
-              <li>Giao diện hiện đại, dễ sử dụng, tối ưu cho mọi thiết bị.</li>
-              <li>Đội ngũ hỗ trợ tận tâm, sẵn sàng đồng hành cùng bạn.</li>
-              <li>Chính sách bảo vệ quyền lợi khách hàng và nhà bán hàng rõ ràng.</li>
-            </ul>
-            <Button className="mt-6 w-fit bg-shop_light_green hover:bg-shop_btn_dark_green text-white px-8 py-3 text-lg rounded-md shadow-md" asChild>
-              <a href="/shop">Khám phá ngay</a>
-            </Button>
-          </div>
-          <div className="flex-1 flex flex-col gap-6">
-            <div className="w-full h-[220px] md:h-[320px] rounded-2xl bg-shop_light_pink border-4 border-shop_light_pink shadow-xl flex items-center justify-center">
-              {/* <Image src="/images/why-foodee.jpg" alt="Vì sao chọn Foodee" fill className="object-cover object-center" /> */}
+            <div className="grid grid-cols-1 gap-3">
+              {benefits.map((benefit, index) => (
+                <div key={index} className="flex items-center space-x-3">
+                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">{benefit}</span>
+                </div>
+              ))}
             </div>
           </div>
-        </Container>
+
+          <div className="card-quickcart p-8">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Bắt đầu ngay hôm nay
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Tham gia cộng đồng MartNow và trải nghiệm mua sắm tuyệt vời
+              </p>
+              <div className="space-y-3">
+                <Link href="/auth/register">
+                  <button className="btn-primary w-full">
+                    Đăng ký tài khoản
+                  </button>
+                </Link>
+                <Link href="/shop">
+                  <button className="btn-outline w-full">
+                    Khám phá sản phẩm
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 px-6 md:px-16 lg:px-32 bg-orange-600">
+        <div className="text-center text-white">
+          <h2 className="text-2xl font-medium mb-4">
+            Sẵn sàng trải nghiệm?
+          </h2>
+          <p className="text-base mb-6 opacity-90 max-w-2xl mx-auto">
+            Tham gia cùng hàng nghìn người dùng đang tin tưởng và sử dụng MartNow mỗi ngày
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/shop">
+              <button className="btn-secondary px-8 py-3">
+                Bắt đầu mua sắm
+              </button>
+            </Link>
+            <Link href="/blog">
+              <button className="px-8 py-3 border border-white text-white bg-transparent hover:bg-white hover:text-orange-600 transition-all rounded-lg">
+                Đọc tin tức
+              </button>
+            </Link>
+          </div>
+        </div>
       </section>
     </div>
   );
-}
+};
 
 export default IntroductionPage;

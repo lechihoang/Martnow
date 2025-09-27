@@ -1,183 +1,372 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { UserService } from '../account/user/user.service';
-import { UserRole } from './roles.enum';
-import {
-  RegisterDto,
-  LoginResponseDto,
-  LogoutResponseDto,
-} from './dto/auth.dto';
-import { CreateUserDto, UserResponseDto } from '../account/user/dto/user.dto';
-import * as bcrypt from 'bcrypt';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { supabase, UserRole } from '../lib/supabase';
+import { User } from '../account/user/entities/user.entity';
+import { Buyer } from '../account/buyer/entities/buyer.entity';
+import { Seller } from '../account/seller/entities/seller.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly usersService: UserService,
-    private readonly jwtService: JwtService,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    @InjectRepository(Buyer)
+    private buyerRepository: Repository<Buyer>,
+    @InjectRepository(Seller)
+    private sellerRepository: Repository<Seller>,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<any> {
-    // Validate input parameters
-    if (!email || !password) {
-      throw new UnauthorizedException('Email and password are required');
-    }
-
-    const user = await this.usersService.findByEmail(email);
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    if (!user.password) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
+  async signup(signupDto: {
+    email: string;
+    password: string;
+    name?: string;
+    username?: string;
+  }) {
     try {
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      if (isPasswordValid) {
-        // Trả về toàn bộ user (ẩn password)
-        const { password: _, ...userInfo } = user;
-        return userInfo;
+      // 1. Create user in Supabase Auth
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
       }
-    } catch (error) {
-      console.error('Bcrypt comparison error:', error);
-      throw new UnauthorizedException('Invalid credentials');
-    }
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: signupDto.email,
+        password: signupDto.password,
+        options: {
+          data: {
+            name: signupDto.name || 'User',
+            username: signupDto.username || `user_${Date.now()}`,
+          },
+        },
+      });
 
-    throw new UnauthorizedException('Invalid credentials');
+      if (authError) {
+        throw new Error(authError.message);
+      }
+
+      if (!authData.user) {
+        throw new Error('Failed to create user');
+      }
+
+      // 2. Create user profile in database
+      const user = this.userRepository.create({
+        id: authData.user.id,
+        email: signupDto.email,
+        name: signupDto.name || 'User',
+        username: signupDto.username || `user_${Date.now()}`,
+        role: UserRole.BUYER, // Default role
+      });
+
+      await this.userRepository.save(user);
+
+      // 3. Create buyer profile
+      const buyer = this.buyerRepository.create({
+        id: authData.user.id,
+      });
+
+      await this.buyerRepository.save(buyer);
+
+      // 4. Return auth data
+      return {
+        user: {
+          id: authData.user.id,
+          email: authData.user.email,
+          name: user.name,
+          username: user.username,
+          role: user.role,
+        },
+        session: authData.session,
+      };
+    } catch (error) {
+      throw new Error(`Signup failed: ${error.message}`);
+    }
   }
 
-  async login(
-    user: any,
-    request: any,
-    response: any,
-  ): Promise<LoginResponseDto> {
-    // Tạo JWT payload
-    const payload = {
-      sub: user.id, // Subject (user ID)
-      username: user.username,
-      email: user.email,
-      role: user.role,
-    };
+  async signin(signinDto: { email: string; password: string }) {
+    try {
+      // 1. Sign in with Supabase Auth
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email: signinDto.email,
+          password: signinDto.password,
+        });
 
-    // Tạo JWT access token
-    const accessToken = this.jwtService.sign(payload);
+      if (authError) {
+        throw new Error(authError.message);
+      }
 
-    // Set JWT trong HTTP-only cookie
-    response.cookie('access_token', accessToken, {
-      httpOnly: true, // Không thể access từ JavaScript - bảo mật tối đa
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-      sameSite: 'strict', // CSRF protection nghiêm ngặt hơn
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      path: '/', // Available for entire app
-    });
+      if (!authData.user) {
+        throw new Error('Invalid credentials');
+      }
 
-    // Optional: Set user info cookie cho frontend (không nhạy cảm)
-    response.cookie(
-      'user_info',
-      JSON.stringify({
+      // 2. Get user profile from database
+      const user = await this.userRepository.findOne({
+        where: { id: authData.user.id },
+      });
+
+      if (!user) {
+        throw new Error('User profile not found');
+      }
+
+      // 3. Return auth data
+      return {
+        user: {
+          id: authData.user.id,
+          email: authData.user.email,
+          name: user.name,
+          username: user.username,
+          role: user.role,
+        },
+        session: authData.session,
+      };
+    } catch (error) {
+      throw new Error(`Signin failed: ${error.message}`);
+    }
+  }
+
+  async signout(userId: string) {
+    try {
+      // 1. Sign out from Supabase Auth
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return { message: 'Signed out successfully' };
+    } catch (error) {
+      throw new Error(`Signout failed: ${error.message}`);
+    }
+  }
+
+  async getProfile(userId: string) {
+    try {
+      // 1. Get user profile from database
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['buyer', 'seller'],
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // 2. Get additional profile data based on role
+      let profileData = {
         id: user.id,
+        email: user.email,
+        name: user.name,
         username: user.username,
         role: user.role,
-        email: user.email,
-      }),
-      {
-        httpOnly: false, // Frontend có thể đọc
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000,
-        path: '/',
-      },
-    );
+        avatar: user.avatar,
+        address: user.address,
+        phone: user.phone,
+      };
 
-    return {
-      user: await this.buildAuthUserResponse(user),
-    };
-  }
-
-  async logout(request: any, response: any): Promise<LogoutResponseDto> {
-    // Với JWT, chúng ta chỉ cần xóa cookies
-    // JWT sẽ tự động hết hạn theo thời gian cấu hình
-
-    // Clear JWT cookie
-    response.clearCookie('access_token', {
-      path: '/',
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-    });
-
-    // Clear user info cookie
-    response.clearCookie('user_info', {
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-    });
-
-    return { message: 'Logout successful' };
-  }
-
-  async register(registerDto: RegisterDto) {
-    const existingUserByEmail = await this.usersService.findByEmail?.(
-      registerDto.email,
-    );
-    if (existingUserByEmail) {
-      throw new UnauthorizedException('Email already exists');
-    }
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-
-    // Tạo CreateUserDto từ RegisterDto
-    const createUserDto: CreateUserDto = {
-      name: registerDto.name,
-      username: registerDto.username,
-      email: registerDto.email,
-      role: registerDto.role,
-      password: hashedPassword,
-      avatar: registerDto.avatar,
-    };
-
-    return this.usersService.createUser(createUserDto);
-  }
-
-  async getProfile(userId: string): Promise<UserResponseDto> {
-    const user = await this.usersService.findByIdWithRelations(
-      parseInt(userId, 10),
-    );
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    return new UserResponseDto(user);
-  }
-
-  // Tạo refresh token (tùy chọn - cho session management)
-  async generateRefreshToken(userId: string): Promise<string> {
-    const payload = { sub: userId, type: 'refresh' };
-    return this.jwtService.sign(payload, { expiresIn: '7d' }); // Refresh token có thời hạn dài hơn
-  }
-
-  // Verify refresh token
-  async verifyRefreshToken(refreshToken: string): Promise<any> {
-    try {
-      const payload = this.jwtService.verify(refreshToken);
-      if (payload.type !== 'refresh') {
-        throw new UnauthorizedException('Invalid token type');
+      if (user.role === 'BUYER' && user.buyer) {
+        profileData = { ...profileData, ...user.buyer };
+      } else if (user.role === 'SELLER' && user.seller) {
+        profileData = { ...profileData, ...user.seller };
       }
-      return payload;
+
+      return profileData;
     } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new Error(`Failed to get profile: ${error.message}`);
     }
   }
 
-  // ✅ Simplified helper method using UserResponseDto
-  private async buildAuthUserResponse(user: any): Promise<UserResponseDto> {
-    // Lấy full user với relations nếu cần
-    const fullUser = await this.usersService.findByIdWithRelations(user.id);
+  async refreshToken(refreshToken: string) {
+    try {
+      // 1. Refresh token with Supabase
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+      const { data: authData, error: authError } =
+        await supabase.auth.refreshSession({
+          refresh_token: refreshToken,
+        });
 
-    if (!fullUser) {
-      throw new UnauthorizedException('User not found');
+      if (authError) {
+        throw new Error(authError.message);
+      }
+
+      if (!authData.session) {
+        throw new Error('Failed to refresh token');
+      }
+
+      return {
+        session: authData.session,
+      };
+    } catch (error) {
+      throw new Error(`Token refresh failed: ${error.message}`);
     }
+  }
 
-    return new UserResponseDto(fullUser);
+  async deleteUser(userId: string) {
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+
+      // 1. Get user from database first
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['buyer', 'seller'],
+      });
+
+      if (!user) {
+        throw new Error('User not found in database');
+      }
+
+      // 2. Delete from Supabase Auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+
+      if (authError) {
+        throw new Error(
+          `Failed to delete from Supabase Auth: ${authError.message}`,
+        );
+      }
+
+      // 3. Delete related profiles first (due to foreign key constraints)
+      if (user.role === UserRole.BUYER && user.buyer) {
+        await this.buyerRepository.remove(user.buyer);
+      } else if (user.role === UserRole.SELLER && user.seller) {
+        await this.sellerRepository.remove(user.seller);
+      }
+
+      // 4. Delete user profile from database
+      await this.userRepository.remove(user);
+
+      return {
+        success: true,
+        message:
+          'User deleted successfully from both Supabase Auth and database',
+      };
+    } catch (error) {
+      throw new Error(`Delete user failed: ${error.message}`);
+    }
+  }
+
+  async forgotPassword(email: string) {
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+
+      // 1. Check if user exists in database
+      const user = await this.userRepository.findOne({
+        where: { email },
+      });
+
+      if (!user) {
+        // Don't reveal if email exists for security reasons
+        return {
+          success: true,
+          message: 'If the email exists, a password reset link has been sent',
+        };
+      }
+
+      // 2. Send password reset email via Supabase
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/reset-password`,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return {
+        success: true,
+        message: 'If the email exists, a password reset link has been sent',
+      };
+    } catch (error) {
+      throw new Error(`Forgot password failed: ${error.message}`);
+    }
+  }
+
+  async resetPassword(accessToken: string, newPassword: string) {
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+
+      // 1. Update password using the access token from reset link
+      const { data: authData, error: authError } =
+        await supabase.auth.updateUser({
+          password: newPassword,
+        });
+
+      if (authError) {
+        throw new Error(authError.message);
+      }
+
+      if (!authData.user) {
+        throw new Error('Failed to reset password');
+      }
+
+      return {
+        success: true,
+        message: 'Password reset successfully',
+      };
+    } catch (error) {
+      throw new Error(`Reset password failed: ${error.message}`);
+    }
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+
+      // 1. Get user from database
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // 2. Verify current password by attempting to sign in
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+
+      if (verifyError) {
+        throw new Error('Current password is incorrect');
+      }
+
+      // 3. Update password
+      const { data: authData, error: updateError } =
+        await supabase.auth.updateUser({
+          password: newPassword,
+        });
+
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+
+      if (!authData.user) {
+        throw new Error('Failed to change password');
+      }
+
+      return {
+        success: true,
+        message: 'Password changed successfully',
+      };
+    } catch (error) {
+      throw new Error(`Change password failed: ${error.message}`);
+    }
   }
 }

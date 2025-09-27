@@ -36,6 +36,7 @@ export class ReviewResponseDto {
   createdAt: Date;
 
   // Essential user info only
+  buyerId: number;
   buyerName: string;
   buyerAvatar?: string;
 
@@ -51,6 +52,7 @@ export class ReviewResponseDto {
     this.createdAt = review.createdAt;
 
     // ✅ Simple buyer info from nested relation
+    this.buyerId = review.buyer?.id || review.buyerId;
     this.buyerName = review.buyer?.user?.name || 'Anonymous';
     this.buyerAvatar = review.buyer?.user?.avatar;
 
@@ -61,7 +63,6 @@ export class ReviewResponseDto {
 
 // ✅ Detailed DTO for review management (admin/owner view)
 export class ReviewDetailDto extends ReviewResponseDto {
-  buyerId: number;
   buyer: {
     id: number;
     user: { name: string; username: string; email: string };
@@ -75,7 +76,6 @@ export class ReviewDetailDto extends ReviewResponseDto {
   constructor(review: any) {
     super(review);
 
-    this.buyerId = review.buyerId;
     this.buyer = {
       id: review.buyer?.id || 0,
       user: {

@@ -4,11 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import ProductDetail from '@/components/ProductDetail';
 import type { Product } from '@/types/entities';
-import { productApi } from '@/lib/api';
+import { productApi, userApi } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
+import { UserProfile } from '@/types/auth';
 
 export default function ProductPage() {
   const params = useParams();
+  const { user } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +38,32 @@ export default function ProductPage() {
       fetchProduct();
     }
   }, [params?.id]);
+
+  // Fetch user profile when user changes
+  useEffect(() => {
+    if (user) {
+      userApi.getProfile().then(profile => {
+        if (profile && profile.id) {
+          const newProfile = {
+            id: profile.id,
+            name: profile.name,
+            username: profile.username,
+            email: profile.email,
+            avatar: profile.avatar,
+            role: profile.role
+          };
+          setUserProfile(newProfile);
+        } else {
+          setUserProfile(null);
+        }
+      }).catch(error => {
+        console.error('Error fetching user profile:', error);
+        setUserProfile(null);
+      });
+    } else if (!user) {
+      setUserProfile(null);
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -120,15 +150,7 @@ export default function ProductPage() {
       </nav>
 
       {/* Product Detail */}
-      <ProductDetail product={product} />
-      
-      {/* Related Products Section - Placeholder */}
-      <div className="mt-16">
-        <h2 className="text-2xl font-bold mb-6">Sản phẩm liên quan</h2>
-        <div className="text-gray-500 text-center py-8">
-          Sản phẩm liên quan sẽ được hiển thị ở đây
-        </div>
-      </div>
+      <ProductDetail product={product} userProfile={userProfile} />
     </div>
   );
 }

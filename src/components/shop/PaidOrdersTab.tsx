@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { sellerApi } from '@/lib/api';
 import { OrderStatus } from '@/types/entities';
-import useUser from '@/hooks/useUser';
 
 interface PaidOrder {
   id: number;
@@ -14,30 +13,39 @@ interface PaidOrder {
   itemCount: number;
 }
 
-const PaidOrdersTab: React.FC = () => {
-  const userData = useUser();
+interface PaidOrdersTabProps {
+  userProfile: any;
+}
+
+const PaidOrdersTab: React.FC<PaidOrdersTabProps> = ({ userProfile }) => {
   const [orders, setOrders] = useState<PaidOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (userData?.user?.seller?.id) {
+    if (userProfile?.seller?.id) {
       fetchPaidOrders();
     }
-  }, [userData]);
+  }, [userProfile]);
 
   const fetchPaidOrders = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Chỉ lấy đơn hàng đã thanh toán (completed)
-      const response = await sellerApi.getSellerOrders(userData!.user!.seller!.id);
+      if (!userProfile?.seller?.id) {
+        setError('Không thể tải thông tin người dùng. Vui lòng đăng nhập lại.');
+        setLoading(false);
+        return;
+      }
       
-      // Filter chỉ lấy đơn hàng completed (đã thanh toán)
-      const paidOrders = response.orders?.filter(order => 
-        order.status?.toLowerCase() === 'completed'
-      ) || [];
+              // Chỉ lấy đơn hàng đã thanh toán (completed)
+        const response = await sellerApi.getSellerOrders();
+        
+        // Filter chỉ lấy đơn hàng completed (đã thanh toán)
+        const paidOrders = response.filter(order => 
+          order.status?.toLowerCase() === 'completed'
+        ) || [];
       
       setOrders(paidOrders);
     } catch (error) {
@@ -98,7 +106,7 @@ const PaidOrdersTab: React.FC = () => {
             <div className="text-green-600 text-2xl mr-3">💰</div>
             <div>
               <p className="text-sm text-green-600 font-medium">Tổng doanh thu</p>
-              <p className="text-xl font-bold text-green-700">
+              <p className="text-2xl font-bold text-green-900">
                 {totalRevenue.toLocaleString('vi-VN')}đ
               </p>
             </div>
@@ -109,8 +117,8 @@ const PaidOrdersTab: React.FC = () => {
           <div className="flex items-center">
             <div className="text-blue-600 text-2xl mr-3">📦</div>
             <div>
-              <p className="text-sm text-blue-600 font-medium">Đơn hàng đã bán</p>
-              <p className="text-xl font-bold text-blue-700">{orders.length}</p>
+              <p className="text-sm text-blue-600 font-medium">Tổng đơn hàng</p>
+              <p className="text-2xl font-bold text-blue-900">{orders.length}</p>
             </div>
           </div>
         </div>
@@ -119,47 +127,73 @@ const PaidOrdersTab: React.FC = () => {
           <div className="flex items-center">
             <div className="text-purple-600 text-2xl mr-3">📊</div>
             <div>
-              <p className="text-sm text-purple-600 font-medium">Doanh thu trung bình</p>
-              <p className="text-xl font-bold text-purple-700">
-                {orders.length > 0 ? Math.round(totalRevenue / orders.length).toLocaleString('vi-VN') : 0}đ
+              <p className="text-sm text-purple-600 font-medium">Trung bình/đơn</p>
+              <p className="text-2xl font-bold text-purple-900">
+                {Math.round(totalRevenue / orders.length).toLocaleString('vi-VN')}đ
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Orders List */}
-      <div className="space-y-4">
-        {orders.map((order) => (
-          <div key={order.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <h3 className="font-semibold text-gray-900">Đơn hàng #{order.id}</h3>
-                <p className="text-sm text-gray-600">
-                  Khách hàng: <span className="font-medium">{order.buyerName}</span>
-                </p>
-                <p className="text-sm text-gray-600">
-                  Ngày mua: {new Date(order.createdAt).toLocaleDateString('vi-VN')}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="font-semibold text-lg text-green-600">
-                  {order.totalPrice.toLocaleString('vi-VN')}đ
-                </p>
-                <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                  ✅ Đã thanh toán
-                </span>
-              </div>
-            </div>
-            
-            {/* Order Summary */}
-            <div className="border-t pt-3 mt-3">
-              <p className="text-sm text-gray-600">
-                Tổng số sản phẩm: <span className="font-medium">{order.itemCount}</span>
-              </p>
-            </div>
-          </div>
-        ))}
+      {/* Orders Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900">Danh sách đơn hàng đã thanh toán</h3>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Mã đơn hàng
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Khách hàng
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Số lượng
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tổng tiền
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ngày tạo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Trạng thái
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {orders.map((order) => (
+                <tr key={order.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    #{order.id}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {order.buyerName}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {order.itemCount} sản phẩm
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                    {order.totalPrice.toLocaleString('vi-VN')}đ
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                      Đã thanh toán
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

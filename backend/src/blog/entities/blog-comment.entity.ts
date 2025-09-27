@@ -6,6 +6,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   JoinColumn,
 } from 'typeorm';
 import { User } from '../../account/user/entities/user.entity';
@@ -25,6 +26,9 @@ export class BlogComment {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  @DeleteDateColumn()
+  deletedAt: Date;
+
   // Relationships
   @ManyToOne(() => User, { eager: true })
   @JoinColumn({ name: 'userId' })
@@ -40,19 +44,19 @@ export class BlogComment {
   @Column()
   blogId: number;
 
-  // Self-referencing for replies
-  @ManyToOne(() => BlogComment, (comment) => comment.replies, {
-    nullable: true,
-  })
-  @JoinColumn({ name: 'parentId' })
-  parent: BlogComment;
+  // Remove reply functionality to simplify comment system
+  // @ManyToOne(() => BlogComment, (comment) => comment.replies, {
+  //   nullable: true,
+  // })
+  // @JoinColumn({ name: 'parentId' })
+  // parent: BlogComment;
 
-  @Column({ nullable: true })
-  parentId: number;
+  // @Column({ nullable: true })
+  // parentId: number;
 
-  @OneToMany(() => BlogComment, (comment) => comment.parent, {
-    cascade: true,
-    onDelete: 'CASCADE',
-  })
-  replies: BlogComment[];
+  // @OneToMany(() => BlogComment, (comment) => comment.parent, {
+  //   cascade: true,
+  //   onDelete: 'CASCADE',
+  // })
+  // replies: BlogComment[];
 }

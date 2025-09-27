@@ -4,8 +4,8 @@ import { VnpayService } from 'nestjs-vnpay';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../order/entities/order.entity';
-import { OrderBusinessService } from '../order/order-business.service';
 import { CreatePaymentDto, PaymentResponseDto } from './dto/payment.dto';
+import { OrderStatus } from '../shared/enums';
 
 @Injectable()
 export class PaymentService {
@@ -16,45 +16,26 @@ export class PaymentService {
     private readonly configService: ConfigService,
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
-    private readonly orderBusinessService: OrderBusinessService,
   ) {}
 
   /**
-   * Tạo URL thanh toán VNPay (với DTO)
+   * Tạo URL thanh toán VNPay cho cart checkout
    */
   async createPaymentUrl(
     orderId: number,
-    createPaymentDto: CreatePaymentDto,
-  ): Promise<PaymentResponseDto>;
-
-  /**
-   * Tạo URL thanh toán VNPay (với amount trực tiếp)
-   */
-  async createPaymentUrl(orderId: number, amount: number): Promise<string>;
-
-  async createPaymentUrl(
-    orderId: number,
-    createPaymentDtoOrAmount: CreatePaymentDto | number,
-  ): Promise<PaymentResponseDto | string> {
-    if (typeof createPaymentDtoOrAmount === 'number') {
-      // Overload cho cart checkout
-      const amount = createPaymentDtoOrAmount;
-      return this.createSimplePaymentUrl(orderId, amount);
-    } else {
-      // Original method
-      return this.createFullPaymentUrl(orderId, createPaymentDtoOrAmount);
-    }
-  }
-
-  /**
-   * Tạo URL thanh toán đơn giản (cho cart)
-   */
-  private async createSimplePaymentUrl(
-    orderId: number,
-    amount: number,
+    amount?: number,
+    manager?: any,
   ): Promise<string> {
-    // Lấy thông tin order
-    const order = await this.orderRepository.findOne({
+    console.log('🔍 createPaymentUrl called for cart checkout:', {
+      orderId,
+      amount,
+      hasManager: !!manager,
+    });
+
+    // Lấy thông tin order - sử dụng manager nếu có để dùng cùng transaction
+    const orderRepository =
+      manager?.getRepository(Order) || this.orderRepository;
+    const order = await orderRepository.findOne({
       where: { id: orderId },
       relations: ['buyer', 'buyer.user', 'items', 'items.product'],
     });
@@ -63,26 +44,50 @@ export class PaymentService {
       throw new Error('Order not found');
     }
 
+    // Sử dụng amount từ order nếu không truyền vào
+    const finalAmount = amount || order.totalPrice;
+
     // Tạo transaction reference (unique)
     const txnRef = `ORDER_${orderId}_${Date.now()}`;
 
-    // Build payment URL
+    // Build payment URL theo đúng repo nestjs-vnpay
+    const returnUrl =
+      this.configService.get('VNPAY_RETURN_URL') ||
+      'http://localhost:3002/payment/vnpay-return';
+
+    console.log('🔧 VNPay Config Debug:', {
+      tmnCode: this.configService.get('VNPAY_TMN_CODE'),
+      hasSecureSecret: !!this.configService.get('VNPAY_SECURE_SECRET'),
+      returnUrl,
+      amount: Math.round(finalAmount),
+      orderId,
+      txnRef,
+    });
+
     const paymentUrl = this.vnpayService.buildPaymentUrl({
-      vnp_Amount: Math.round(amount),
+      vnp_Amount: Math.round(finalAmount),
       vnp_CreateDate: parseInt(this.formatDate(new Date())),
       vnp_CurrCode: 'VND' as any,
       vnp_IpAddr: '127.0.0.1',
       vnp_Locale: 'vn' as any,
       vnp_OrderInfo: order.note || `Thanh toán đơn hàng #${order.id}`,
       vnp_OrderType: 'other' as any,
-      vnp_ReturnUrl: this.configService.get('VNPAY_RETURN_URL') || '',
+      vnp_ReturnUrl: returnUrl,
       vnp_TxnRef: txnRef,
     });
 
-    // Cập nhật order với transaction reference
-    await this.orderRepository.update(orderId, {
-      paymentReference: txnRef,
-    });
+    console.log('🔗 VNPay Payment URL created:', paymentUrl);
+
+    // Cập nhật order với transaction reference - sử dụng manager nếu có
+    if (manager) {
+      await manager.update(Order, orderId, {
+        paymentReference: txnRef,
+      });
+    } else {
+      await this.orderRepository.update(orderId, {
+        paymentReference: txnRef,
+      });
+    }
 
     return paymentUrl;
   }
@@ -158,9 +163,12 @@ export class PaymentService {
       });
 
       if (order) {
-        // 🔥 Gọi business logic để xử lý order paid
-        await this.orderBusinessService.handleOrderPaid(order.id);
-        this.logger.log(`🎉 Order ${order.id} business logic completed`);
+        // Cập nhật order status thành paid
+        await this.orderRepository.update(order.id, {
+          status: OrderStatus.PAID,
+          paidAt: new Date(),
+        });
+        this.logger.log(`🎉 Order ${order.id} status updated to paid`);
       } else {
         this.logger.error(`❌ Order not found for transaction: ${txnRef}`);
       }
@@ -185,11 +193,14 @@ export class PaymentService {
         where: { paymentReference: txnRef },
       });
 
-      if (order && order.status !== 'paid') {
-        // 🔥 Gọi business logic để xử lý order paid
-        await this.orderBusinessService.handleOrderPaid(order.id);
-        this.logger.log(`🎉 IPN: Order ${order.id} business logic completed`);
-      } else if (order?.status === 'paid') {
+      if (order && order.status !== OrderStatus.PAID) {
+        // Cập nhật order status thành paid
+        await this.orderRepository.update(order.id, {
+          status: OrderStatus.PAID,
+          paidAt: new Date(),
+        });
+        this.logger.log(`🎉 IPN: Order ${order.id} status updated to paid`);
+      } else if (order?.status === OrderStatus.PAID) {
         this.logger.log(`ℹ️  IPN: Order ${order.id} already processed`);
       } else {
         this.logger.error(`❌ IPN: Order not found for transaction: ${txnRef}`);

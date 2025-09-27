@@ -4,8 +4,9 @@ export enum UserRole {
   SELLER = 'seller',
 }
 
-// Order status - chỉ 2 trạng thái quan trọng
+// Order status - các trạng thái đơn hàng
 export enum OrderStatus {
+  PENDING = 'pending', // Đơn hàng đang chờ thanh toán (tạm thời)
   PAID = 'paid', // Đã thanh toán (hiển thị cho cả buyer và seller)
   CANCELLED = 'cancelled', // Đã hủy
 }

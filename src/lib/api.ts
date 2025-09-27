@@ -1,29 +1,82 @@
-import { 
-  UserResponseDto, 
-  BuyerResponseDto, 
-  SellerResponseDto,
-  CreateUserDto,
-  CreateBuyerDto,
-  CreateSellerDto,
-  UpdateUserDto,
-  UpdateSellerDto,
-  UserReviewsDto,
-  BuyerOrdersDto,
-  SellerOrdersDto,
-  ProductResponseDto,
-  CreateProductDto,
-  UpdateProductDto,
-  OrderResponseDto,
-  CreateOrderDto,
-  UploadResponseDto,
-  CreateReviewDto,
-  UpdateReviewDto,
-  ReviewResponseDto,
-} from '../types/dtos';
+ import { createClient } from "@supabase/supabase-js";
+import { ProductResponseDto, CreateProductDto, UpdateProductDto, CreateOrderDto, CreateReviewDto, UpdateReviewDto, OrderResponseDto, ReviewResponseDto } from '../types/dtos';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-// Helper function để handle API errors, đặc biệt là authentication errors
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
+
+// Helper function để get auth token
+export async function getAuthToken(): Promise<string | null> {
+  if (!supabase) {
+    return null;
+  }
+  
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error || !session?.access_token) {
+      return null;
+    }
+    
+    return session.access_token;
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    return null;
+  }
+}
+
+// Helper function để get authentication headers
+export async function getAuthHeaders(): Promise<HeadersInit> {
+  if (!supabase) {
+    console.error('Supabase client not initialized');
+    throw new Error('Supabase client not initialized');
+  }
+  
+  try {
+    console.log('🔍 getAuthHeaders: Getting session...');
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('❌ getAuthHeaders: Error getting session:', error);
+      throw new Error('Failed to get session: ' + error.message);
+    }
+    
+    console.log('🔍 getAuthHeaders: Session exists:', !!session);
+    console.log('🔍 getAuthHeaders: Access token exists:', !!session?.access_token);
+    
+    const headers: HeadersInit = {};
+
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+      console.log('✅ getAuthHeaders: Auth token added to headers');
+    } else {
+      console.warn('⚠️ getAuthHeaders: No access token found in session');
+      throw new Error('No authentication token available');
+    }
+
+    return headers;
+  } catch (error) {
+    console.error('❌ getAuthHeaders: Error:', error);
+    throw error;
+  }
+}
+
+// Helper function để get headers with content type
+export async function getHeadersWithContentType(): Promise<HeadersInit> {
+  const authHeaders = await getAuthHeaders();
+  return {
+    ...authHeaders,
+    'Content-Type': 'application/json',
+  };
+}
+
+// Helper function để handle API errors
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -32,6 +85,28 @@ export class ApiError extends Error {
   ) {
     super(message);
     this.name = 'ApiError';
+  }
+}
+
+// Helper function để lấy user profile
+export async function getUserProfile(): Promise<any | null> {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+      headers,
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.data) {
+        return data.data;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return null;
   }
 }
 
@@ -45,10 +120,14 @@ async function handleResponse<T>(response: Response): Promise<T> {
       errorData = { message: response.statusText };
     }
 
-    // Nếu là 401 Unauthorized, có thể redirect đến login
+    // Nếu là 401 Unauthorized, dispatch auth error event
     if (response.status === 401) {
-      // Có thể dispatch logout event hoặc redirect
       console.warn('Authentication failed - token may be expired');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('authError', {
+          detail: { message: 'Authentication expired', status: 401 }
+        }));
+      }
     }
 
     throw new ApiError(
@@ -58,917 +137,460 @@ async function handleResponse<T>(response: Response): Promise<T> {
     );
   }
 
+  // Check if response has content to parse
+  const contentType = response.headers.get('content-type');
+  if (response.status === 204 || !contentType || !contentType.includes('application/json')) {
+    // For delete operations or responses without JSON content
+    return {} as T;
+  }
+
   return response.json();
 }
 
-// Profile API - Tổng hợp cho profile page
-export const profileApi = {
-  // Lấy đầy đủ thông tin profile (user + seller/buyer data nếu có)
-  async getFullProfile(userId: number): Promise<{
-    user: UserResponseDto;
-    seller?: SellerResponseDto;
-    buyer?: BuyerResponseDto;
-  }> {
-    try {
-      // Lấy thông tin user trước
-      const userData = await userApi.getProfile(userId);
-      
-      const result: {
-        user: UserResponseDto;
-        seller?: SellerResponseDto;
-        buyer?: BuyerResponseDto;
-      } = { user: userData };
-      
-      // Nếu là seller, lấy thêm thông tin seller
-      if (userData.role === 'seller' && userData.seller?.id) {
-        try {
-          const sellerData = await sellerApi.getSeller(userData.seller.id);
-          result.seller = sellerData;
-        } catch (error) {
-          console.warn('Could not fetch seller data:', error);
-          // Không throw error, chỉ log warning
-        }
-      }
-      
-      // Nếu là buyer, có thể lấy thêm thông tin buyer (nếu cần)
-      if (userData.role === 'buyer' && userData.buyer?.id) {
-        try {
-          const buyerData = await buyerApi.getBuyer(userData.buyer.id);
-          result.buyer = buyerData;
-        } catch (error) {
-          console.warn('Could not fetch buyer data:', error);
-          // Không throw error, chỉ log warning
-        }
-      }
-      
-      return result;
-    } catch (error) {
-      console.error('Error fetching full profile:', error);
-      throw error;
+// Auth API - Sử dụng Supabase Auth
+export const authApi = {
+  async signIn(email: string, password: string) {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
     }
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  async signUp(email: string, password: string, userData: any) {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: userData
+      }
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  async signOut() {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  },
+
+  async getUser() {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) throw error;
+    return user;
+  },
+
+  async getSession() {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    return session;
+  },
+
+  async forgotPassword(email: string) {
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+    return handleResponse(response);
+  },
+
+  async resetPassword(accessToken: string, password: string) {
+    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ access_token: accessToken, password }),
+    });
+    return handleResponse(response);
+  },
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+      method: 'POST',
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    });
+    return handleResponse(response);
   },
 };
 
 // User API
 export const userApi = {
-  // Get user profile with buyer/seller info
-  async getProfile(userId: number): Promise<UserResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/user-activity/user/${userId}/profile`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch user profile');
-    return response.json();
+  async getProfile(): Promise<any> {
+    return getUserProfile();
   },
 
-  // Get user reviews
-  async getUserReviews(userId: number): Promise<UserReviewsDto> {
-    const response = await fetch(`${API_BASE_URL}/user-activity/user/${userId}/reviews`, {
-      credentials: 'include',
+  async getProfileById(userId: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      headers: await getAuthHeaders(),
     });
-    if (!response.ok) throw new Error('Failed to fetch user reviews');
-    return response.json();
+    return handleResponse(response);
   },
 
-  // Create user (likely not needed as auth/register handles this)
-  async createUser(userData: CreateUserDto): Promise<UserResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/users`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(userData),
-    });
-    if (!response.ok) throw new Error('Failed to create user');
-    return response.json();
-  },
-
-  // Update user
-  async updateUser(userId: number, userData: UpdateUserDto): Promise<UserResponseDto> {
+  async updateProfile(userId: string, data: any): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(userData),
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Failed to update user');
-    return response.json();
+    return handleResponse(response);
   },
 };
 
-// Buyer API
-export const buyerApi = {
-  // Get user orders (new method using userId)
-  async getUserOrders(userId: number): Promise<BuyerOrdersDto> {
-    const response = await fetch(`${API_BASE_URL}/user-activity/user/${userId}/orders`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch user orders');
-    return response.json();
-  },
-
-  // Legacy method - deprecated
-  async getBuyerOrders(buyerId: number): Promise<BuyerOrdersDto> {
-    console.warn('getBuyerOrders is deprecated. Use getUserOrders instead.');
-    const response = await fetch(`${API_BASE_URL}/user-activity/buyer/${buyerId}/orders`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch buyer orders');
-    return response.json();
-  },
-
-  // Create buyer profile
-  async createBuyer(buyerData: CreateBuyerDto): Promise<BuyerResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/buyers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(buyerData),
-    });
-    if (!response.ok) throw new Error('Failed to create buyer');
-    return response.json();
-  },
-
-  // Get buyer profile
-  async getBuyer(buyerId: number): Promise<BuyerResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/buyers/${buyerId}`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch buyer');
-    return response.json();
-  },
-};
-
-// Seller API
-export const sellerApi = {
-  // Get seller orders
-  async getSellerOrders(sellerId: number): Promise<SellerOrdersDto> {
-    const response = await fetch(`${API_BASE_URL}/user-activity/seller/${sellerId}/orders`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch seller orders');
-    return response.json();
-  },
-
-  // Create seller profile
-  async createSeller(sellerData: CreateSellerDto): Promise<SellerResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/sellers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(sellerData),
-    });
-    if (!response.ok) throw new Error('Failed to create seller');
-    return response.json();
-  },
-
-  // Update seller profile
-  async updateSeller(sellerId: number, sellerData: UpdateSellerDto): Promise<SellerResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/sellers/${sellerId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(sellerData),
-    });
-    if (!response.ok) throw new Error('Failed to update seller');
-    return response.json();
-  },
-
-  // Get seller profile
-  async getSeller(sellerId: number): Promise<SellerResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/sellers/${sellerId}`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch seller');
-    return response.json();
-  },
-
-  // Get seller profile by user ID
-  async getSellerByUserId(userId: number): Promise<SellerResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/sellers/by-user/${userId}`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch seller by user ID');
-    return response.json();
-  },
-};
-
-// Authentication helpers
-export const authApi = {
-  async login(email: string, password: string): Promise<{ user: UserResponseDto }> {
-    console.log('📡 API: Sending login request to:', `${API_BASE_URL}/auth/login`);
-    console.log('📡 API: Request data:', { email, password: '***' });
-    
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include', // Include cookies for httpOnly authentication
-      body: JSON.stringify({ email, password }),
-    });
-    
-    console.log('📥 API: Response status:', response.status);
-    console.log('📥 API: Response ok:', response.ok);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ API: Login failed with:', errorText);
-      throw new Error(`Login failed: ${errorText}`);
-    }
-    
-    const data = await response.json();
-    console.log('✅ API: Login successful, data:', data);
-    return data;
-  },
-
-  async register(userData: CreateUserDto): Promise<UserResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(userData),
-    });
-    if (!response.ok) throw new Error('Registration failed');
-    return response.json();
-  },
-
-  async logout(): Promise<{ message: string }> {
-    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Logout failed');
-    return response.json();
-  },
-
-  async getProfile(): Promise<UserResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
-      method: 'GET', // Đổi từ POST thành GET
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to get profile');
-    return response.json();
-  },
-
-  // Thêm method để check auth status
-  async getStatus(): Promise<{ isAuthenticated: boolean; user: any }> {
-    const response = await fetch(`${API_BASE_URL}/auth/status`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to get auth status');
-    return response.json();
-  },
-};
-
-// Product API (can be added when product controller is implemented)
+// Product API
 export const productApi = {
-  // Get categories
-  async getCategories(): Promise<{ id: number; name: string; description: string; }[]> {
-    const response = await fetch(`${API_BASE_URL}/products/categories`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch categories');
-    return response.json();
+  async getProducts(params?: any): Promise<ProductResponseDto[]> {
+    const queryParams = new URLSearchParams(params).toString();
+    // Fix: use 'product' instead of 'products' to match backend route
+    const response = await fetch(`${API_BASE_URL}/product?${queryParams}`);
+    return handleResponse(response);
   },
 
-  // Get all products
-  async getProducts(): Promise<ProductResponseDto[]> {
-    const response = await fetch(`${API_BASE_URL}/products`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch products');
-    return response.json();
+  async getProduct(id: number): Promise<ProductResponseDto> {
+    const response = await fetch(`${API_BASE_URL}/product/${id}`);
+    return handleResponse(response);
   },
 
-  // Get top discount products
-  async getTopDiscountProducts(): Promise<ProductResponseDto[]> {
-    const response = await fetch(`${API_BASE_URL}/products/top-discount`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch top discount products');
-    return response.json();
-  },
-
-  // Get product by ID
-  async getProduct(productId: number): Promise<ProductResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch product');
-    return response.json();
-  },
-
-  // Get products by seller
-  async getProductsBySeller(sellerId: number): Promise<ProductResponseDto[]> {
-    const response = await fetch(`${API_BASE_URL}/products/seller/${sellerId}`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch seller products');
-    return response.json();
-  },
-
-  // Create product
-  async createProduct(productData: CreateProductDto): Promise<ProductResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/products`, {
+  async createProduct(data: CreateProductDto): Promise<ProductResponseDto> {
+    const response = await fetch(`${API_BASE_URL}/product`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(productData),
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Failed to create product');
-    return response.json();
+    return handleResponse(response);
   },
 
-  // Update product
-  async updateProduct(productId: number, productData: UpdateProductDto): Promise<ProductResponseDto> {
-    const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+  async updateProduct(id: number, data: UpdateProductDto): Promise<ProductResponseDto> {
+    const response = await fetch(`${API_BASE_URL}/product/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(productData),
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Failed to update product');
-    return response.json();
+    return handleResponse(response);
   },
 
-  // Delete product
-  async deleteProduct(productId: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+  async deleteProduct(id: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/product/${id}`, {
       method: 'DELETE',
-      credentials: 'include',
+      headers: await getAuthHeaders(),
     });
-    if (!response.ok) throw new Error('Failed to delete product');
+    return handleResponse(response);
   },
 
-  // Search products
-  async searchProducts(query: string, limit: number = 20): Promise<ProductResponseDto[]> {
-    const response = await fetch(`${API_BASE_URL}/products/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Search failed');
-    return response.json();
+  async getCategories(): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/product/categories`);
+    return handleResponse(response);
   },
 
-  // Get popular products
-  async getPopularProducts(limit: number = 10): Promise<ProductResponseDto[]> {
-    const response = await fetch(`${API_BASE_URL}/products/popular?limit=${limit}`, {
-      credentials: 'include',
+  async getSellerProducts(): Promise<ProductResponseDto[]> {
+    const response = await fetch(`${API_BASE_URL}/product/seller`, {
+      headers: await getAuthHeaders(),
     });
-    if (!response.ok) throw new Error('Failed to fetch popular products');
-    return response.json();
-  },
-
-  // Get similar products
-  async getSimilarProducts(productId: number, limit: number = 5): Promise<ProductResponseDto[]> {
-    const response = await fetch(`${API_BASE_URL}/products/${productId}/similar?limit=${limit}`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch similar products');
-    return response.json();
+    return handleResponse(response);
   },
 };
 
-// Order API  
+// Order API
 export const orderApi = {
-  // Get all orders
   async getOrders(): Promise<OrderResponseDto[]> {
     const response = await fetch(`${API_BASE_URL}/orders`, {
-      credentials: 'include',
+      headers: await getAuthHeaders(),
     });
-    if (!response.ok) throw new Error('Failed to fetch orders');
-    return response.json();
+    return handleResponse(response);
   },
 
-  // Create order
-  async createOrder(orderData: CreateOrderDto): Promise<OrderResponseDto> {
+  async createOrder(data: CreateOrderDto): Promise<OrderResponseDto> {
     const response = await fetch(`${API_BASE_URL}/orders`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(orderData),
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Failed to create order');
-    return response.json();
+    return handleResponse(response);
+  },
+
+  async getOrder(id: number): Promise<OrderResponseDto> {
+    const response = await fetch(`${API_BASE_URL}/orders/${id}`, {
+      headers: await getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  // Cart checkout
+  async checkout(items: Array<{productId: number, quantity: number, price: number}>, note?: string) {
+    const response = await fetch(`${API_BASE_URL}/order/checkout`, {
+      method: 'POST',
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify({ items, note }),
+    });
+    return handleResponse(response);
   },
 };
 
-// Media/Upload API
-export const uploadApi = {
-  // Upload single file for entity
-  async uploadFile(
-    file: File, 
-    entityType: string = 'general', 
-    entityId?: number
-  ): Promise<any> {
-    const formData = new FormData();
-    formData.append('files', file); // Backend expects 'files'
-    formData.append('entityType', entityType);
-    if (entityId) {
-      formData.append('entityId', entityId.toString());
-    }
-    
-    const response = await fetch(`${API_BASE_URL}/media/upload`, {
+// Payment API
+export const paymentApi = {
+  async createPayment(orderId: number) {
+    const response = await fetch(`${API_BASE_URL}/payment/create/${orderId}`, {
       method: 'POST',
-      credentials: 'include',
-      body: formData,
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify({}),
     });
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Upload failed:', errorText);
-      throw new Error(`Failed to upload file: ${response.status} ${response.statusText}`);
-    }
-    return response.json();
+    return handleResponse(response);
   },
 
-  // Upload multiple files
-  async uploadMultipleFiles(
-    files: File[], 
-    entityType: string, 
-    entityId: number,
-    isPrimary?: boolean[]
-  ): Promise<any> {
-    const formData = new FormData();
-    files.forEach(file => formData.append('files', file));
-    formData.append('entityType', entityType);
-    formData.append('entityId', entityId.toString());
-    if (isPrimary) {
-      isPrimary.forEach((primary, index) => {
-        formData.append(`isPrimary[${index}]`, primary.toString());
-      });
-    }
-    
-    const response = await fetch(`${API_BASE_URL}/media/upload`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    });
-    if (!response.ok) throw new Error('Failed to upload files');
-    return response.json();
-  },
-
-  // Get media files for entity
-  async getMediaFiles(entityType: string, entityId: number): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/media/${entityType}/${entityId}`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to get media files');
-    return response.json();
-  },
-
-  // Update media files (add/remove)
-  async updateMediaFiles(
-    entityType: string,
-    entityId: number,
-    options: {
-      filesToAdd?: File[];
-      filesToDelete?: number[];
-      primaryFileId?: number;
-    }
-  ): Promise<any> {
-    const formData = new FormData();
-    
-    if (options.filesToAdd) {
-      options.filesToAdd.forEach(file => formData.append('files', file));
-    }
-    
-    if (options.filesToDelete) {
-      formData.append('filesToDelete', JSON.stringify(options.filesToDelete));
-    }
-    
-    if (options.primaryFileId) {
-      formData.append('primaryFileId', options.primaryFileId.toString());
-    }
-    
-    const response = await fetch(`${API_BASE_URL}/media/${entityType}/${entityId}`, {
-      method: 'PUT',
-      credentials: 'include',
-      body: formData,
-    });
-    if (!response.ok) throw new Error('Failed to update media files');
-    return response.json();
-  },
-
-  // Set primary media file
-  async setPrimaryMedia(mediaFileId: number): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/media/primary/${mediaFileId}`, {
-      method: 'PUT',
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to set primary media');
-    return response.json();
-  },
-
-  // Delete all media for entity
-  async deleteAllMedia(entityType: string, entityId: number): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/media/${entityType}/${entityId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to delete media files');
-    return response.json();
+  async getBankList() {
+    const response = await fetch(`${API_BASE_URL}/payment/banks`);
+    return handleResponse(response);
   },
 };
 
 // Review API
 export const reviewApi = {
-  // Get product reviews
   async getProductReviews(productId: number): Promise<ReviewResponseDto[]> {
-    const response = await fetch(`${API_BASE_URL}/reviews/product/${productId}`, {
-      credentials: 'include',
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error Response:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText
-      });
-      throw new Error(`Failed to fetch product reviews: ${response.status} ${response.statusText}`);
-    }
-    return response.json();
+    const response = await fetch(`${API_BASE_URL}/reviews/product/${productId}`);
+    return handleResponse(response);
   },
 
-  // Get product rating stats
-  async getProductRatingStats(productId: number): Promise<{
-    averageRating: number;
-    totalReviews: number;
-    ratingDistribution: { [key: number]: number };
-  }> {
-    const response = await fetch(`${API_BASE_URL}/reviews/product/${productId}/stats`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch product rating stats');
-    return response.json();
-  },
-
-  // Create review
-  async createReview(reviewData: Omit<CreateReviewDto, 'buyerId'>): Promise<ReviewResponseDto> {
+  async createReview(productId: number, data: CreateReviewDto): Promise<ReviewResponseDto> {
     const response = await fetch(`${API_BASE_URL}/reviews`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(reviewData),
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify(data),
     });
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Create Review API Error:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText
-      });
-      
-      // Try to parse error response as JSON to get the message
-      let errorMessage = `Failed to create review: ${response.status} ${response.statusText}`;
-      try {
-        const errorData = JSON.parse(errorText);
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        }
-      } catch {
-        // If can't parse as JSON, use the text as is
-        if (errorText) {
-          errorMessage = errorText;
-        }
-      }
-      
-      // Create a proper error object with response details for handling in UI
-      const error = new Error(errorMessage) as Error & {
-        response: {
-          status: number;
-          data: { message: string };
-        };
-      };
-      error.response = {
-        status: response.status,
-        data: { message: errorMessage }
-      };
-      throw error;
-    }
-    return response.json();
+    return handleResponse(response);
   },
 
-  // Update review
-  async updateReview(reviewId: number, reviewData: UpdateReviewDto): Promise<ReviewResponseDto> {
+  async updateReview(reviewId: number, data: UpdateReviewDto): Promise<ReviewResponseDto> {
     const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(reviewData),
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Failed to update review');
-    return response.json();
+    return handleResponse(response);
   },
 
-  // Delete review
   async deleteReview(reviewId: number): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}`, {
       method: 'DELETE',
-      credentials: 'include',
+      headers: await getAuthHeaders(),
     });
-    if (!response.ok) throw new Error('Failed to delete review');
+    return handleResponse(response);
   },
 
-  // Mark review as helpful
-  async markReviewHelpful(reviewId: number): Promise<{ helpfulCount: number }> {
+  async getProductRatingStats(productId: number): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/reviews/product/${productId}/stats`);
+    return handleResponse(response);
+  },
+
+  async toggleHelpful(reviewId: number): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}/helpful`, {
       method: 'POST',
-      credentials: 'include',
+      headers: await getAuthHeaders(),
     });
-    if (!response.ok) throw new Error('Failed to mark review as helpful');
-    return response.json();
-  },
-
-  // Get top reviews for product
-  async getTopProductReviews(productId: number, limit: number = 5): Promise<ReviewResponseDto[]> {
-    const response = await fetch(`${API_BASE_URL}/reviews/product/${productId}/top?limit=${limit}`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Failed to fetch top product reviews');
-    return response.json();
+    return handleResponse(response);
   },
 };
 
-// Favorites API
-export const favoritesApi = {
-  // Get user's favorite products
-  async getFavorites(): Promise<ProductResponseDto[]> {
-    const response = await fetch(`${API_BASE_URL}/favorites`, {
-      credentials: 'include',
-    });
+// Media API
+export const mediaApi = {
+  async uploadAvatar(file: File): Promise<{ avatarUrl: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
     
-    const data = await handleResponse<{ message: string; data: ProductResponseDto[] }>(response);
-    return data.data || []; // API trả về { message, data }
-  },
-
-  // Add product to favorites
-  async addToFavorites(productId: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/favorites/${productId}`, {
+    const response = await fetch(`${API_BASE_URL}/media/avatar`, {
       method: 'POST',
-      credentials: 'include',
-    });
-    await handleResponse<{ message: string; data?: any }>(response);
-  },
-
-  // Remove product from favorites
-  async removeFromFavorites(productId: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/favorites/${productId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    await handleResponse<{ message: string }>(response);
-  },
-
-  // Check if product is favorite
-  async isFavorite(productId: number): Promise<boolean> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/favorites/check/${productId}`, {
-        credentials: 'include',
-      });
-      const data = await handleResponse<{ isFavorite: boolean }>(response);
-      return data.isFavorite;
-    } catch (error) {
-      // If there's an auth error or other error, assume not favorite
-      console.warn('Error checking favorite status:', error);
-      return false;
-    }
-  },
-
-  // Get favorite status for multiple products
-  async getFavoriteStatus(productIds: number[]): Promise<Record<number, boolean>> {
-    try {
-      const promises = productIds.map(id => this.isFavorite(id));
-      const results = await Promise.all(promises);
-      
-      const favoriteStatus: Record<number, boolean> = {};
-      productIds.forEach((id, index) => {
-        favoriteStatus[id] = results[index];
-      });
-      
-      return favoriteStatus;
-    } catch (error) {
-      console.error('Error fetching favorite status:', error);
-      return {};
-    }
-  },
-};
-
-// Chat API
-export const chatApi = {
-  // Get user's chat rooms
-  async getRooms(page: number = 1, limit: number = 20): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/chat/rooms?page=${page}&limit=${limit}`, {
-      credentials: 'include',
+      headers: await getAuthHeaders(),
+      body: formData,
     });
     return handleResponse(response);
   },
 
-  // Get room by ID
-  async getRoom(roomId: number) {
-    const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}`, {
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Get messages for a room
-  async getRoomMessages(roomId: number, page: number = 1, limit: number = 50): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/messages?page=${page}&limit=${limit}`, {
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Start private chat
-  async startPrivateChat(userId: number): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/chat/private`, {
+  async uploadProductImages(productId: string, files: File[]): Promise<{ imageUrls: string[] }> {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    
+    const response = await fetch(`${API_BASE_URL}/media/products/${productId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ userId }),
+      headers: await getAuthHeaders(),
+      body: formData,
     });
     return handleResponse(response);
   },
-
-  // Check room access
-  async checkRoomAccess(roomId: number) {
-    const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/access`, {
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Get available users for chat
-  async getAvailableUsers() {
-    const response = await fetch(`${API_BASE_URL}/chat/users`, {
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-};
-
-// Payment API  
-export const paymentApi = {
-  // Create payment URL
-  async createPayment(orderId: number, options?: { locale?: string }) {
-    const response = await fetch(`${API_BASE_URL}/payment/create/${orderId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(options || {})
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to create payment');
-    }
-
-    return response.json();
-  },
-
-  // Query payment status
-  async queryPayment(txnRef: string, txnDate: string) {
-    const response = await fetch(`${API_BASE_URL}/payment/query/${txnRef}/${txnDate}`, {
-      method: 'GET',
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to query payment');
-    }
-
-    return response.json();
-  },
-
-  // Refund payment
-  async refundPayment(txnRef: string, data: { amount: number; reason: string }) {
-    const response = await fetch(`${API_BASE_URL}/payment/refund/${txnRef}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to refund payment');
-    }
-
-    return response.json();
-  }
 };
 
 // Blog API
 export const blogApi = {
-  // Get all blogs
   async getBlogs(): Promise<any[]> {
-    const response = await fetch(`${API_BASE_URL}/blogs`, {
-      credentials: 'include',
-    });
+    const response = await fetch(`${API_BASE_URL}/blogs`);
     return handleResponse(response);
   },
 
-  // Get blog by ID
   async getBlog(id: number): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/blogs/${id}`, {
-      credentials: 'include',
-    });
+    const response = await fetch(`${API_BASE_URL}/blogs/${id}`);
     return handleResponse(response);
   },
 
-  // Create blog
-  async createBlog(blogData: { title: string; content: string; imageUrl?: string; featuredImage?: string }): Promise<any> {
+  async createBlog(data: any): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/blogs`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(blogData),
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify(data),
     });
     return handleResponse(response);
   },
 
-  // Update blog
-  async updateBlog(id: number, blogData: { title?: string; content?: string; imageUrl?: string; featuredImage?: string }): Promise<any> {
+  async updateBlog(id: number, data: any): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/blogs/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(blogData),
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify(data),
     });
     return handleResponse(response);
   },
 
-  // Delete blog
   async deleteBlog(id: number): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/blogs/${id}`, {
       method: 'DELETE',
-      credentials: 'include',
-    });
-    await handleResponse(response);
-  },
-
-  // Get comments for blog
-  async getComments(blogId: number): Promise<any[]> {
-    const response = await fetch(`${API_BASE_URL}/blogs/${blogId}/comments`, {
-      credentials: 'include',
+      headers: await getAuthHeaders(),
     });
     return handleResponse(response);
   },
 
-  // Create comment
-  async createComment(blogId: number, commentData: { content: string; parentId?: number }): Promise<any> {
+  async getBlogComments(blogId: number): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/blogs/${blogId}/comments`);
+    return handleResponse(response);
+  },
+
+  async createBlogComment(blogId: number, data: any): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/blogs/${blogId}/comments`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(commentData),
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify(data),
     });
     return handleResponse(response);
   },
 
-  // Update comment
-  async updateComment(commentId: number, commentData: { content: string }): Promise<any> {
+  async updateComment(commentId: number, data: any): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/blogs/comments/${commentId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(commentData),
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify(data),
     });
     return handleResponse(response);
   },
 
-  // Delete comment
   async deleteComment(commentId: number): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/blogs/comments/${commentId}`, {
       method: 'DELETE',
-      credentials: 'include',
+      headers: await getAuthHeaders(),
     });
-    await handleResponse(response);
+    return handleResponse(response);
   },
 
-  // Vote blog
   async voteBlog(blogId: number, voteType: 'up' | 'down'): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/blogs/${blogId}/vote`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: await getHeadersWithContentType(),
       body: JSON.stringify({ voteType }),
     });
     return handleResponse(response);
   },
 
-  // Remove vote
   async unvoteBlog(blogId: number): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/blogs/${blogId}/vote`, {
       method: 'DELETE',
-      credentials: 'include',
+      headers: await getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+};
+
+// Seller API
+export const sellerApi = {
+  async getSellerProfile(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/sellers/profile`, {
+      headers: await getAuthHeaders(),
     });
     return handleResponse(response);
   },
 
-  // Get vote stats
-  async getVoteStats(blogId: number): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/blogs/${blogId}/vote-stats`, {
-      credentials: 'include',
+  async updateSellerProfile(data: any): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/sellers/profile`, {
+      method: 'PATCH',
+      headers: await getHeadersWithContentType(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  async getSellerOrders(): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/sellers/orders`, {
+      headers: await getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  async getSellerStats(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/sellers/stats`, {
+      headers: await getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  async getSellerByUserId(userId: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/sellers/user/${userId}`, {
+      headers: await getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  async getAnalytics(sellerId: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/sellers/${sellerId}/analytics`, {
+      headers: await getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  async getOrdersBySellerId(sellerId: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/sellers/${sellerId}/orders`, {
+      headers: await getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+};
+
+
+
+// Upload API
+export const uploadApi = {
+  async uploadFile(file: File, type: string = 'general'): Promise<{ status: string; data: Array<{ secureUrl: string }> }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+    
+    const response = await fetch(`${API_BASE_URL}/media/upload`, {
+      method: 'POST',
+      headers: await getAuthHeaders(),
+      body: formData,
     });
     return handleResponse(response);
   },

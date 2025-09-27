@@ -1,7 +1,6 @@
 import {
   Controller,
   Post,
-  Delete,
   Get,
   Param,
   UseGuards,
@@ -9,13 +8,17 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FavoriteService } from './favorite.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
+import { RoleGuard } from '../auth/role.guard';
+import { Roles } from '../auth/role.decorator';
+import { UserRole } from '../lib/supabase';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Buyer } from '../account/buyer/entities/buyer.entity';
 
 @Controller('favorites')
-@UseGuards(JwtAuthGuard)
+@UseGuards(SupabaseAuthGuard, RoleGuard)
+@Roles(UserRole.BUYER)
 export class FavoriteController {
   constructor(
     private readonly favoriteService: FavoriteService,
@@ -24,9 +27,9 @@ export class FavoriteController {
   ) {}
 
   // Helper method để lấy buyerId từ user
-  private async getBuyerId(userId: string): Promise<number> {
+  private async getBuyerId(userId: string): Promise<string> {
     const buyer = await this.buyerRepository.findOne({
-      where: { user: { id: parseInt(userId) } },
+      where: { user: { id: userId } },
       relations: ['user'],
     });
 
@@ -39,33 +42,20 @@ export class FavoriteController {
     return buyer.id;
   }
 
-  // Thêm sản phẩm vào yêu thích
-  @Post(':productId')
-  async addToFavorites(
+  // Toggle favorite (thêm/xóa sản phẩm khỏi yêu thích)
+  @Post(':productId/toggle')
+  async toggleFavorite(
     @Param('productId') productId: number,
     @Request() req: any,
   ) {
     const buyerId = await this.getBuyerId(req.user.id);
-    const favorite = await this.favoriteService.addToFavorites(
+    const result = await this.favoriteService.toggleFavorite(
       buyerId,
       productId,
     );
     return {
-      message: 'Đã thêm vào danh sách yêu thích',
-      data: favorite,
-    };
-  }
-
-  // Xóa sản phẩm khỏi yêu thích
-  @Delete(':productId')
-  async removeFromFavorites(
-    @Param('productId') productId: number,
-    @Request() req: any,
-  ) {
-    const buyerId = await this.getBuyerId(req.user.id);
-    await this.favoriteService.removeFromFavorites(buyerId, productId);
-    return {
-      message: 'Đã xóa khỏi danh sách yêu thích',
+      message: result.message,
+      isFavorite: result.isFavorite,
     };
   }
 
@@ -76,7 +66,7 @@ export class FavoriteController {
     const products = await this.favoriteService.getFavoritesByBuyer(buyerId);
     return {
       message: 'Danh sách sản phẩm yêu thích',
-      data: products,
+      favorites: products,
     };
   }
 

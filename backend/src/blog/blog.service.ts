@@ -51,8 +51,6 @@ export class BlogService {
         'author',
         'comments',
         'comments.user',
-        'comments.replies',
-        'comments.replies.user',
         'votes',
       ],
     });
@@ -151,13 +149,14 @@ export class BlogService {
       throw new ForbiddenException('You can only delete your own comments');
     }
 
+    // Simple hard delete for flat comment structure
     await this.commentRepository.delete(id);
   }
 
   async findCommentsByBlogId(blogId: number): Promise<BlogComment[]> {
     return this.commentRepository.find({
-      where: { blogId, parentId: undefined }, // Only top-level comments
-      relations: ['user', 'replies', 'replies.user'],
+      where: { blogId }, // All comments (no longer hierarchical)
+      relations: ['user'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -241,6 +240,9 @@ export class BlogService {
     blog.upvoteCount = upvoteCount;
     blog.downvoteCount = downvoteCount;
     blog.userVote = userVote;
+
+    // Comments are now flat (no replies)
+    // No longer need to initialize replies since we removed reply functionality
 
     return blog;
   }

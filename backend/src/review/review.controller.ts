@@ -13,10 +13,10 @@ import {
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { CreateReviewDto, UpdateReviewDto } from './dto/review.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../auth/roles.enum';
+import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
+import { RoleGuard } from '../auth/role.guard';
+import { Roles } from '../auth/role.decorator';
+import { UserRole } from '../lib/supabase';
 
 @Controller('reviews')
 export class ReviewController {
@@ -24,11 +24,11 @@ export class ReviewController {
 
   // Tạo review mới - chỉ buyer mới được review
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(SupabaseAuthGuard, RoleGuard)
   @Roles(UserRole.BUYER)
   async createReview(@Body() createReviewDto: CreateReviewDto, @Request() req) {
-    // Lấy userId từ JWT payload
-    const userId = req.user.userId;
+    // Lấy userId từ Supabase payload
+    const userId = req.user.id;
 
     return this.reviewService.createReview(createReviewDto, userId);
   }
@@ -49,30 +49,30 @@ export class ReviewController {
 
   // Cập nhật review - chỉ chủ review mới được sửa
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(SupabaseAuthGuard, RoleGuard)
   @Roles(UserRole.BUYER)
   async updateReview(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateReviewDto: UpdateReviewDto,
     @Request() req,
   ) {
-    const userId = req.user.userId;
+    const userId = req.user.id;
     return this.reviewService.updateReview(id, updateReviewDto, userId);
   }
 
   // Xóa review - chỉ chủ review mới được xóa
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(SupabaseAuthGuard, RoleGuard)
   @Roles(UserRole.BUYER)
   async deleteReview(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    const userId = req.user.userId;
+    const userId = req.user.id;
     await this.reviewService.deleteReview(id, userId);
     return { message: 'Xóa đánh giá thành công' };
   }
 
   // Tăng helpful count cho review
   @Post(':id/helpful')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(SupabaseAuthGuard)
   async markReviewHelpful(@Param('id', ParseIntPipe) id: number) {
     return this.reviewService.incrementHelpfulCount(id);
   }

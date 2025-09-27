@@ -1,10 +1,17 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings } from 'lucide-react';
-import { SettingsTab } from '@/constants/settingsTabs';
+import { Settings, User as UserIcon, Store, Lock, Bell, Eye } from 'lucide-react';
+import { UserRole } from '@/types/entities';
+
+export interface SettingsTab {
+  id: string;
+  label: string;
+  icon: typeof UserIcon;
+  show?: (userRole?: UserRole) => boolean;
+}
 
 interface SettingsLayoutProps {
-  user: { id: number; name?: string } | null;
+  user: { id: string | number; name?: string } | null;
   tabs: SettingsTab[];
   activeTab: string;
   onTabChange: (tabId: string) => void;
@@ -23,13 +30,13 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-6">
           {/* Back Button */}
           <div className="mb-4">
             <button 
               onClick={() => router.back()}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
+              className="flex items-center gap-2 text-gray-600 hover:text-blue-600 font-medium transition-colors"
             >
               ← Quay lại
             </button>
@@ -58,7 +65,7 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({
         <div className="flex gap-6">
           {/* Sidebar Navigation */}
           <div className="w-64 flex-shrink-0">
-            <div className="bg-white rounded-xl shadow-lg p-4">
+            <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-100">
               <div className="space-y-2">
                 {tabs.map((tab) => {
                   const IconComponent = tab.icon;
@@ -68,8 +75,8 @@ const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                       onClick={() => onTabChange(tab.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                         activeTab === tab.id
-                          ? 'bg-blue-50 text-blue-700 font-medium'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          ? 'bg-blue-50 text-blue-700 font-medium border border-blue-200'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600'
                       }`}
                     >
                       <IconComponent className="w-5 h-5" />

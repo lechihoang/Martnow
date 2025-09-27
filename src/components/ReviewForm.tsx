@@ -20,64 +20,111 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
 }) => {
   const [rating, setRating] = useState(initialData?.rating || 0);
   const [comment, setComment] = useState(initialData?.comment || '');
+  const [errors, setErrors] = useState<{ rating?: string; comment?: string }>({});
+
+  const validateForm = () => {
+    const newErrors: { rating?: string; comment?: string } = {};
+    
+    if (rating === 0) {
+      newErrors.rating = 'Vui lòng chọn số sao đánh giá';
+    }
+    
+    if (comment.trim().length > 500) {
+      newErrors.comment = 'Nhận xét không được vượt quá 500 ký tự';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (rating === 0) {
-      alert('Vui lòng chọn số sao đánh giá');
+    
+    if (!validateForm()) {
       return;
     }
-    onSubmit({ rating, comment });
+    
+    onSubmit({ rating, comment: comment.trim() });
+  };
+
+  const handleRatingChange = (newRating: number) => {
+    setRating(newRating);
+    if (errors.rating) {
+      setErrors(prev => ({ ...prev, rating: undefined }));
+    }
+  };
+
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setComment(value);
+    if (errors.comment) {
+      setErrors(prev => ({ ...prev, comment: undefined }));
+    }
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        {initialData ? 'Chỉnh sửa đánh giá' : 'Đánh giá sản phẩm'}
-      </h3>
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+      <div className="text-center mb-8">
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">
+          {initialData ? 'Chỉnh sửa đánh giá' : 'Đánh giá sản phẩm'}
+        </h3>
+        <p className="text-gray-600">
+          {initialData ? 'Cập nhật cảm nhận của bạn về sản phẩm' : 'Chia sẻ trải nghiệm của bạn với cộng đồng'}
+        </p>
+      </div>
       
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* Rating */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="text-center">
+          <label className="block text-sm font-medium text-gray-700 mb-4">
             Đánh giá của bạn *
           </label>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-3">
             <StarRating
               rating={rating}
-              onRatingChange={setRating}
+              onRatingChange={handleRatingChange}
               size="lg"
             />
-            <span className="text-sm text-gray-600">
+            <span className="text-lg font-semibold text-blue-600">
               {rating > 0 && `${rating} sao`}
             </span>
           </div>
+          {errors.rating && (
+            <p className="text-red-500 text-sm mt-2">{errors.rating}</p>
+          )}
         </div>
 
         {/* Comment */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
             Nhận xét (tùy chọn)
           </label>
           <textarea
             value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
+            onChange={handleCommentChange}
+            rows={5}
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-colors ${
+              errors.comment ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+            }`}
+            placeholder="Chia sẻ cảm nhận của bạn về sản phẩm... (tối đa 500 ký tự)"
             maxLength={500}
           />
-          <p className="text-xs text-gray-500 mt-1">
-            {comment.length}/500 ký tự
-          </p>
+          <div className="flex justify-between items-center mt-2">
+            <p className={`text-sm ${errors.comment ? 'text-red-500' : 'text-gray-500'}`}>
+              {comment.length}/500 ký tự
+            </p>
+            {errors.comment && (
+              <p className="text-red-500 text-sm font-medium">{errors.comment}</p>
+            )}
+          </div>
         </div>
 
         {/* Buttons */}
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-4 pt-6 border-t border-gray-100">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+            className="px-6 py-3 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
             disabled={loading}
           >
             Hủy
@@ -85,9 +132,16 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
           <button
             type="submit"
             disabled={loading || rating === 0}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium shadow-sm hover:shadow-md"
           >
-            {loading ? 'Đang lưu...' : (initialData ? 'Cập nhật đánh giá' : 'Gửi đánh giá')}
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Đang lưu...</span>
+              </div>
+            ) : (
+              initialData ? 'Cập nhật đánh giá' : 'Gửi đánh giá'
+            )}
           </button>
         </div>
       </form>

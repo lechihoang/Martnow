@@ -32,7 +32,7 @@ export class ReviewService {
   ): Promise<ReviewResponseDto> {
     // Tìm buyer từ userId (buyer.id chính là userId)
     const buyer = await this.buyerRepository.findOne({
-      where: { id: parseInt(userId) },
+      where: { id: userId },
       relations: ['user'],
     });
     if (!buyer) {
@@ -106,7 +106,7 @@ export class ReviewService {
     }
 
     // Verify ownership by checking buyer.id (which is userId)
-    if (review.buyer.id !== parseInt(userId)) {
+    if (review.buyer.id !== userId) {
       throw new UnauthorizedException('You can only update your own reviews');
     }
 
@@ -129,25 +129,22 @@ export class ReviewService {
   async deleteReview(id: number, userId: string): Promise<void> {
     const review = await this.reviewRepository.findOne({
       where: { id },
-      relations: ['buyer'],
+      relations: ['buyer', 'buyer.user'],
     });
 
     if (!review) {
-      throw new NotFoundException('Review không tồn tại');
+      throw new NotFoundException(`Review not found`);
     }
 
     // Verify ownership by checking buyer.id (which is userId)
-    if (review.buyer.id !== parseInt(userId)) {
-      throw new UnauthorizedException(
-        'Bạn chỉ có thể xóa review của chính mình',
-      );
+    if (review.buyer.id !== userId) {
+      throw new UnauthorizedException('You can only delete your own reviews');
     }
 
-    const productId = review.productId; // Lưu lại productId trước khi xóa
     await this.reviewRepository.remove(review);
 
-    // ✅ Cập nhật product statistics sau khi xóa review
-    await this.updateProductStatistics(productId);
+    // ✅ Cập nhật product statistics khi review được xóa
+    await this.updateProductStatistics(review.productId);
   }
 
   async getProductRatingStats(productId: number): Promise<{

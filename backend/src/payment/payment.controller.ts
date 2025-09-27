@@ -22,10 +22,8 @@ export class PaymentController {
     @Param('orderId', ParseIntPipe) orderId: number,
     @Body() createPaymentDto: CreatePaymentDto,
   ) {
-    const result = await this.paymentService.createPaymentUrl(
-      orderId,
-      createPaymentDto,
-    );
+    // Không cần truyền amount, service sẽ tự lấy từ order
+    const result = await this.paymentService.createPaymentUrl(orderId);
     return {
       message: 'Payment URL created successfully',
       data: result,

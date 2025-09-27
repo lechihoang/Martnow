@@ -1,5 +1,5 @@
 import { IsString, IsEmail, IsOptional, IsEnum } from 'class-validator';
-import { UserRole } from '../../../auth/roles.enum';
+import { UserRole } from '../../../lib/supabase';
 
 export class CreateUserDto {
   @IsString()
@@ -10,9 +10,6 @@ export class CreateUserDto {
 
   @IsEmail()
   email: string;
-
-  @IsString()
-  password: string;
 
   @IsEnum(UserRole)
   role: UserRole;
@@ -43,10 +40,6 @@ export class UpdateUserDto {
   @IsOptional()
   email?: string;
 
-  @IsString()
-  @IsOptional()
-  password?: string;
-
   @IsEnum(UserRole)
   @IsOptional()
   role?: UserRole;
@@ -65,7 +58,7 @@ export class UpdateUserDto {
 }
 
 export class UserResponseDto {
-  id: number;
+  id: string;
   name: string;
   username: string;
   email: string;
@@ -73,19 +66,15 @@ export class UserResponseDto {
   avatar?: string;
   address?: string;
   phone?: string;
-  createdAt: Date;
-  updatedAt: Date;
   buyerInfo?: {
-    id: number;
-    createdAt: Date;
+    id: string;
   };
   sellerInfo?: {
-    id: number;
+    id: string;
     shopName?: string;
     shopAddress?: string;
     shopPhone?: string;
     description?: string;
-    createdAt: Date;
   };
 
   constructor(user: any) {
@@ -101,13 +90,10 @@ export class UserResponseDto {
     this.avatar = user.avatar;
     this.address = user.address;
     this.phone = user.phone;
-    this.createdAt = user.createdAt;
-    this.updatedAt = user.updatedAt;
 
     if (user.buyer) {
       this.buyerInfo = {
         id: user.buyer.id,
-        createdAt: user.buyer.createdAt,
       };
     }
 
@@ -118,7 +104,6 @@ export class UserResponseDto {
         shopAddress: user.seller.shopAddress,
         shopPhone: user.seller.shopPhone,
         description: user.seller.description,
-        createdAt: user.seller.createdAt,
       };
     }
   }

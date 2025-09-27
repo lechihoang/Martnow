@@ -2,9 +2,9 @@ import {
   Entity,
   Column,
   OneToOne,
+  PrimaryColumn,
   JoinColumn,
   OneToMany,
-  PrimaryColumn,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Order } from '../../../order/entities/order.entity';
@@ -13,11 +13,11 @@ import { Favorite } from '../../../favorite/entities/favorite.entity';
 
 @Entity()
 export class Buyer {
-  @PrimaryColumn({ type: 'int' }) // Sử dụng userId làm PK luôn
-  id: number; // Chính là userId
+  @PrimaryColumn({ type: 'varchar', length: 255 })
+  id: string; // This will be the same as user.id (supabase_id)
 
   @OneToOne(() => User, (user) => user.buyer)
-  @JoinColumn({ name: 'id' }) // Join bằng id chính
+  @JoinColumn({ name: 'id' })
   user: User;
 
   // Tất cả đơn hàng mà buyer này đã mua
@@ -28,7 +28,7 @@ export class Buyer {
   @OneToMany(() => Review, (review) => review.buyer)
   reviews: Review[];
 
-  // Tất cả sản phẩm yêu thích của buyer
+  // Tất cả sản phẩm yêu thích của buyer (sync với backend)
   @OneToMany(() => Favorite, (favorite) => favorite.buyer)
   favorites: Favorite[];
 }

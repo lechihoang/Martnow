@@ -6,14 +6,12 @@ import { Seller } from '../account/seller/entities/seller.entity';
 import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
 import { AuthModule } from '../auth/auth.module';
-import { CommonModule } from '../common/common.module';
 import { MediaModule } from '../media/media.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Product, Category, Seller]),
     AuthModule,
-    CommonModule,
     MediaModule,
   ],
   controllers: [ProductController],

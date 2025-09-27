@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { blogApi } from '../lib/api';
-import useUser from '../hooks/useUser';
 
 interface VoteButtonsProps {
   blogId: number;
@@ -12,6 +11,7 @@ interface VoteButtonsProps {
   userVote?: 'up' | 'down' | null;
   orientation?: 'horizontal' | 'vertical';
   onVoteChange?: (newStats: { upvoteCount: number; downvoteCount: number; userVote: 'up' | 'down' | null }) => void;
+  userProfile: any;
 }
 
 const VoteButtons: React.FC<VoteButtonsProps> = ({
@@ -21,15 +21,15 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
   userVote,
   orientation = 'horizontal',
   onVoteChange,
+  userProfile
 }) => {
   const [localUpvotes, setLocalUpvotes] = useState(upvoteCount);
   const [localDownvotes, setLocalDownvotes] = useState(downvoteCount);
   const [localUserVote, setLocalUserVote] = useState(userVote);
   const [loading, setLoading] = useState(false);
-  const { user } = useUser();
 
   const handleVote = async (voteType: 'up' | 'down') => {
-    if (!user) {
+    if (!userProfile) {
       alert('Bạn cần đăng nhập để vote');
       return;
     }
@@ -62,10 +62,10 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
   };
 
   const containerClass = orientation === 'vertical' 
-    ? 'flex flex-col items-center space-y-1'
-    : 'flex items-center space-x-4';
+    ? 'flex flex-col items-center space-y-2'
+    : 'flex items-center space-x-3';
 
-  const buttonClass = 'flex items-center space-x-1 px-2 py-1 rounded transition-colors disabled:opacity-50';
+  const buttonClass = 'flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 font-medium disabled:opacity-50 hover:scale-105';
 
   return (
     <div className={containerClass}>
@@ -75,13 +75,13 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
         disabled={loading}
         className={`${buttonClass} ${
           localUserVote === 'up'
-            ? 'bg-green-100 text-green-600'
-            : 'text-gray-500 hover:bg-green-50 hover:text-green-600'
+            ? 'bg-green-100 text-green-700 border-2 border-green-200 shadow-md'
+            : 'text-gray-600 hover:bg-green-50 hover:text-green-600 border-2 border-gray-200 hover:border-green-200'
         }`}
         title="Upvote"
       >
-        <ChevronUp size={18} className={localUserVote === 'up' ? 'fill-current' : ''} />
-        <span className="text-sm font-medium">{localUpvotes}</span>
+        <ChevronUp size={20} className={`${localUserVote === 'up' ? 'fill-current' : ''}`} />
+        <span className="text-base font-semibold">{localUpvotes}</span>
       </button>
 
       {/* Downvote Button */}
@@ -90,18 +90,14 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
         disabled={loading}
         className={`${buttonClass} ${
           localUserVote === 'down'
-            ? 'bg-red-100 text-red-600'
-            : 'text-gray-500 hover:bg-red-50 hover:text-red-600'
+            ? 'bg-red-100 text-red-700 border-2 border-red-200 shadow-md'
+            : 'text-gray-600 hover:bg-red-50 hover:text-red-600 border-2 border-gray-200 hover:border-red-200'
         }`}
         title="Downvote"
       >
-        <ChevronDown size={18} className={localUserVote === 'down' ? 'fill-current' : ''} />
-        <span className="text-sm font-medium">{localDownvotes}</span>
+        <ChevronDown size={20} className={`${localUserVote === 'down' ? 'fill-current' : ''}`} />
+        <span className="text-base font-semibold">{localDownvotes}</span>
       </button>
-
-      {loading && (
-        <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-      )}
     </div>
   );
 };

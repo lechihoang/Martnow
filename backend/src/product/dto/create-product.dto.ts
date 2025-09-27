@@ -44,7 +44,6 @@ export class CreateProductDto {
   tags?: string; // JSON string of tags
 }
 
-// ✅ Simplified ProductResponseDto
 export class ProductResponseDto {
   id: number;
   sellerId: number;
@@ -52,12 +51,11 @@ export class ProductResponseDto {
   name: string;
   description?: string;
   price: number;
+  discountedPrice: number;
   imageUrl?: string;
   isAvailable: boolean;
   stock: number;
   discount: number;
-  createdAt: Date;
-  updatedAt: Date;
 
   // Relations
   seller: {
@@ -66,7 +64,6 @@ export class ProductResponseDto {
     shopAddress?: string;
     user: {
       name: string;
-      username: string;
     };
   };
   category: {
@@ -81,30 +78,27 @@ export class ProductResponseDto {
   totalSold?: number;
 
   constructor(product: any) {
-    // Basic fields
     this.id = product.id;
     this.sellerId = product.sellerId;
     this.categoryId = product.categoryId;
     this.name = product.name;
     this.description = product.description;
     this.price = Number(product.price);
+    this.discount = product.discount || 0;
+    this.discountedPrice =
+      this.discount > 0
+        ? Math.max(0, (Number(product.price) * (100 - this.discount)) / 100)
+        : Number(product.price);
+    this.imageUrl = product.imageUrl;
     this.isAvailable = product.isAvailable;
-    this.stock = product.stock;
-    this.discount = product.discount;
-    this.createdAt = product.createdAt;
-    this.updatedAt = product.updatedAt;
+    this.stock = product.stock || 0;
 
-    // No image URL support
-    this.imageUrl = undefined;
-
-    // Relations
     this.seller = {
       id: product.seller?.id,
       shopName: product.seller?.shopName,
       shopAddress: product.seller?.shopAddress,
       user: {
         name: product.seller?.user?.name || '',
-        username: product.seller?.user?.username || '',
       },
     };
 
@@ -114,7 +108,6 @@ export class ProductResponseDto {
       description: product.category?.description,
     };
 
-    // Optional aggregated data
     this.averageRating = product.averageRating || 0;
     this.totalReviews = product.totalReviews || 0;
     this.totalSold = product.totalSold || 0;

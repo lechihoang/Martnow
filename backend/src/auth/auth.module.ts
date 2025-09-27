@@ -1,32 +1,17 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from './auth.controller';
-import { RolesGuard } from './roles.guard';
-import { AccountModule } from '../account/account.module';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { PassportModule } from '@nestjs/passport';
-import { JwtStrategy } from './jwt.strategy';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import { AuthService } from './auth.service';
+import { SupabaseAuthGuard } from './supabase-auth.guard';
+import { RoleGuard } from './role.guard';
+import { User } from '../account/user/entities/user.entity';
+import { Buyer } from '../account/buyer/entities/buyer.entity';
+import { Seller } from '../account/seller/entities/seller.entity';
 
 @Module({
-  imports: [
-    AccountModule,
-    ConfigModule,
-    PassportModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h'),
-        },
-      }),
-    }),
-  ],
+  imports: [TypeOrmModule.forFeature([User, Buyer, Seller])],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
-  exports: [JwtAuthGuard, RolesGuard],
+  providers: [AuthService, SupabaseAuthGuard, RoleGuard],
+  exports: [AuthService, SupabaseAuthGuard, RoleGuard],
 })
 export class AuthModule {}

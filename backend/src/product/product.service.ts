@@ -7,20 +7,20 @@ import { Seller } from '../account/seller/entities/seller.entity';
 import { CreateProductDto, ProductResponseDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { MediaService } from '../media/media.service';
-import * as slug from 'slug';
 
 export interface ProductFilterOptions {
-  categoryId?: number;
-  sellerId?: number;
-  type?: string;
+  categoryName?: string;
   minPrice?: number;
   maxPrice?: number;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+  search?: string;
 }
 
 @Injectable()
 export class ProductService {
-  private readonly productRelations = ['category', 'seller', 'seller.user'];
-
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
@@ -37,9 +37,9 @@ export class ProductService {
     return this.categoryRepository.find({ order: { name: 'ASC' } });
   }
 
-  async getSellerIdByUserId(userId: string): Promise<number> {
+  async getSellerIdByUserId(userId: string): Promise<string> {
     const seller = await this.sellerRepository.findOne({
-      where: { user: { id: parseInt(userId) } },
+      where: { user: { id: userId } },
       relations: ['user'],
     });
 
@@ -52,19 +52,18 @@ export class ProductService {
 
   async createProduct(
     createProductDto: CreateProductDto,
-    sellerId: number,
+    sellerId: string,
   ): Promise<ProductResponseDto> {
     const product = this.productRepository.create({
       ...createProductDto,
       sellerId: sellerId,
-      categoryId: createProductDto.categoryId,
     });
 
     const savedProduct = await this.productRepository.save(product);
 
     const result = await this.productRepository.findOne({
       where: { id: savedProduct.id },
-      relations: this.productRelations,
+      relations: ['category', 'seller', 'seller.user'],
     });
 
     if (!result) {
@@ -79,17 +78,12 @@ export class ProductService {
   async findOne(id: number): Promise<ProductResponseDto> {
     const product = await this.productRepository.findOne({
       where: { id },
-      relations: this.productRelations,
+      relations: ['category', 'seller', 'seller.user'],
     });
 
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
-
-    // Increment view count asynchronously (fire and forget)
-    this.incrementViewCount(id).catch((err) =>
-      console.error('Failed to increment view count:', err),
-    );
 
     return new ProductResponseDto(product);
   }
@@ -97,11 +91,12 @@ export class ProductService {
   async updateProduct(
     id: number,
     updateProductDto: UpdateProductDto,
-    sellerId?: number,
+    sellerId?: string,
   ): Promise<ProductResponseDto> {
     const productEntity = await this.productRepository.findOne({
       where: { id },
     });
+
     if (!productEntity) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
@@ -117,7 +112,7 @@ export class ProductService {
 
     const updatedProduct = await this.productRepository.findOne({
       where: { id },
-      relations: this.productRelations,
+      relations: ['category', 'seller', 'seller.user'],
     });
 
     return new ProductResponseDto(updatedProduct!);
@@ -125,11 +120,12 @@ export class ProductService {
 
   async deleteProduct(
     id: number,
-    sellerId?: number,
+    sellerId?: string,
   ): Promise<{ message: string }> {
     const productEntity = await this.productRepository.findOne({
       where: { id },
     });
+
     if (!productEntity) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
@@ -141,40 +137,130 @@ export class ProductService {
       );
     }
 
-    // ✅ MANUAL CLEANUP: Delete media files trước khi xóa product
-    await this.mediaService.deleteAllMediaFiles('product', id);
+    // Xóa media files trước khi xóa product
+    await this.mediaService.deleteAllMediaFiles('product', id.toString());
 
-    // Delete product từ database
-    await this.productRepository.delete(id);
-
-    return {
-      message: 'Product and associated media files deleted successfully',
-    };
+    await this.productRepository.remove(productEntity);
+    return { message: 'Product deleted successfully' };
   }
 
   // === QUERY METHODS ===
 
-  async findAll(
-    filters: ProductFilterOptions = {},
-  ): Promise<ProductResponseDto[]> {
-    const { categoryId, sellerId, type, minPrice, maxPrice } = filters;
-
-    const query = this.productRepository
-      .createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.seller', 'seller')
-      .leftJoinAndSelect('seller.user', 'user');
-
-    this.applyFilters(query, {
-      categoryId,
-      sellerId,
-      type,
+  async findAll(filters: ProductFilterOptions = {}): Promise<{
+    products: ProductResponseDto[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const {
+      categoryName,
       minPrice,
       maxPrice,
+      page = 1,
+      limit = 20, // 20 chia hết cho 2, 4, 5 cột - đảm bảo fill đều các hàng
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+      search,
+    } = filters;
+
+    console.log('ProductService.findAll called with:', {
+      categoryName,
+      minPrice,
+      maxPrice,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+      search,
     });
 
-    const products = await query.getMany();
-    return products.map((product) => new ProductResponseDto(product));
+    // Simple approach - get all products first
+    const allProducts = await this.productRepository.find({
+      relations: ['category', 'seller', 'seller.user'],
+    });
+
+    // Apply filters in memory
+    let filteredProducts = allProducts;
+
+    if (categoryName) {
+      filteredProducts = filteredProducts.filter(
+        (p) => p.category?.name === categoryName,
+      );
+    }
+
+    if (minPrice !== undefined) {
+      filteredProducts = filteredProducts.filter((p) => p.price >= minPrice);
+    }
+
+    if (maxPrice !== undefined) {
+      filteredProducts = filteredProducts.filter((p) => p.price <= maxPrice);
+    }
+
+    // Apply search filter
+    if (search && search.trim()) {
+      const searchLower = search.toLowerCase().trim();
+      filteredProducts = filteredProducts.filter((p) =>
+        p.name.toLowerCase().includes(searchLower) ||
+        p.description?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply sorting
+    const validSortFields = [
+      'createdAt',
+      'price',
+      'averageRating',
+      'totalSold',
+      'viewCount',
+      'name',
+    ];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+
+    filteredProducts.sort((a, b) => {
+      const aValue = a[sortField as keyof Product];
+      const bValue = b[sortField as keyof Product];
+
+      if (sortOrder === 'ASC') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    // Apply pagination
+    const total = filteredProducts.length;
+    const totalPages = Math.ceil(total / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+    console.log('Pagination details:', {
+      total,
+      totalPages,
+      page,
+      limit,
+      startIndex,
+      endIndex,
+      returnedCount: paginatedProducts.length
+    });
+
+    const result = {
+      products: paginatedProducts.map(
+        (product) => new ProductResponseDto(product),
+      ),
+      total,
+      page: Number(page), // Ensure it's a number
+      totalPages,
+    };
+
+    console.log('Returning result:', {
+      productsCount: result.products.length,
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages
+    });
+
+    return result;
   }
 
   async searchProducts(
@@ -190,8 +276,7 @@ export class ProductService {
       .andWhere(
         `(
         product.name ILIKE :likeQuery OR
-        product.description ILIKE :likeQuery OR
-        product.tags ILIKE :likeQuery
+        product.description ILIKE :likeQuery
       )`,
         {
           likeQuery: `%${searchQuery}%`,
@@ -221,63 +306,7 @@ export class ProductService {
     return products.map((product) => new ProductResponseDto(product));
   }
 
-  async findTopDiscountProducts(
-    limit: number = 10,
-  ): Promise<ProductResponseDto[]> {
-    const products = await this.productRepository
-      .createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.seller', 'seller')
-      .leftJoinAndSelect('seller.user', 'user')
-      .orderBy('product.discount', 'DESC')
-      .take(limit)
-      .getMany();
-
-    return products.map((product) => new ProductResponseDto(product));
-  }
-
-  async getSimilarProducts(
-    productId: number,
-    limit: number = 5,
-  ): Promise<ProductResponseDto[]> {
-    const product = await this.productRepository.findOne({
-      where: { id: productId },
-      relations: ['category'],
-    });
-
-    if (!product) return [];
-
-    const similar = await this.productRepository
-      .createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.seller', 'seller')
-      .leftJoinAndSelect('seller.user', 'user')
-      .where('product.categoryId = :categoryId', {
-        categoryId: product.categoryId,
-      })
-      .andWhere('product.id != :productId', { productId })
-      .andWhere('product.isAvailable = :isAvailable', { isAvailable: true })
-      .orderBy('product.averageRating', 'DESC')
-      .addOrderBy('product.totalSold', 'DESC')
-      .limit(limit)
-      .getMany();
-
-    return similar.map((p) => new ProductResponseDto(p));
-  }
-
-  // === UTILITY METHODS ===
-
-  async validateSellerOwnership(
-    productId: number,
-    sellerId: number,
-  ): Promise<boolean> {
-    const product = await this.productRepository.findOne({
-      where: { id: productId, sellerId },
-    });
-    return !!product;
-  }
-
-  async findProductsBySeller(sellerId: number): Promise<ProductResponseDto[]> {
+  async findProductsBySeller(sellerId: string): Promise<ProductResponseDto[]> {
     const products = await this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
@@ -289,74 +318,13 @@ export class ProductService {
     return products.map((product) => new ProductResponseDto(product));
   }
 
-  async incrementViewCount(productId: number): Promise<void> {
-    await this.productRepository
-      .createQueryBuilder()
-      .update(Product)
-      .set({ viewCount: () => 'viewCount + 1' })
-      .where('id = :id', { id: productId })
-      .execute();
-  }
-
-  async updateProductStatistics(productId: number): Promise<void> {
-    const [reviewStats, salesStats] = await Promise.all([
-      // Get review statistics
-      this.productRepository.query(
-        `
-        SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews
-        FROM review WHERE productId = $1
-      `,
-        [productId],
-      ),
-
-      // Get sales statistics
-      this.productRepository.query(
-        `
-        SELECT COALESCE(SUM(oi.quantity), 0) as total_sold
-        FROM order_item oi 
-        JOIN "order" o ON oi.orderId = o.id 
-        WHERE oi.productId = $1 AND o.status = 'đã thanh toán'
-      `,
-        [productId],
-      ),
-    ]);
-
-    const avgRating = reviewStats[0]?.avg_rating || 0;
-    const totalReviews = reviewStats[0]?.total_reviews || 0;
-    const totalSold = salesStats[0]?.total_sold || 0;
-
-    await this.productRepository.update(productId, {
-      averageRating: parseFloat(avgRating),
-      totalReviews: totalReviews,
-      totalSold: totalSold,
+  async validateSellerOwnership(
+    productId: number,
+    sellerId: string,
+  ): Promise<boolean> {
+    const product = await this.productRepository.findOne({
+      where: { id: productId, sellerId },
     });
-  }
-
-  generateProductSlug(name: string): string {
-    return slug(name, { lower: true });
-  }
-
-  private applyFilters(query: any, filters: ProductFilterOptions): void {
-    const { categoryId, sellerId, type, minPrice, maxPrice } = filters;
-
-    if (categoryId) {
-      query.andWhere('product.categoryId = :categoryId', { categoryId });
-    }
-
-    if (sellerId) {
-      query.andWhere('product.sellerId = :sellerId', { sellerId });
-    }
-
-    if (type) {
-      query.andWhere('product.type = :type', { type });
-    }
-
-    if (minPrice !== undefined) {
-      query.andWhere('product.price >= :minPrice', { minPrice });
-    }
-
-    if (maxPrice !== undefined) {
-      query.andWhere('product.price <= :maxPrice', { maxPrice });
-    }
+    return !!product;
   }
 }

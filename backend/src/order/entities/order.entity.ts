@@ -6,7 +6,6 @@ import {
   JoinColumn,
   PrimaryGeneratedColumn,
   CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { Buyer } from '../../account/buyer/entities/buyer.entity';
 import { OrderItem } from './order-item.entity';
@@ -20,10 +19,8 @@ export class Order {
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
-  updatedAt: Date;
-  @Column({ type: 'int' })
-  buyerId: number;
+  @Column({ type: 'varchar' })
+  buyerId: string;
 
   @ManyToOne(() => Buyer, (buyer) => buyer.orders)
   @JoinColumn({ name: 'buyerId' })
@@ -35,7 +32,7 @@ export class Order {
   @Column({
     type: 'enum',
     enum: OrderStatus,
-    default: OrderStatus.PAID,
+    default: OrderStatus.PENDING, // Đơn hàng được tạo khi checkout, chờ thanh toán
   })
   status: OrderStatus;
 

@@ -1,56 +1,114 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserRole } from '@/types/entities';
-import { useSettingsData } from '@/hooks/useSettingsData';
-import { getVisibleTabs } from '@/constants/settingsTabs';
-import SettingsLayout from '@/components/settings/SettingsLayout';
+import { useAuth } from '@/hooks/useAuth';
+import { getUserProfile } from '@/lib/api';
+import { UserProfile } from '@/types/auth';
+import { User as UserIcon, Store, Lock, Bell, Eye } from 'lucide-react';
+import SettingsLayout, { SettingsTab } from '@/components/settings/SettingsLayout';
 import ProfileTab from '@/components/settings/ProfileTab';
 import ShopTab from '@/components/settings/ShopTab';
 import SecurityTab from '@/components/settings/SecurityTab';
 import NotificationsTab from '@/components/settings/NotificationsTab';
 import PrivacyTab from '@/components/settings/PrivacyTab';
 
+const SETTINGS_TABS: SettingsTab[] = [
+  {
+    id: 'profile',
+    label: 'Thông tin cá nhân',
+    icon: UserIcon,
+  },
+  {
+    id: 'shop',
+    label: 'Cửa hàng',
+    icon: Store,
+    show: (userRole) => userRole === 'SELLER',
+  },
+  {
+    id: 'security',
+    label: 'Bảo mật',
+    icon: Lock,
+  },
+  {
+    id: 'notifications',
+    label: 'Thông báo',
+    icon: Bell,
+  },
+  {
+    id: 'privacy',
+    label: 'Quyền riêng tư',
+    icon: Eye,
+  },
+];
+
+const getVisibleTabs = (userRole?: string): SettingsTab[] => {
+  return SETTINGS_TABS.filter(tab => !tab.show || tab.show(userRole));
+};
+
 const SettingsPage: React.FC = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('profile');
-  
-  const {
-    user,
-    seller,
-    loading,
-    error,
-    handleUpdateUser,
-    handleUpdateSeller,
-    handleCreateSeller
-  } = useSettingsData();
+  const { user: authUser } = useAuth();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch user profile
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (authUser && authUser.id && authUser.email && authUser.aud === 'authenticated') {
+        try {
+          setLoading(true);
+          const profileData = await getUserProfile();
+          if (profileData && profileData.id) {
+            setUserProfile(profileData);
+          } else {
+            setError('Không thể tải thông tin người dùng');
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          setError('Có lỗi xảy ra khi tải thông tin người dùng');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [authUser]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [loading, user, router]);
+    const timeoutId = setTimeout(() => {
+      if (!loading && (!authUser || !userProfile)) {
+        router.push('/auth/login');
+      }
+    }, 100);
 
-  const visibleTabs = getVisibleTabs(user?.role);
+    return () => clearTimeout(timeoutId);
+  }, [loading, authUser, userProfile, router]);
+
+  const visibleTabs = getVisibleTabs(userProfile?.role);
 
   const renderTabContent = () => {
-    if (!user) return null;
+    if (!userProfile) return null;
 
     switch (activeTab) {
       case 'profile':
         return (
-          <ProfileTab 
-            user={user} 
-            onUpdate={handleUpdateUser} 
+          <ProfileTab
+            user={userProfile}
+            onUpdate={() => {}}
           />
         );
       case 'shop':
-        return user.role === UserRole.SELLER ? (
-          <ShopTab 
-            seller={seller}
-            onUpdate={handleUpdateSeller}
-            onCreate={handleCreateSeller}
+        return userProfile.role === 'SELLER' ? (
+          <ShopTab
+            seller={null}
+            onUpdate={() => {}}
+            onCreate={() => {}}
           />
         ) : null;
       case 'security':
@@ -76,7 +134,7 @@ const SettingsPage: React.FC = () => {
     );
   }
 
-  if (error || !user) {
+  if (error || !userProfile) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-6xl mx-auto">
@@ -90,7 +148,7 @@ const SettingsPage: React.FC = () => {
             </p>
             <button
               onClick={() => router.back()}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
             >
               ← Quay lại
             </button>
@@ -102,7 +160,7 @@ const SettingsPage: React.FC = () => {
 
   return (
     <SettingsLayout
-      user={user}
+      user={userProfile}
       tabs={visibleTabs}
       activeTab={activeTab}
       onTabChange={setActiveTab}

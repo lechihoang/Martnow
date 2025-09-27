@@ -4,20 +4,18 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, X, Upload } from 'lucide-react';
 import { blogApi, uploadApi } from '../lib/api';
-import useUser from '../hooks/useUser';
+import { CreateBlogDto, UpdateBlogDto } from '../types/dtos';
+import { UserProfile } from '../types/auth';
 
 interface BlogFormProps {
   blogId?: number;
+  userProfile: UserProfile | null;
+  loading: boolean;
 }
 
-interface BlogData {
-  title: string;
-  content: string;
-  imageUrl?: string;
-  featuredImage?: string;
-}
+type BlogData = CreateBlogDto;
 
-const BlogForm: React.FC<BlogFormProps> = ({ blogId }) => {
+const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userLoading }) => {
   const [formData, setFormData] = useState<BlogData>({
     title: '',
     content: '',
@@ -28,24 +26,30 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId }) => {
   const [submitting, setSubmitting] = useState(false);
   const [featuredImageFile, setFeaturedImageFile] = useState<File | null>(null);
   const [featuredImagePreview, setFeaturedImagePreview] = useState<string>('');
-  const { user, loading: userLoading } = useUser();
   const router = useRouter();
 
   const isEdit = Boolean(blogId);
 
   useEffect(() => {
     // Wait for user loading to complete before checking authentication
-    if (userLoading) return;
-    
-    if (!user) {
-      router.push('/login');
+    if (userLoading) {
       return;
     }
 
-    if (isEdit && blogId) {
+    // Add delay to prevent race condition with userProfile fetch
+    const timeoutId = setTimeout(() => {
+      if (!userProfile) {
+        router.push('/auth/login');
+        return;
+      }
+    }, 2000); // Increase timeout to 2 seconds
+
+    if (isEdit && blogId && userProfile) {
       fetchBlog();
     }
-  }, [user, userLoading, blogId, isEdit, router]);
+
+    return () => clearTimeout(timeoutId);
+  }, [userProfile, userLoading, blogId, isEdit, router]);
 
   const fetchBlog = async () => {
     if (!blogId) return;
@@ -55,9 +59,9 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId }) => {
       const blog = await blogApi.getBlog(blogId);
       
       // Check if user is the author
-      if (blog.author.id !== user?.id) {
+      if (blog.author.id !== userProfile?.id) {
         alert('Bạn không có quyền chỉnh sửa bài viết này');
-        router.push('/blogs');
+        router.push('/blog');
         return;
       }
 
@@ -74,7 +78,7 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId }) => {
     } catch (err) {
       console.error('Error fetching blog:', err);
       alert('Không thể tải bài viết');
-      router.push('/blogs');
+      router.push('/blog');
     } finally {
       setLoading(false);
     }
@@ -104,187 +108,205 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId }) => {
         return result.data[0].secureUrl;
       }
       return null;
-    } catch (err) {
-      console.error('Error uploading featured image:', err);
-      throw new Error('Không thể tải ảnh tiêu đề lên');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || submitting) return;
-
+    
     if (!formData.title.trim() || !formData.content.trim()) {
-      alert('Vui lòng điền đầy đủ tiêu đề và nội dung');
+      alert('Vui lòng điền đầy đủ thông tin');
       return;
     }
 
     try {
       setSubmitting(true);
       
-      // Upload featured image if new image is selected
-      let featuredImage = formData.featuredImage;
+      // Upload featured image if there's a new one
+      let featuredImageUrl = formData.featuredImage;
       if (featuredImageFile) {
-        const uploadedImageUrl = await uploadFeaturedImage();
-        featuredImage = uploadedImageUrl || undefined;
+        const uploadedUrl = await uploadFeaturedImage();
+        if (uploadedUrl) {
+          featuredImageUrl = uploadedUrl;
+        }
       }
 
-      const blogData = {
+      const submitData = {
         ...formData,
-        featuredImage,
+        featuredImage: featuredImageUrl,
       };
 
-      let result;
       if (isEdit && blogId) {
-        result = await blogApi.updateBlog(blogId, blogData);
+        await blogApi.updateBlog(blogId, submitData as UpdateBlogDto);
+        alert('Cập nhật bài viết thành công!');
       } else {
-        result = await blogApi.createBlog(blogData);
+        await blogApi.createBlog(submitData);
+        alert('Tạo bài viết thành công!');
       }
 
-      router.push(`/blogs/${result.id}`);
-    } catch (err) {
-      console.error('Error saving blog:', err);
-      alert(isEdit ? 'Không thể cập nhật bài viết' : 'Không thể tạo bài viết');
+      router.push('/blog');
+    } catch (error) {
+      console.error('Error submitting blog:', error);
+      alert('Có lỗi xảy ra. Vui lòng thử lại.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Show loading while checking authentication or fetching blog data
-  if (userLoading || loading) {
+  if (userLoading || (!userProfile && !userLoading)) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
-  // If not logged in (and not loading), this should not render
-  // because useEffect will redirect to login
-  if (!user) {
-    return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-            {isEdit ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}
-          </h1>
-          <button
-            onClick={() => router.back()}
-            className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <X size={24} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tiêu đề *
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Nhập tiêu đề bài viết"
-              required
-            />
-          </div>
-
-          {/* Featured Image Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ảnh tiêu đề (hiển thị ở đầu bài viết)
-            </label>
-            <div className="space-y-3">
-              {featuredImagePreview && (
-                <div className="relative inline-block">
-                  <img
-                    src={featuredImagePreview}
-                    alt="Featured Image Preview"
-                    className="w-64 h-32 object-cover rounded-lg border"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFeaturedImagePreview('');
-                      setFeaturedImageFile(null);
-                      setFormData({ ...formData, featuredImage: '' });
-                    }}
-                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              )}
-              
-              <label className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 transition-colors">
-                <Upload size={20} className="text-gray-500" />
-                <span className="text-gray-600">Chọn ảnh tiêu đề</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFeaturedImageChange}
-                  className="hidden"
-                />
-              </label>
-              <p className="text-sm text-gray-500">
-                Ảnh này sẽ hiển thị ở đầu bài viết và trong danh sách blog
-              </p>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold">
+                  {isEdit ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}
+                </h1>
+                <p className="text-blue-100 mt-2">
+                  {isEdit ? 'Cập nhật nội dung bài viết của bạn' : 'Chia sẻ kiến thức và trải nghiệm với cộng đồng'}
+                </p>
+              </div>
+              <button
+                onClick={() => router.push('/blog')}
+                className="p-2 text-blue-100 hover:text-white hover:bg-blue-600 rounded-lg transition-colors"
+              >
+                <X size={24} />
+              </button>
             </div>
           </div>
 
-          {/* Content */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nội dung *
-            </label>
-            <textarea
-              value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              rows={12}
-              placeholder="Viết nội dung bài viết..."
-              required
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              Bạn có thể sử dụng HTML đơn giản để định dạng văn bản
-            </p>
-          </div>
+          {/* Form */}
+          <div className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tiêu đề bài viết *
+                </label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Nhập tiêu đề bài viết..."
+                  required
+                />
+              </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={submitting || !formData.title.trim() || !formData.content.trim()}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition-colors"
-            >
-              {submitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>{isEdit ? 'Đang cập nhật...' : 'Đang tạo...'}</span>
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  <span>{isEdit ? 'Cập nhật' : 'Tạo bài viết'}</span>
-                </>
-              )}
-            </button>
+              {/* Featured Image */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ảnh đại diện
+                </label>
+                <div className="space-y-4">
+                  {featuredImagePreview && (
+                    <div className="relative">
+                      <img
+                        src={featuredImagePreview}
+                        alt="Preview"
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFeaturedImagePreview('');
+                          setFeaturedImageFile(null);
+                        }}
+                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-center w-full">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload className="w-8 h-8 mb-4 text-gray-500" />
+                        <p className="mb-2 text-sm text-gray-500">
+                          <span className="font-semibold">Click để upload</span> hoặc kéo thả file
+                        </p>
+                        <p className="text-xs text-gray-500">PNG, JPG, GIF (MAX. 10MB)</p>
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleFeaturedImageChange}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nội dung bài viết *
+                </label>
+                <textarea
+                  value={formData.content}
+                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows={15}
+                  placeholder="Viết nội dung bài viết của bạn..."
+                  required
+                />
+                <p className="text-sm text-gray-500 mt-2">
+                  Hỗ trợ HTML để định dạng văn bản
+                </p>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => router.push('/blog')}
+                  className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={18} />
+                      {isEdit ? 'Cập nhật' : 'Tạo bài viết'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

@@ -13,38 +13,30 @@ export class FavoriteService {
     private favoriteRepository: Repository<Favorite>,
   ) {}
 
-  // Thêm sản phẩm vào danh sách yêu thích
-  async addToFavorites(buyerId: number, productId: number): Promise<Favorite> {
+  // Thêm hoặc xóa sản phẩm khỏi danh sách yêu thích (toggle)
+  async toggleFavorite(
+    buyerId: string,
+    productId: number,
+  ): Promise<{ isFavorite: boolean; message: string }> {
     const existingFavorite = await this.favoriteRepository.findOne({
       where: { buyerId, productId },
     });
 
     if (existingFavorite) {
-      throw new Error('Sản phẩm đã có trong danh sách yêu thích');
-    }
-
-    const favorite = this.favoriteRepository.create({
-      buyerId,
-      productId,
-    });
-
-    return this.favoriteRepository.save(favorite);
-  }
-
-  // Xóa sản phẩm khỏi danh sách yêu thích
-  async removeFromFavorites(buyerId: number, productId: number): Promise<void> {
-    const result = await this.favoriteRepository.delete({
-      buyerId,
-      productId,
-    });
-
-    if (result.affected === 0) {
-      throw new Error('Sản phẩm không có trong danh sách yêu thích');
+      await this.favoriteRepository.remove(existingFavorite);
+      return { isFavorite: false, message: 'Đã xóa khỏi danh sách yêu thích' };
+    } else {
+      const favorite = this.favoriteRepository.create({
+        buyerId,
+        productId,
+      });
+      await this.favoriteRepository.save(favorite);
+      return { isFavorite: true, message: 'Đã thêm vào danh sách yêu thích' };
     }
   }
 
   // Lấy danh sách sản phẩm yêu thích của user
-  async getFavoritesByBuyer(buyerId: number): Promise<ProductResponseDto[]> {
+  async getFavoritesByBuyer(buyerId: string): Promise<ProductResponseDto[]> {
     const favorites = await this.favoriteRepository.find({
       where: { buyerId },
       relations: [
@@ -55,18 +47,16 @@ export class FavoriteService {
       ],
     });
 
-    // Convert to ProductResponseDto array
     return favorites.map(
       (favorite) => new ProductResponseDto(favorite.product),
     );
   }
 
   // Kiểm tra sản phẩm có trong danh sách yêu thích không
-  async isFavorite(buyerId: number, productId: number): Promise<boolean> {
+  async isFavorite(buyerId: string, productId: number): Promise<boolean> {
     const favorite = await this.favoriteRepository.findOne({
       where: { buyerId, productId },
     });
-
     return !!favorite;
   }
 

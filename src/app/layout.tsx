@@ -1,8 +1,20 @@
 // Next.js and React imports
 import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 
 // Global styles
 import "./globals.css";
+
+// Font configuration
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 // Third-party libraries
 import { Toaster } from "react-hot-toast";
@@ -12,18 +24,13 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Container from "../components/Container";
 
-// Feature components
-import ChatSystem from "@/components/chat/ChatSystem";
-
-// Providers
-import { ClientProviders } from "@/components/ClientProviders";
 
 // Metadata configuration
 export const metadata: Metadata = {
-  title: "Foodee - Food Delivery Platform",
-  description: "Order delicious food from your favorite restaurants with Foodee",
-  keywords: ["food delivery", "restaurant", "order online", "foodee"],
-  authors: [{ name: "Foodee Team" }],
+  title: "MartNow - Tạp hóa Online Giao Hàng Nhanh",
+  description: "Mua sắm tạp hóa online, giao hàng tận nhà trong 30 phút. Đa dạng sản phẩm, giá cạnh tranh, thanh toán an toàn.",
+  keywords: ["tạp hóa online", "giao hàng nhanh", "martnow", "mua sắm online", "thực phẩm"],
+  authors: [{ name: "MartNow Team" }],
   viewport: "width=device-width, initial-scale=1",
 };
 
@@ -34,41 +41,51 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">
-        {/* Global providers wrapper */}
-        <ClientProviders>
-          {/* Toast notifications */}
-          <Toaster 
-            position="top-right"
-            toastOptions={{
-              duration: 3000,
+    <html lang="vi">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased text-gray-700`}>
+        {/* Toast notifications */}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#1F2937',
+              color: '#F9FAFB',
+              borderRadius: '12px',
+              padding: '16px',
+              fontSize: '14px',
+              fontWeight: '500',
+            },
+            success: {
               style: {
-                background: '#363636',
-                color: '#fff',
+                background: '#10B981',
+                color: '#FFFFFF',
               },
-            }}
-          />
-          
-          {/* Main layout structure */}
-          <div className="flex flex-col min-h-screen">
-            {/* Site header */}
-            <Header />
-            
-            {/* Main content area */}
-            <main className="flex-1 bg-gray-50">
-              <Container>
-                {children}
-              </Container>
-            </main>
-            
-            {/* Site footer */}
-            <Footer />
-          </div>
-          
-          {/* Chat system overlay */}
-          <ChatSystem />
-        </ClientProviders>
+            },
+            error: {
+              style: {
+                background: '#DC2626',
+                color: '#FFFFFF',
+              },
+            },
+          }}
+        />
+
+        {/* Main layout structure */}
+        <div className="flex flex-col min-h-screen">
+          {/* Site header */}
+          <Header />
+
+          {/* Main content area */}
+          <main className="flex-1">
+            <Container>
+              {children}
+            </Container>
+          </main>
+
+          {/* Site footer */}
+          <Footer />
+        </div>
       </body>
     </html>
   );

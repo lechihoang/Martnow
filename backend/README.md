@@ -62,12 +62,7 @@ PORT=3001
 NODE_ENV=development
 ```
 
-### 4. Chạy database migration:
-```bash
-npm run typeorm:run
-```
-
-### 5. Seed dữ liệu mẫu (optional):
+### 4. Seed dữ liệu mẫu (optional):
 ```bash
 npm run seed
 ```

@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Container from '@/components/Container';
-import useUser from '@/hooks/useUser';
+import { useAuth } from '@/hooks/useAuth';
+import { getUserProfile } from '@/lib/api';
+import { UserProfile } from '@/types/auth';
 
 // Tab components
 import PaidOrdersTab from '@/components/shop/PaidOrdersTab';
@@ -14,110 +15,147 @@ type TabType = 'orders' | 'products' | 'analytics';
 
 const ShopDashboard: React.FC = () => {
   const router = useRouter();
-  const userData = useUser();
+  const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('orders');
-  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
 
+  // Fetch user profile when user changes (same pattern as cart/favorites)
   useEffect(() => {
-    if (userData === null) {
-      return; // Still loading
-    }
-    
-    if (userData === undefined || !userData?.user) {
-      router.push('/login');
-      return;
-    }
+    console.log('🔍 Shop Dashboard: Auth state changed, user:', user?.id || 'null');
+    setProfileLoading(true);
 
-    if (userData.user.role !== 'seller') {
-      router.push('/');
-      return;
+    if (user) {
+      console.log('🔍 Shop Dashboard: User found, fetching profile...', user.id);
+      getUserProfile().then(profile => {
+        console.log('🔍 Shop Dashboard: Profile received:', profile);
+        setUserProfile(profile);
+        setProfileLoading(false);
+      }).catch(error => {
+        console.error('❌ Shop Dashboard: Error fetching user profile:', error);
+        setUserProfile(null);
+        setProfileLoading(false);
+      });
+    } else {
+      console.log('🔍 Shop Dashboard: No user, setting userProfile to null');
+      setUserProfile(null);
+      setProfileLoading(false);
     }
+  }, [user]);
 
-    setLoading(false);
-  }, [userData, router]);
-
-  if (loading) {
+  // Show loading state while fetching user data (same as cart/favorites)
+  if (profileLoading) {
     return (
-      <Container>
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500"></div>
-        </div>
-      </Container>
-    );
-  }
-
-  if (!userData?.user || userData.user.role !== 'seller') {
-    return (
-      <Container>
-        <div className="min-h-screen bg-gray-50 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">Không có quyền truy cập</h1>
-            <p className="text-gray-600">Chỉ người bán mới có thể truy cập trang này.</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+            <h2 className="text-lg font-semibold text-gray-900">Đang tải quản lý cửa hàng...</h2>
+            <p className="text-sm text-gray-600 text-center">
+              Vui lòng chờ trong giây lát
+            </p>
           </div>
         </div>
-      </Container>
+      </div>
     );
   }
 
-  const tabs = [
-    { key: 'orders' as TabType, label: 'Đơn hàng đã thanh toán', icon: '💳' },
-    { key: 'products' as TabType, label: 'Quản lý sản phẩm', icon: '📦' },
-    { key: 'analytics' as TabType, label: 'Biểu đồ doanh số', icon: '📊' }
+  // Show access denied if not logged in or not a seller (same as cart/favorites pattern)
+  if (!user || !userProfile || userProfile.role !== 'SELLER') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🏪</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Truy cập bị từ chối
+          </h2>
+          <p className="text-gray-600">
+            Chỉ người bán mới có thể truy cập trang quản lý cửa hàng
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const menuItems = [
+    { key: 'orders' as TabType, label: 'Đơn hàng đã thanh toán', icon: '💳', description: 'Xem các đơn hàng đã được thanh toán' },
+    { key: 'products' as TabType, label: 'Quản lý sản phẩm', icon: '📦', description: 'Thêm, sửa, xóa sản phẩm của bạn' },
+    { key: 'analytics' as TabType, label: 'Thống kê doanh thu', icon: '📊', description: 'Xem biểu đồ và báo cáo doanh số' }
   ];
 
   return (
-    <Container>
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                  🏪 Cửa hàng của tôi
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  Quản lý cửa hàng của bạn một cách dễ dàng
-                </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                🏪 Quản lý cửa hàng
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Quản lý cửa hàng của bạn một cách dễ dàng
+              </p>
+            </div>
+            <button
+              onClick={() => router.push('/add')}
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+            >
+              ➕ Thêm sản phẩm mới
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="flex gap-6">
+          {/* Sidebar */}
+          <div className="w-80 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <div className="p-4 bg-gradient-to-r from-green-500 to-green-600 text-white">
+                <h2 className="font-semibold">Danh mục quản lý</h2>
+                <p className="text-green-100 text-sm">Chọn chức năng bạn muốn sử dụng</p>
               </div>
-              <button
-                onClick={() => router.push('/add')}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
-              >
-                ➕ Thêm sản phẩm mới
-              </button>
+
+              <nav className="p-2">
+                {menuItems.map((item) => (
+                  <button
+                    key={item.key}
+                    onClick={() => setActiveTab(item.key)}
+                    className={`w-full text-left p-4 rounded-lg mb-2 transition-all duration-200 group ${
+                      activeTab === item.key
+                        ? 'bg-green-50 border-l-4 border-green-500 text-green-700'
+                        : 'hover:bg-gray-50 text-gray-700 hover:text-green-600'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">{item.icon}</span>
+                      <div>
+                        <div className="font-medium">{item.label}</div>
+                        <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-600">
+                          {item.description}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </nav>
             </div>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="bg-white rounded-lg shadow-sm mb-6">
-            <div className="flex border-b border-gray-200">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
-                    activeTab === tab.key
-                      ? 'text-green-600 border-b-2 border-green-600 bg-green-50'
-                      : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <span className="mr-2">{tab.icon}</span>
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Tab Content */}
-            <div className="p-6">
-              {activeTab === 'orders' && <PaidOrdersTab />}
-              {activeTab === 'products' && <ProductsTab />}
-              {activeTab === 'analytics' && <SalesAnalyticsTab />}
+          {/* Main Content */}
+          <div className="flex-1">
+            <div className="bg-white rounded-lg shadow-sm">
+              <div className="p-6">
+                {activeTab === 'orders' && <PaidOrdersTab userProfile={userProfile} />}
+                {activeTab === 'products' && <ProductsTab />}
+                {activeTab === 'analytics' && <SalesAnalyticsTab />}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </Container>
+    </div>
   );
 };
 

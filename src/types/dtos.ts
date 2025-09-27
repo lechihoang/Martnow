@@ -1,4 +1,15 @@
-import { UserRole, OrderStatus } from './entities';
+// User roles enum
+export enum UserRole {
+  BUYER = 'BUYER',
+  SELLER = 'SELLER',
+}
+
+// Order status enum
+export enum OrderStatus {
+  PENDING = 'pending',      // Chờ thanh toán
+  PAID = 'paid',           // Đã thanh toán
+  CANCELLED = 'cancelled', // Hủy
+}
 
 // ===============================
 // USER DTOs
@@ -79,6 +90,7 @@ export interface ProductResponseDto {
   name: string;
   description?: string;
   price: number;
+  discountedPrice: number; // Computed field for price after discount
   imageUrl?: string;
   isAvailable: boolean;
   stock: number;
@@ -176,28 +188,16 @@ export interface UpdateReviewDto {
 
 export interface ReviewResponseDto {
   id: number;
-  userId: number;
-  buyerId: number;
+  buyerId: string;
   productId: number;
   rating: number;
   comment?: string;
   createdAt: Date;
-  updatedAt: Date;
-  user: {
-    id: number;
-    name: string;
-    username: string;
-    avatar?: string;
-  };
-  product: {
-    id: number;
-    name: string;
-    imageUrl?: string;
-    seller: {
-      id: number;
-      shopName?: string;
-    };
-  };
+  // User info directly from backend
+  buyerName: string;
+  buyerAvatar?: string;
+  // Product info directly from backend
+  productName: string;
 }
 
 // ===============================
@@ -363,4 +363,75 @@ export interface SellerStatsDto {
   totalReviews: number;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// ===============================
+// BLOG DTOs
+// ===============================
+export interface CreateBlogDto {
+  title: string;
+  content: string;
+  imageUrl?: string;
+  featuredImage?: string;
+}
+
+export interface UpdateBlogDto {
+  title?: string;
+  content?: string;
+  imageUrl?: string;
+  featuredImage?: string;
+}
+
+export interface BlogResponseDto {
+  id: number;
+  title: string;
+  content: string;
+  imageUrl?: string;
+  featuredImage?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  author: {
+    id: number;
+    name: string;
+    username: string;
+  };
+  comments: BlogCommentDto[];
+  upvoteCount?: number;
+  downvoteCount?: number;
+  userVote?: 'up' | 'down' | null;
+}
+
+export interface CreateCommentDto {
+  content: string;
+  // Removed parentId since we no longer support reply functionality
+  // parentId?: number;
+}
+
+export interface UpdateCommentDto {
+  content: string;
+}
+
+export interface BlogCommentDto {
+  id: number;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
+  user: {
+    id: number;
+    name: string;
+  };
+  // Removed parentId and replies since we no longer support reply functionality
+  // parentId?: number;
+  // replies: BlogCommentDto[];
+}
+
+export interface VoteBlogDto {
+  voteType: 'up' | 'down';
+}
+
+export interface VoteResponseDto {
+  upvoteCount: number;
+  downvoteCount: number;
+  userVote: 'up' | 'down' | null;
 }

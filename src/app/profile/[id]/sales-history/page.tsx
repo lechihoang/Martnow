@@ -1,140 +1,77 @@
 "use client";
-import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import ProfileLayout from '@/components/profile/ProfileLayout';
-import OrderHistory from '@/components/profile/OrderHistory';
-import { Order, User, OrderStatus, UserRole } from '@/types/entities';
+import { useAuth } from '@/hooks/useAuth';
+import { getUserProfile } from '@/lib/api';
 import { sellerApi } from '@/lib/api';
-import { SellerOrdersDto, UserResponseDto } from '@/types/dtos';
-import useUser from '@/hooks/useUser';
 
 const SalesHistoryPage: React.FC = () => {
-  const router = useRouter();
   const params = useParams();
-  const userId = params?.id as string;
-  const userData = useUser();
+  const router = useRouter();
+  const userId = params.id as string;
+  const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState<any>(null);
   
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [profileUser, setProfileUser] = useState<User | null>(null);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const currentUserResponse = userData.user;
-      
-      if (!currentUserResponse) {
-        setError('Không thể tải thông tin người dùng. Vui lòng đăng nhập lại.');
-        setLoading(false);
-        return;
-      }
-      
-      // Convert UserResponseDto to User
-      const currentUserData: User = {
-        ...currentUserResponse,
-        password: '',
-        reviews: [],
-        buyer: undefined,
-        seller: undefined,
-      };
-      
-      setCurrentUser(currentUserData);
+  // Fetch user profile when user changes
+  useEffect(() => {
+    if (user) {
+      getUserProfile().then(profile => {
+        setUserProfile(profile);
+      });
+    } else {
+      setUserProfile(null);
+    }
+  }, [user]);
 
-      // Kiểm tra quyền truy cập - chỉ seller mới được xem sales history
-      if (currentUserData.role !== 'seller') {
-        setError('Chỉ người bán mới có thể truy cập lịch sử bán hàng.');
-        setLoading(false);
-        return;
-      }
+  // Fetch sales data
+  useEffect(() => {
+    const fetchSalesData = async () => {
+      if (!user || !userProfile) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
 
-      // Nếu xem sales history của chính mình
-      if (userId === currentUserData.id?.toString()) {
-        setProfileUser(currentUserData);
-        
-        // Kiểm tra xem có seller không
-        const sellerInfo = (currentUserResponse as UserResponseDto)?.seller;
-        
-        if (!sellerInfo?.id) {
-          setError('Bạn chưa có thông tin shop. Vui lòng tạo shop trước khi xem lịch sử bán hàng.');
-          setOrders([]);
+        // Check if user is seller and viewing their own profile
+        if (userProfile.role !== 'SELLER') {
+          setError('Chỉ người bán mới có thể xem lịch sử bán hàng.');
           setLoading(false);
           return;
         }
 
-        // Seller: lấy đơn hàng đã bán từ API
-        try {
-          console.log('Fetching seller orders for seller ID:', sellerInfo.id);
-          const sellerOrdersData: SellerOrdersDto = await sellerApi.getSellerOrders(sellerInfo.id);
-          console.log('Seller orders data:', sellerOrdersData);
-          
-          // Convert SellerOrdersDto to Order[]
-          const sellerOrders: Order[] = sellerOrdersData.orders.map(orderData => ({
-            id: orderData.id,
-            buyerId: 0,
-            addressId: undefined,
-            totalPrice: orderData.totalPrice,
-            status: orderData.status as OrderStatus,
-            note: '',
-            createdAt: new Date(orderData.createdAt),
-            updatedAt: new Date(orderData.createdAt),
-            buyer: {
-              id: 0,
-              userId: 0,
-              user: {
-                id: 0,
-                name: orderData.buyerName,
-                username: '',
-                email: '',
-                role: UserRole.BUYER,
-                password: '',
-                avatar: '',
-                reviews: []
-              },
-              orders: [],
-              reviews: [],
-              addresses: []
-            },
-            items: [] as Order['items'], // Fix the 'any' type
-            address: undefined
-          }));
-          
-          console.log('Converted seller orders:', sellerOrders);
-          setOrders(sellerOrders);
-        } catch (apiError) {
-          console.error('Error fetching seller orders from API:', apiError);
-          setError('Không thể tải lịch sử bán hàng từ server. Vui lòng thử lại sau.');
-          setOrders([]);
+        if (user.id !== userId) {
+          setError('Bạn chỉ có thể xem lịch sử bán hàng của chính mình.');
+          setLoading(false);
+          return;
         }
-      } else {
-        // Không cho phép xem sales history của người khác (private)
-        router.push(`/profile/${userId}`);
-        return;
+
+        // Fetch seller orders
+        const ordersData = await sellerApi.getSellerOrders();
+        setOrders(ordersData || []);
+        
+      } catch (error) {
+        console.error('Error fetching sales data:', error);
+        setError('Không thể tải lịch sử bán hàng. Vui lòng thử lại sau.');
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setError('Có lỗi xảy ra khi tải dữ liệu');
-      setLoading(false);
+    if (userProfile) {
+      fetchSalesData();
     }
-  }, [userData.user, userId, router]);
+  }, [user, userProfile, userId]);
 
-  useEffect(() => {
-    if (userData.loading) {
-      return;
-    }
-    
-    if (userData.user === null) {
-      router.push('/login');
-      return;
-    }
-
-    fetchData();
-  }, [userData.loading, userData.user, userId, router, fetchData]);
+  // Redirect if not logged in
+  if (!user) {
+    router.push('/auth/login');
+    return null;
+  }
 
   if (loading) {
     return (
@@ -146,11 +83,19 @@ const SalesHistoryPage: React.FC = () => {
     );
   }
 
-  if (!profileUser || !currentUser) {
+  if (error) {
     return (
       <ProfileLayout>
         <div className="text-center py-8">
-          <p className="text-red-500">Không thể tải lịch sử bán hàng</p>
+          <div className="text-red-500 text-6xl mb-4">❌</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Lỗi</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => router.back()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+          >
+            ← Quay lại
+          </button>
         </div>
       </ProfileLayout>
     );
@@ -159,41 +104,87 @@ const SalesHistoryPage: React.FC = () => {
   return (
     <ProfileLayout>
       <div className="space-y-6">
-        {error && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <span className="text-yellow-400">⚠️</span>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-yellow-800">{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Lịch sử bán hàng
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Theo dõi tất cả các đơn hàng khách hàng đã mua từ shop của bạn
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-500">
-              Tổng: {orders.length} đơn hàng
-            </div>
-            {orders.length > 0 && (
-              <div className="text-xs text-gray-400 mt-1">
-                Tổng doanh thu: {orders.reduce((total, order) => total + order.totalPrice, 0).toLocaleString('vi-VN')} ₫
-              </div>
-            )}
-          </div>
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            📊 Lịch sử bán hàng
+          </h1>
+          <p className="text-gray-600">
+            Quản lý và theo dõi các đơn hàng đã bán
+          </p>
         </div>
 
-        <OrderHistory orders={orders} userRole={profileUser.role as 'buyer' | 'seller'} />
+        {/* Orders List */}
+        <div className="bg-white rounded-lg shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Đơn hàng ({orders.length})
+            </h2>
+          </div>
+
+          {orders.length === 0 ? (
+            <div className="p-8 text-center">
+              <div className="text-gray-400 text-6xl mb-4">📦</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Chưa có đơn hàng nào
+              </h3>
+              <p className="text-gray-500">
+                Khi có đơn hàng, chúng sẽ xuất hiện ở đây
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200">
+              {orders.map((order: any) => (
+                <div key={order.id} className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm text-gray-500">
+                          #{order.id}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                        </div>
+                        <div className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          order.status === 'PAID' 
+                            ? 'bg-green-100 text-green-800'
+                            : order.status === 'PENDING'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {order.status === 'PAID' ? 'Đã thanh toán' :
+                           order.status === 'PENDING' ? 'Chờ thanh toán' :
+                           order.status}
+                        </div>
+                      </div>
+                      
+                      {order.buyerName && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          Khách hàng: {order.buyerName}
+                        </div>
+                      )}
+                      
+                      {order.note && (
+                        <div className="mt-1 text-sm text-gray-500">
+                          Ghi chú: {order.note}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-green-600">
+                        {new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND'
+                        }).format(order.totalPrice)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </ProfileLayout>
   );

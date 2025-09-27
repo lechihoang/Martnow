@@ -5,12 +5,10 @@ import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Order } from '../order/entities/order.entity';
-import { OrderModule } from '../order/order.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Order]),
-    OrderModule,
     VnpayModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

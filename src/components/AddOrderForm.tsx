@@ -139,7 +139,7 @@ const AddProductForm = () => {
       }
 
       // Step 1: Create product without images first
-      const productResponse = await fetch('http://localhost:3001/products', {
+      const productResponse = await fetch('http://localhost:3001/product', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json' 

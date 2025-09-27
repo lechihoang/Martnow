@@ -1,45 +1,31 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Reply, Edit, Trash2, Send } from 'lucide-react';
+import { MessageCircle, Edit, Trash2, Send } from 'lucide-react';
 import { blogApi } from '../lib/api';
-import useUser from '../hooks/useUser';
-
-interface Comment {
-  id: number;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-  user: {
-    id: number;
-    name: string;
-  };
-  parentId?: number;
-  replies: Comment[];
-}
+import { BlogCommentDto } from '../types/dtos';
 
 interface CommentSectionProps {
   blogId: number;
+  userProfile: any;
 }
 
 interface CommentItemProps {
-  comment: Comment;
+  comment: BlogCommentDto;
   blogId: number;
-  onReply: (parentId: number) => void;
   onUpdate: () => void;
-  level?: number;
+  userProfile: any;
 }
 
-const CommentItem: React.FC<CommentItemProps> = ({ 
-  comment, 
-  blogId, 
-  onReply, 
-  onUpdate, 
-  level = 0 
+const CommentItem: React.FC<CommentItemProps> = ({
+  comment,
+  blogId,
+  onUpdate,
+  userProfile
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
-  const { user } = useUser();
+  const isDeleted = comment.deletedAt !== null && comment.deletedAt !== undefined;
 
   const handleEdit = async () => {
     try {
@@ -64,11 +50,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
     }
   };
 
-  const isAuthor = user?.id === comment.user.id;
-  const canReply = level < 2; // Chỉ cho phép reply 2 cấp
+  const isAuthor = userProfile?.id?.toString() === comment.user.id?.toString();
 
   return (
-    <div className={`${level > 0 ? 'ml-8 mt-4' : 'mb-6'} border-l-2 border-gray-100 pl-4`}>
+    <div className="mb-6 border-l-2 border-gray-100 pl-4">
       <div className="bg-gray-50 rounded-lg p-4">
         <div className="flex justify-between items-start mb-2">
           <div className="flex items-center space-x-2">
@@ -81,7 +66,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
             )}
           </div>
 
-          {isAuthor && (
+          {isAuthor && !isDeleted && (
             <div className="flex space-x-1">
               <button
                 onClick={() => setIsEditing(!isEditing)}
@@ -101,7 +86,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
           )}
         </div>
 
-        {isEditing ? (
+        {isEditing && !isDeleted ? (
           <div className="space-y-2">
             <textarea
               value={editContent}
@@ -129,42 +114,21 @@ const CommentItem: React.FC<CommentItemProps> = ({
           </div>
         ) : (
           <>
-            <p className="text-gray-700 mb-2">{comment.content}</p>
-            {canReply && user && (
-              <button
-                onClick={() => onReply(comment.id)}
-                className="flex items-center text-sm text-blue-600 hover:text-blue-800"
-              >
-                <Reply size={14} className="mr-1" />
-                Trả lời
-              </button>
-            )}
+            <p className={`mb-2 ${isDeleted ? 'text-gray-400 italic' : 'text-gray-700'}`}>
+              {comment.content}
+            </p>
           </>
         )}
       </div>
-
-      {/* Replies */}
-      {comment.replies.map((reply) => (
-        <CommentItem
-          key={reply.id}
-          comment={reply}
-          blogId={blogId}
-          onReply={onReply}
-          onUpdate={onUpdate}
-          level={level + 1}
-        />
-      ))}
     </div>
   );
 };
 
-const CommentSection: React.FC<CommentSectionProps> = ({ blogId }) => {
-  const [comments, setComments] = useState<Comment[]>([]);
+const CommentSection: React.FC<CommentSectionProps> = ({ blogId, userProfile }) => {
+  const [comments, setComments] = useState<BlogCommentDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newComment, setNewComment] = useState('');
-  const [replyToId, setReplyToId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const { user } = useUser();
+  const [newComment, setNewComment] = useState('');
 
   useEffect(() => {
     fetchComments();
@@ -173,7 +137,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogId }) => {
   const fetchComments = async () => {
     try {
       setLoading(true);
-      const data = await blogApi.getComments(blogId);
+      const data = await blogApi.getBlogComments(blogId);
+      // All comments are now top-level (no hierarchical structure)
       setComments(data);
     } catch (err) {
       console.error('Error fetching comments:', err);
@@ -184,17 +149,15 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogId }) => {
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !user) return;
+    if (!newComment.trim() || !userProfile) return;
 
     try {
       setSubmitting(true);
-      await blogApi.createComment(blogId, {
+      await blogApi.createBlogComment(blogId, {
         content: newComment,
-        parentId: replyToId || undefined,
       });
-      
+
       setNewComment('');
-      setReplyToId(null);
       fetchComments();
     } catch (err) {
       console.error('Error creating comment:', err);
@@ -204,84 +167,88 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogId }) => {
     }
   };
 
-  const handleReply = (parentId: number) => {
-    setReplyToId(parentId);
-    document.getElementById('comment-input')?.focus();
-  };
 
   if (loading) {
     return <div className="animate-pulse bg-gray-200 h-32 rounded"></div>;
   }
 
   return (
-    <div>
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
       {/* Comment Form */}
-      {user ? (
-        <form onSubmit={handleSubmitComment} className="mb-8">
-          {replyToId && (
-            <div className="mb-2 p-2 bg-blue-50 border-l-4 border-blue-400 rounded">
-              <span className="text-sm text-blue-700">Đang trả lời bình luận</span>
-              <button
-                type="button"
-                onClick={() => setReplyToId(null)}
-                className="ml-2 text-blue-600 hover:text-blue-800 text-sm"
-              >
-                Hủy
-              </button>
-            </div>
-          )}
-          <div className="flex space-x-3">
+      {userProfile ? (
+        <form onSubmit={handleSubmitComment} className="mb-12">
+          <div className="flex space-x-4">
             <textarea
               id="comment-input"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder={replyToId ? 'Viết câu trả lời...' : 'Viết bình luận...'}
-              className="flex-1 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              rows={3}
+              placeholder="Chia sẻ suy nghĩ của bạn..."
+              className="flex-1 p-4 border-2 border-gray-200 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-base"
+              rows={4}
               disabled={submitting}
             />
             <button
               type="submit"
               disabled={!newComment.trim() || submitting}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-1"
             >
               {submitting ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
               ) : (
-                <Send size={16} />
+                <>
+                  <Send size={18} />
+                  <span>Gửi</span>
+                </>
               )}
             </button>
           </div>
         </form>
       ) : (
-        <div className="mb-8 p-4 bg-gray-100 rounded-lg text-center">
-          <p className="text-gray-600 mb-2">Đăng nhập để bình luận</p>
+        <div className="mb-12 p-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border-2 border-dashed border-blue-200 text-center">
+          <div className="w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+            <span className="text-blue-600 text-2xl">💬</span>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Đăng nhập để bình luận</h3>
+          <p className="text-gray-600 mb-4">Tham gia thảo luận và chia sẻ ý kiến của bạn với cộng đồng</p>
           <button
-            onClick={() => window.location.href = '/login'}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => window.location.href = '/auth/login'}
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
           >
-            Đăng nhập
+            Đăng nhập ngay
           </button>
         </div>
       )}
 
       {/* Comments List */}
       <div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+          <span>💬</span>
+          <span>Bình luận ({comments.length})</span>
+        </h3>
+        
         {comments.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <MessageCircle size={48} className="mx-auto mb-2 text-gray-300" />
-            <p>Chưa có bình luận nào. Hãy là người đầu tiên!</p>
+          <div className="text-center py-16">
+            <div className="w-24 h-24 bg-gray-100 rounded-full mx-auto mb-6 flex items-center justify-center">
+              <MessageCircle size={48} className="text-gray-300" />
+            </div>
+            <h4 className="text-xl font-semibold text-gray-900 mb-2">Chưa có bình luận nào</h4>
+            <p className="text-gray-600 mb-4">Hãy là người đầu tiên bắt đầu cuộc trò chuyện!</p>
+            <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium">
+              🚀 Viết bình luận đầu tiên
+            </div>
           </div>
         ) : (
-          comments.map((comment) => (
-            <CommentItem
-              key={comment.id}
-              comment={comment}
-              blogId={blogId}
-              onReply={handleReply}
-              onUpdate={fetchComments}
-            />
-          ))
+          <div className="space-y-6">
+            {comments.map((comment) => (
+              <CommentItem
+                key={comment.id}
+                comment={comment}
+                blogId={blogId}
+                onUpdate={fetchComments}
+                userProfile={userProfile}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

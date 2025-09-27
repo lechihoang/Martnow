@@ -1,69 +1,56 @@
 import {
   Controller,
   Get,
-  Patch,
-  Delete,
-  Param,
+  Post,
   Body,
-  ParseIntPipe,
+  Patch,
+  Param,
+  Delete,
   UseGuards,
-  Request,
-  UnauthorizedException,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto, UserResponseDto } from './dto/user.dto';
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
+import { RoleGuard } from '../../auth/role.guard';
+import { Roles } from '../../auth/role.decorator';
+import { UserRole } from '../../lib/supabase';
 
 @Controller('users')
+@UseGuards(SupabaseAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  /**
-   * Get user profile by ID (public endpoint)
-   */
+  @Post()
+  async create(@Body() createUserDto: any) {
+    return this.userService.create(createUserDto);
+  }
+
+
   @Get(':id')
-  async getUser(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<UserResponseDto> {
+  async findOne(@Param('id') id: string) {
     const user = await this.userService.findByIdWithRelations(id);
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new Error('User not found');
     }
     return new UserResponseDto(user);
   }
 
-  /**
-   * Update user profile (only the user themselves can update)
-   */
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  async updateUser(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateUserDto: UpdateUserDto,
-    @Request() req: any,
-  ): Promise<UserResponseDto> {
-    // Check if user is updating their own profile
-    if (req.user.id !== id) {
-      throw new UnauthorizedException('You can only update your own profile');
-    }
+  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    const updatedUser = await this.userService.update(id, updateUserDto);
 
-    return await this.userService.updateUser(id, updateUserDto);
+    // Sync changes to Supabase user metadata
+    // Note: This requires Supabase service role key for backend
+    // Frontend should also update Supabase user metadata directly
+
+    return updatedUser;
   }
 
-  /**
-   * Delete user account (only the user themselves can delete)
-   */
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  async deleteUser(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: any,
-  ): Promise<{ message: string }> {
-    // Check if user is deleting their own account
-    if (req.user.id !== id) {
-      throw new UnauthorizedException('You can only delete your own account');
-    }
-
-    return await this.userService.deleteUser(id);
+  @Roles(UserRole.SELLER)
+  @UseGuards(RoleGuard)
+  async remove(@Param('id') id: string) {
+    return this.userService.remove(id);
   }
 }

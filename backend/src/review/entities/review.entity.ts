@@ -20,8 +20,8 @@ export class Review {
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
-  @Column({ type: 'int' })
-  buyerId: number; // Reference to Buyer.id
+  @Column({ type: 'varchar' })
+  buyerId: string; // Reference to Buyer.id
 
   @ManyToOne(() => Buyer, (buyer) => buyer.reviews)
   @JoinColumn({ name: 'buyerId' })

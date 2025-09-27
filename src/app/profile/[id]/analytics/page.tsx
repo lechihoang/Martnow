@@ -1,26 +1,41 @@
-"use client";
+'use client';
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import ProfileLayout from '@/components/profile/ProfileLayout';
-import SellerStats from '@/components/profile/SellerStats';
-import ProfileCard from '@/components/profile/ProfileCard';
-import { Stats, Order, OrderStatus } from '@/types/entities';
-import useUser from '@/hooks/useUser';
+import { Stats, Order, OrderStatus } from '../../../../types/entities';
+import { useAuth } from '@/hooks/useAuth';
+import { sellerApi } from '@/lib/api';
+import { TrendingUp, ShoppingBag, Users, Package, DollarSign, Calendar } from 'lucide-react';
 
 const AnalyticsPage: React.FC = () => {
-  const router = useRouter();
   const params = useParams();
-  const userId = params?.id as string;
-  const { user: currentUser, loading: currentUserLoading } = useUser();
+  const router = useRouter();
+  const userId = params.id as string;
+  const { user: currentUser } = useAuth();
+  const [userProfile, setUserProfile] = useState<any>(null);
   
+  // Fetch user profile when currentUser changes
+  useEffect(() => {
+          if (currentUser) {
+        sellerApi.getSellerProfile().then(profile => {
+          setUserProfile(profile);
+        });
+      } else {
+      setUserProfile(null);
+    }
+  }, [currentUser]);
+
   const [stats, setStats] = useState<Stats>({
+    totalSales: 0,
     totalOrders: 0,
     totalRevenue: 0,
-    totalProducts: 0,
     pendingOrders: 0,
-    completedOrders: 0,
-    averageRating: 0,
-    totalReviews: 0
+    averageOrderValue: 0,
+    totalProducts: 0,
+    totalCustomers: 0,
+    monthlySales: [],
+    topProducts: []
   });
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,14 +48,17 @@ const AnalyticsPage: React.FC = () => {
       }
 
       // Kiểm tra quyền truy cập - chỉ seller và chính chủ tài khoản
-      if (currentUser.role !== 'seller' || currentUser.id.toString() !== userId) {
+      if (!userProfile || userProfile.role !== 'SELLER' || currentUser.id !== userId) {
         router.push('/');
         return;
       }
 
-      const { mockStats, mockOrders } = await import('@/lib/mockData');
-      setStats(mockStats);
-      setRecentOrders(mockOrders.slice(0, 5)); // 5 đơn hàng gần nhất
+      const response = await sellerApi.getAnalytics(userId);
+      setStats(response.data);
+
+      const ordersResponse = await sellerApi.getOrdersBySellerId(userId);
+      setRecentOrders(ordersResponse.data);
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -49,17 +67,13 @@ const AnalyticsPage: React.FC = () => {
   }, [currentUser, userId, router]);
 
   useEffect(() => {
-    if (currentUserLoading) {
-      return;
-    }
-    
     if (!currentUser) {
-      router.push('/login');
+      router.push('/auth/login');
       return;
     }
 
     fetchData();
-  }, [currentUserLoading, currentUser, userId, router, fetchData]);
+  }, [currentUser, userId, router, fetchData]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -68,7 +82,8 @@ const AnalyticsPage: React.FC = () => {
     }).format(price);
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN', {
       month: 'short',
       day: 'numeric',
@@ -77,17 +92,31 @@ const AnalyticsPage: React.FC = () => {
     });
   };
 
-  // Dữ liệu cho biểu đồ doanh thu theo tháng (giả lập)
-  const monthlyRevenue = [
-    { month: 'T1', revenue: 2500000 },
-    { month: 'T2', revenue: 3200000 },
-    { month: 'T3', revenue: 2800000 },
-    { month: 'T4', revenue: 3500000 },
-    { month: 'T5', revenue: 4100000 },
-    { month: 'T6', revenue: 3800000 },
-  ];
+  const getStatusColor = (status: OrderStatus) => {
+    switch (status) {
+      case OrderStatus.PAID:
+        return 'bg-green-100 text-green-800';
+      case OrderStatus.PENDING:
+        return 'bg-yellow-100 text-yellow-800';
+      case OrderStatus.CANCELLED:
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-  const maxRevenue = Math.max(...monthlyRevenue.map(m => m.revenue));
+  const getStatusText = (status: OrderStatus) => {
+    switch (status) {
+      case OrderStatus.PAID:
+        return 'Đã thanh toán';
+      case OrderStatus.PENDING:
+        return 'Chờ xử lý';
+      case OrderStatus.CANCELLED:
+        return 'Đã hủy';
+      default:
+        return 'Không xác định';
+    }
+  };
 
   if (loading) {
     return (
@@ -102,6 +131,7 @@ const AnalyticsPage: React.FC = () => {
   return (
     <ProfileLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">Thống kê & Phân tích</h1>
           <div className="flex gap-2">
@@ -114,148 +144,159 @@ const AnalyticsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Thống kê tổng quan */}
-        <SellerStats stats={stats} />
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Biểu đồ doanh thu */}
-          <ProfileCard title="Doanh thu theo tháng">
-            <div className="space-y-4">
-              {monthlyRevenue.map((item, index) => (
-                <div key={index} className="flex items-center gap-4">
-                  <div className="w-8 text-sm text-gray-600">{item.month}</div>
-                  <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                    <div 
-                      className="bg-green-500 h-4 rounded-full transition-all duration-500"
-                      style={{ width: `${(item.revenue / maxRevenue) * 100}%` }}
-                    ></div>
-                  </div>
-                  <div className="w-24 text-sm font-medium text-gray-900 text-right">
-                    {formatPrice(item.revenue)}
-                  </div>
-                </div>
-              ))}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <DollarSign className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Tổng doanh thu</p>
+                <p className="text-2xl font-bold text-gray-900">{formatPrice(stats.totalSales)}</p>
+              </div>
             </div>
-          </ProfileCard>
+          </div>
 
-          {/* Đơn hàng gần đây */}
-          <ProfileCard title="Đơn hàng gần đây">
-            {recentOrders.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-gray-400 text-4xl mb-2">📋</div>
-                <p className="text-gray-500">Chưa có đơn hàng nào</p>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <ShoppingBag className="w-6 h-6 text-green-600" />
               </div>
-            ) : (
-              <div className="space-y-3">
-                {recentOrders.map((order) => (
-                  <div key={order.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <div className="font-medium text-gray-900">#{order.id}</div>
-                      <div className="text-sm text-gray-500">{formatDate(order.createdAt)}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold text-gray-900">
-                        {formatPrice(order.totalPrice)}
-                      </div>
-                      <div className={`text-xs px-2 py-1 rounded-full ${
-                        order.status === OrderStatus.COMPLETED 
-                          ? 'bg-green-100 text-green-800'
-                          : order.status === OrderStatus.PENDING
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {order.status === OrderStatus.COMPLETED ? 'Đã giao' : 
-                         order.status === OrderStatus.PENDING ? 'Chờ xử lý' : 'Đang xử lý'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Tổng đơn hàng</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}</p>
               </div>
-            )}
-          </ProfileCard>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Package className="w-6 h-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Sản phẩm</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <Users className="w-6 h-6 text-orange-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Khách hàng</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalCustomers}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Top sản phẩm bán chạy */}
-          <ProfileCard title="Sản phẩm bán chạy">
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Monthly Sales Chart */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Doanh thu theo tháng</h3>
             <div className="space-y-3">
-              {[
-                { name: 'Bánh mì thịt nướng', sold: 45, revenue: 1125000 },
-                { name: 'Bánh mì pate', sold: 32, revenue: 640000 },
-                { name: 'Bánh mì chả cá', sold: 28, revenue: 840000 },
-              ].map((product, index) => (
-                <div key={index} className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium text-gray-900">{product.name}</div>
-                    <div className="text-sm text-gray-500">Đã bán: {product.sold}</div>
-                  </div>
-                  <div className="text-sm font-semibold text-green-600">
-                    {formatPrice(product.revenue)}
+              {stats.monthlySales.map((month, index) => (
+                <div key={month.month} className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">{month.month}</span>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-32 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full" 
+                        style={{ 
+                          width: `${(month.sales / Math.max(...stats.monthlySales.map(m => m.sales))) * 100}%` 
+                        }}
+                      ></div>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900 w-20 text-right">
+                      {formatPrice(month.sales)}
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
-          </ProfileCard>
+          </div>
 
-          {/* Đánh giá */}
-          <ProfileCard title="Đánh giá cửa hàng">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-yellow-500 mb-2">4.8</div>
-              <div className="flex justify-center gap-1 mb-2">
-                {[1,2,3,4,5].map((star) => (
-                  <span key={star} className="text-yellow-400 text-lg">⭐</span>
-                ))}
-              </div>
-              <div className="text-sm text-gray-500">Từ 127 đánh giá</div>
-              <div className="mt-4 space-y-2">
-                {[
-                  { stars: 5, count: 89 },
-                  { stars: 4, count: 28 },
-                  { stars: 3, count: 7 },
-                  { stars: 2, count: 2 },
-                  { stars: 1, count: 1 },
-                ].map((rating) => (
-                  <div key={rating.stars} className="flex items-center gap-2 text-xs">
-                    <span>{rating.stars}⭐</span>
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-yellow-400 h-2 rounded-full"
-                        style={{ width: `${(rating.count / 127) * 100}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-gray-500">{rating.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </ProfileCard>
-
-          {/* Tăng trưởng */}
-          <ProfileCard title="Tăng trưởng">
+          {/* Top Products */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Sản phẩm bán chạy</h3>
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Doanh thu tháng này</span>
-                <div className="text-right">
-                  <div className="font-semibold text-green-600">+15.3%</div>
-                  <div className="text-xs text-gray-500">vs tháng trước</div>
+              {stats.topProducts.map((product, index) => (
+                <div key={product.productId} className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium mr-3">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{product.productName}</p>
+                      <p className="text-xs text-gray-500">Đã bán: {product.totalSold}</p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">
+                    {formatPrice(product.revenue)}
+                  </span>
                 </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Đơn hàng mới</span>
-                <div className="text-right">
-                  <div className="font-semibold text-blue-600">+8.7%</div>
-                  <div className="text-xs text-gray-500">vs tháng trước</div>
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Khách hàng mới</span>
-                <div className="text-right">
-                  <div className="font-semibold text-purple-600">+22.1%</div>
-                  <div className="text-xs text-gray-500">vs tháng trước</div>
-                </div>
-              </div>
+              ))}
             </div>
-          </ProfileCard>
+          </div>
+        </div>
+
+        {/* Recent Orders */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Đơn hàng gần đây</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Mã đơn
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Thời gian
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tổng tiền
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Trạng thái
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ghi chú
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {recentOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      #{order.id}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(order.createdAt)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {formatPrice(order.totalPrice)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                        {getStatusText(order.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {order.note || '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </ProfileLayout>

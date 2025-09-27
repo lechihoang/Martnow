@@ -1,85 +1,72 @@
 import {
   Controller,
   Post,
-  Delete,
-  Get,
+  UseInterceptors,
+  UploadedFile,
+  UploadedFiles,
+  UseGuards,
+  Req,
   Param,
   Body,
-  UseInterceptors,
-  UploadedFiles,
-  ParseIntPipe,
-  BadRequestException,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { MediaService } from './media.service';
-import { MediaUploadDto } from './dto/media-upload.dto';
+import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 
 @Controller('media')
+@UseGuards(SupabaseAuthGuard)
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
   /**
-   * Upload media files for an entity
+   * Upload avatar cho user
    */
-  @Post('upload')
-  @UseInterceptors(FilesInterceptor('files', 10)) // Max 10 files
-  @UsePipes(new ValidationPipe({ transform: true }))
-  async uploadMedia(
-    @UploadedFiles() files: any[],
-    @Body() dto: MediaUploadDto,
-  ) {
-    if (!files || files.length === 0) {
-      throw new BadRequestException('No files provided');
-    }
-
-    const uploadDto = {
-      ...dto,
-      files,
-    };
-
-    const mediaFiles = await this.mediaService.uploadMediaFiles(uploadDto);
+  @Post('avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAvatar(@UploadedFile() file: any, @Req() req: any) {
+    const avatarUrl = await this.mediaService.uploadAvatar(req.user.id, file);
 
     return {
       status: 'success',
-      message: `Successfully uploaded ${mediaFiles.length} files`,
-      data: mediaFiles,
+      message: 'Avatar uploaded successfully',
+      data: { avatarUrl },
     };
   }
 
   /**
-   * Get all media files for an entity
+   * Upload images cho product
    */
-  @Get(':entityType/:entityId')
-  async getMediaFiles(
-    @Param('entityType') entityType: string,
-    @Param('entityId', ParseIntPipe) entityId: number,
+  @Post('products/:productId')
+  @UseInterceptors(FilesInterceptor('files', 5)) // Max 5 images
+  async uploadProductImages(
+    @Param('productId') productId: string,
+    @UploadedFiles() files: any[],
   ) {
-    const mediaFiles = await this.mediaService.getMediaFiles(
-      entityType,
-      entityId,
+    const imageUrls = await this.mediaService.uploadProductImages(
+      productId,
+      files,
     );
 
     return {
       status: 'success',
-      data: mediaFiles,
+      message: `Successfully uploaded ${imageUrls.length} images`,
+      data: { imageUrls },
     };
   }
 
   /**
-   * Delete all media files for an entity
+   * Upload general file (for blogs, etc.)
    */
-  @Delete(':entityType/:entityId')
-  async deleteAllMedia(
-    @Param('entityType') entityType: string,
-    @Param('entityId', ParseIntPipe) entityId: number,
-  ) {
-    await this.mediaService.deleteAllMediaFiles(entityType, entityId);
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(@UploadedFile() file: any, @Body() body: { type?: string }) {
+    const type = body.type || 'general';
+    const uploadResult = await this.mediaService.uploadFile(file, type);
 
     return {
       status: 'success',
-      message: 'All media files deleted successfully',
+      message: 'File uploaded successfully',
+      data: [uploadResult], // Return as array to match frontend expectation
     };
   }
 }

@@ -22,16 +22,11 @@ import { OrderItem } from './order/entities/order-item.entity';
 import { Review } from './review/entities/review.entity';
 import { SellerStats } from './seller-stats/entities/seller-stats.entity';
 import { Favorite } from './favorite/entities/favorite.entity';
-import { MediaFile } from './media/entities/media-file.entity';
-import { Room } from './chat/entities/room.entity';
-import { Message } from './chat/entities/message.entity';
-// import { Blog } from './blog/entities/blog.entity';
-// import { BlogComment } from './blog/entities/blog-comment.entity';
-// import { BlogVote } from './blog/entities/blog-vote.entity';
+import { Blog } from './blog/entities/blog.entity';
+import { BlogComment } from './blog/entities/blog-comment.entity';
+import { BlogVote } from './blog/entities/blog-vote.entity';
 import { PaymentModule } from './payment/payment.module';
-import { CartModule } from './cart/cart.module';
-import { ChatModule } from './chat/chat.module';
-// import { BlogModule } from './blog/blog.module';
+import { BlogModule } from './blog/blog.module';
 
 @Module({
   imports: [
@@ -40,13 +35,9 @@ import { ChatModule } from './chat/chat.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: config.get('DB_HOST'),
-        port: parseInt(config.get('DB_PORT', '5432'), 10),
-        username: config.get('DB_USERNAME'),
-        password: config.get('DB_PASSWORD'),
-        database: config.get('DB_NAME'),
+        url: configService.get('DATABASE_URL'),
         entities: [
           Product,
           Seller,
@@ -58,13 +49,21 @@ import { ChatModule } from './chat/chat.module';
           Review,
           SellerStats,
           Favorite,
-          MediaFile /*, Room, Message, Blog, BlogComment, BlogVote*/,
+          Blog,
+          BlogComment,
+          BlogVote,
         ],
-        synchronize: true, // bật lại để có foreign keys và constraints
-        ssl:
-          config.get('DB_SSL') === 'true'
-            ? { rejectUnauthorized: false }
-            : false,
+        synchronize: configService.get('NODE_ENV') === 'development',
+        logging: configService.get('NODE_ENV') === 'development',
+        autoLoadEntities: true,
+        ssl: {
+          rejectUnauthorized: false,
+        },
+        extra: {
+          max: 20,
+          connectionTimeoutMillis: 30000,
+          idleTimeoutMillis: 30000,
+        },
       }),
     }),
     AccountModule,
@@ -76,9 +75,7 @@ import { ChatModule } from './chat/chat.module';
     FavoriteModule,
     MediaModule,
     PaymentModule,
-    CartModule,
-    // ChatModule,
-    // BlogModule,
+    BlogModule,
   ],
   controllers: [AppController],
   providers: [AppService],

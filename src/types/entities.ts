@@ -1,182 +1,167 @@
-// Auto-generated from backend entities
-
-// Enums
 export enum UserRole {
-  BUYER = 'buyer',
-  SELLER = 'seller',
-  BOTH = 'both',
+  BUYER = 'BUYER',
+  SELLER = 'SELLER',
 }
 
-export enum OrderStatus {
-  PENDING = 'pending',
-  CONFIRMED = 'confirmed',
-  PREPARING = 'preparing',
-  DELIVERING = 'delivering',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
-}
-
-export enum ProductStatus {
-  AVAILABLE = 'available',
-  OUT_OF_STOCK = 'out_of_stock',
-  DISCONTINUED = 'discontinued',
-}
-
-// Base interfaces - minimal timestamps only for order-related entities
-export interface WithOrderTimestamps {
-  id: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface WithCreatedOnly {
-  id: number;
-  createdAt: Date;
-}
-
-export interface WithoutTimestamps {
-  id: number;
-}
-
-export interface User extends WithoutTimestamps {
+export interface User {
+  id: string;
   name: string;
   username: string;
   email: string;
   role: UserRole;
-  password: string;
   avatar?: string;
-  buyer?: Buyer;
-  seller?: Seller;
-  reviews: Review[];
+  address?: string;
+  phone?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface Buyer extends WithoutTimestamps {
-  userId: number;
-  user: User;
-  orders: Order[];
-  reviews: Review[];
-  addresses: Address[];
+export interface Buyer {
+  id: string;
+  user?: User;
 }
 
-export interface Seller extends WithoutTimestamps {
-  userId: number;
-  user: User;
+export interface Seller {
+  id: string;
   shopName?: string;
   shopAddress?: string;
   shopPhone?: string;
   description?: string;
-  products: Product[];
-  stats?: SellerStats;
+  user?: User;
 }
 
-export interface SellerStats extends WithoutTimestamps {
-  sellerId: number;
-  seller: Seller;
-  totalOrders: number;
-  totalRevenue: number;
-  totalProducts: number;
-  pendingOrders: number;
-  completedOrders: number;
-  averageRating: number;
-  totalReviews: number;
-}
-
-// Alias for compatibility with existing code
-export type Stats = Pick<SellerStats, 'totalOrders' | 'totalRevenue' | 'totalProducts' | 'pendingOrders' | 'completedOrders' | 'averageRating' | 'totalReviews'>;
-
-export interface Address extends WithoutTimestamps {
-  userId: number;
-  buyerId: number;
-  user: User;
-  buyer: Buyer;
-  addressLine: string;
-  city: string;
-  district: string;
-  ward: string;
-  phone: string;
-  isDefault: boolean;
-}
-
-export interface Category extends WithoutTimestamps {
-  name: string;
-  description?: string;
-  products: Product[];
-}
-
-export interface Product extends WithoutTimestamps {
-  sellerId: number;
+export interface Product {
+  id: number;
+  sellerId: string;
   categoryId: number;
-  seller: Seller;
-  category: Category;
   name: string;
   description?: string;
   price: number;
   imageUrl?: string;
-  images: ProductImage[];
+  discountedPrice?: number;
   isAvailable: boolean;
   stock: number;
-  discount?: number;
-  // Statistics fields
+  discount: number;
   averageRating: number;
   totalReviews: number;
   totalSold: number;
   viewCount: number;
-  // SEO field
-  tags?: string; // JSON string
-  reviews: Review[];
-  orderItems: OrderItem[];
+  tags?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  seller?: Seller;
+  category?: Category;
 }
 
-export interface ProductImage extends WithoutTimestamps {
-  productId: number;
-  product: Product;
-  imageData: string; // base64 string
-  mimeType: string;
-  originalName?: string;
-  fileSize: number;
-  altText?: string;
-  displayOrder: number;
-  isPrimary: boolean;
+export interface Category {
+  id: number;
+  name: string;
+  description?: string;
 }
 
-// Only keep timestamps for Order-related entities
-export interface Order extends WithOrderTimestamps {
-  buyerId: number;
-  addressId?: number;
-  buyer: Buyer;
-  address?: Address;
+export enum OrderStatus {
+  PENDING = 'pending',
+  PAID = 'paid',
+  CANCELLED = 'cancelled',
+}
+
+export interface Order {
+  id: number;
+  buyerId: string;
   totalPrice: number;
   status: OrderStatus;
   note?: string;
   paymentReference?: string;
-  paidAt?: Date;
-  items: OrderItem[];
+  paidAt?: string;
+  createdAt: string;
+  buyer?: Buyer;
+  items?: OrderItem[];
 }
 
-export interface OrderItem extends WithCreatedOnly {
+export interface OrderItem {
   orderId: number;
   productId: number;
-  order: Order;
-  product: Product;
   quantity: number;
   price: number;
+  createdAt: string;
+  product?: Product;
 }
 
-export interface Review extends WithCreatedOnly {
-  userId: number;
-  buyerId: number;
+export interface Review {
+  id: number;
+  buyerId: string;
   productId: number;
-  user: User;
-  buyer: Buyer;
-  product: Product;
   rating: number;
   comment?: string;
   helpfulCount: number;
+  createdAt: string;
+  buyer?: Buyer;
+  product?: Product;
 }
 
-export interface Favorite extends WithoutTimestamps {
-  buyerId: number;
+export interface Favorite {
+  buyerId: string;
   productId: number;
-  buyer: Buyer;
-  product: Product;
+  buyer?: Buyer;
+  product?: Product;
+}
+
+export interface Blog {
+  id: number;
+  title: string;
+  content: string;
+  imageUrl?: string;
+  featuredImage?: string;
+  authorId: string;
+  createdAt: string;
+  updatedAt: string;
+  author?: User;
+  comments?: BlogComment[];
+  votes?: BlogVote[];
+}
+
+export interface BlogComment {
+  id: number;
+  content: string;
+  userId: string;
+  blogId: number;
+  parentId?: number;
+  createdAt: string;
+  updatedAt: string;
+  user?: User;
+  blog?: Blog;
+  parent?: BlogComment;
+  replies?: BlogComment[];
+}
+
+export interface BlogVote {
+  id: number;
+  voteType: 'up' | 'down';
+  userId: string;
+  blogId: number;
+  createdAt: string;
+  updatedAt: string;
+  user?: User;
+  blog?: Blog;
+}
+
+export interface Stats {
+  totalSales: number;
+  totalOrders: number;
+  totalRevenue: number;
+  pendingOrders: number;
+  averageOrderValue: number;
+  totalProducts: number;
+  totalCustomers: number;
+  monthlySales: Array<{
+    month: string;
+    sales: number;
+    orders: number;
+  }>;
+  topProducts: Array<{
+    productId: number;
+    productName: string;
+    totalSold: number;
+    revenue: number;
+  }>;
 }

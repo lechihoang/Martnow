@@ -14,25 +14,18 @@ const ProductRatingStats: React.FC<ProductRatingStatsProps> = ({
   ratingDistribution,
   className = ''
 }) => {
-  if (totalReviews === 0) {
-    return (
-      <div className={`text-center py-4 ${className}`}>
-        <div className="text-gray-400 text-2xl mb-2">⭐</div>
-        <p className="text-gray-500">Chưa có đánh giá</p>
-      </div>
-    );
-  }
+  // Always show the chart, even with 0 reviews
 
   return (
     <div className={`bg-gray-50 rounded-lg p-4 ${className}`}>
       <div className="flex items-center gap-4 mb-4">
         <div className="text-center">
           <div className="text-3xl font-bold text-gray-900">
-            {averageRating.toFixed(1)}
+            {totalReviews === 0 ? '0.0' : averageRating.toFixed(1)}
           </div>
           <StarRating rating={averageRating} readonly />
           <p className="text-sm text-gray-600 mt-1">
-            {totalReviews} đánh giá
+            {totalReviews} đánh giá{totalReviews === 0 ? ' (chưa có)' : ''}
           </p>
         </div>
 

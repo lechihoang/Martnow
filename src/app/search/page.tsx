@@ -4,13 +4,33 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProductGrid from '@/components/ProductGrid';
 import { PageState } from '@/components/ui';
-import Container from '@/components/Container';
 import { productApi } from '@/lib/api';
 import type { ProductResponseDto } from '@/types/dtos';
+import { useAuth } from '@/hooks/useAuth';
 
 const SearchContent = () => {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
+  const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState<any>(null);
+  
+  // Fetch user profile when user changes
+  useEffect(() => {
+    if (user) {
+      // TODO: Implement getUserProfile function or remove this logic
+      // For now, we'll set a basic profile from user data
+      setUserProfile({
+        id: user.id,
+        name: user.email || 'User',
+        username: user.email?.split('@')[0] || 'user',
+        email: user.email || '',
+        avatar: user.user_metadata?.avatar_url,
+        role: 'BUYER' // Default role
+      });
+    } else {
+      setUserProfile(null);
+    }
+  }, [user]);
   
   const [products, setProducts] = useState<ProductResponseDto[]>([]);
   const [loading, setLoading] = useState(false);
@@ -26,9 +46,20 @@ const SearchContent = () => {
       setLoading(true);
       setError(null);
       
-      // Sử dụng productApi từ lib/api.ts
-      const results = await productApi.searchProducts(query, 20);
-      setProducts(results);
+      // Sử dụng productApi từ lib/api.ts với search parameter
+      const results = await productApi.getProducts({
+        search: query,
+        limit: 20
+      });
+
+      // Backend có thể trả về { products: [], total, page, totalPages } hoặc array trực tiếp
+      if (results && results.products) {
+        setProducts(results.products);
+      } else if (Array.isArray(results)) {
+        setProducts(results);
+      } else {
+        setProducts([]);
+      }
     } catch (err) {
       console.error('Search error:', err);
       setError('Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại.');
@@ -43,7 +74,7 @@ const SearchContent = () => {
   }, [query]);
 
   return (
-    <Container className="py-8">
+    <div className="py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           {query ? `Kết quả tìm kiếm cho "${query}"` : 'Tìm kiếm sản phẩm'}
@@ -71,22 +102,23 @@ const SearchContent = () => {
       >
         <ProductGrid 
           products={products}
-          favoriteStatus={{}} 
-          onFavoriteChange={() => {}} 
+          favoriteStatus={{}}
+          userProfile={userProfile}
+          loading={loading}
         />
       </PageState>
-    </Container>
+    </div>
   );
 };
 
 const SearchPage = () => {
   return (
     <Suspense fallback={
-      <Container className="py-8">
+      <div className="py-8">
         <div className="flex justify-center items-center min-h-[400px]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         </div>
-      </Container>
+      </div>
     }>
       <SearchContent />
     </Suspense>

@@ -23,8 +23,8 @@ export class Product {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'int' })
-  sellerId: number;
+  @Column({ type: 'varchar' })
+  sellerId: string;
 
   @ManyToOne(() => Seller, (seller) => seller.products)
   @JoinColumn({ name: 'sellerId' })

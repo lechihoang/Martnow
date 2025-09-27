@@ -3,29 +3,28 @@
 import React from 'react';
 import { UserResponseDto } from '@/types/dtos';
 import { Calendar, Mail, Star, Award } from 'lucide-react';
-import { useChatContext } from '@/contexts/ChatContext';
-import useUser from '@/hooks/useUser';
+import { UserRole } from '@/types/entities';
 
 interface PublicProfileCardProps {
   user: UserResponseDto;
   isOwnProfile: boolean;
   onMessage?: () => void;
   onViewShop?: () => void;
+  currentUser: any;
 }
 
 const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
   user,
   isOwnProfile,
   onMessage,
-  onViewShop
+  onViewShop,
+  currentUser
 }) => {
-  const { startChatWithUser } = useChatContext();
-  const { user: currentUser } = useUser();
 
   const handleMessage = () => {
     if (!currentUser) {
       // Redirect to login if not authenticated
-      window.location.href = '/login';
+      window.location.href = '/auth/login';
       return;
     }
     
@@ -34,8 +33,8 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
       return;
     }
     
-    // Use the new chat system
-    startChatWithUser(user.id);
+    // Chat functionality removed
+    alert('Tính năng chat đã được tạm thời vô hiệu hóa');
   };
 
   return (
@@ -65,11 +64,11 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                user.role === 'seller' 
+                user.role === UserRole.SELLER
                   ? 'bg-green-100 text-green-800' 
                   : 'bg-blue-100 text-blue-800'
               }`}>
-                {user.role === 'seller' ? '🏪 Người bán' : '🛒 Người mua'}
+                {user.role === UserRole.SELLER ? '🏪 Người bán' : '🛒 Người mua'}
               </span>
             </div>
             <p className="text-xl text-gray-600 mb-4">@{user.username}</p>
@@ -111,7 +110,7 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
                 >
                   💬 Nhắn tin
                 </button>
-                {user.role === 'seller' && (
+                {user.role === UserRole.SELLER && (
                   <button 
                     onClick={onViewShop}
                     className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
@@ -150,7 +149,7 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
           <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
             ✅ Đã xác thực
           </span>
-          {user.role === 'seller' && (
+          {user.role === UserRole.SELLER && (
             <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
             🏆 Người bán tin cậy
             </span>
@@ -161,7 +160,7 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
         <div className="bg-gray-50 rounded-lg p-4">
           <h3 className="font-semibold text-gray-900 mb-2">Giới thiệu</h3>
           <p className="text-gray-600">
-            {user.role === 'seller'
+            {user.role === UserRole.SELLER
               ? user.seller?.description || "Chào mừng đến với cửa hàng của tôi! Tôi chuyên bán các sản phẩm chất lượng cao với giá tốt nhất. Hãy liên hệ nếu bạn có bất kỳ câu hỏi nào!"
               : "Người mua tích cực trên Foodee. Thích khám phá các món ăn mới và ủng hộ các cửa hàng địa phương."
             }

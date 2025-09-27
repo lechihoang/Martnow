@@ -2,27 +2,36 @@ import React from 'react'
 import Container from './Container'
 import ProductCard from './ProductCard'
 import type { ProductResponseDto } from '../types/dtos'
+import { UserProfile } from '@/types/auth';
 
 type ProductGridProps = {
   products: ProductResponseDto[]
   favoriteStatus?: Record<number, boolean>
-  onFavoriteChange?: (productId: number, isFavorite: boolean) => void
+  userProfile: UserProfile | null
+  loading: boolean
 }
 
-const ProductGrid = ({ products, favoriteStatus = {}, onFavoriteChange }: ProductGridProps) => {
+const ProductGrid = ({
+  products,
+  favoriteStatus = {},
+  userProfile,
+  loading
+}: ProductGridProps) => {
+  // Safety check to ensure products is an array
+  const safeProducts = Array.isArray(products) ? products : [];
+
   return (
-    <Container className="flex flex-col lg:px-0 my-10">
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 mt-10 animate-in fade-in duration-500">
-        {products.map((product) => (
-          <ProductCard 
-            key={product.id} 
-            product={product} 
-            isFavorite={favoriteStatus[product.id]}
-            onFavoriteChange={onFavoriteChange}
-          />
-        ))}
-      </div>
-    </Container>
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 w-full">
+      {safeProducts.map((product) => (
+        <ProductCard
+          key={product.id}
+          product={product}
+          isFavorite={favoriteStatus[product.id]}
+          userProfile={userProfile}
+          loading={loading}
+        />
+      ))}
+    </div>
   )
 }
 

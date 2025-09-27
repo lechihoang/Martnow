@@ -1,12 +1,12 @@
-import { Entity, Column, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { UserRole } from '../../../auth/roles.enum';
+import { Entity, Column, OneToOne, PrimaryColumn } from 'typeorm';
+import { UserRole } from '../../../lib/supabase';
 import { Buyer } from '../../buyer/entities/buyer.entity';
 import { Seller } from '../../seller/entities/seller.entity';
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryColumn({ type: 'varchar', length: 255 })
+  id: string; // This will be supabase_id
 
   @Column({ type: 'varchar', length: 100 })
   name: string;
@@ -20,9 +20,6 @@ export class User {
   @Column({ type: 'enum', enum: UserRole })
   role: UserRole;
 
-  @Column({ type: 'varchar' })
-  password: string;
-
   @Column({ type: 'varchar', length: 255, nullable: true })
   avatar: string;
 
@@ -32,10 +29,11 @@ export class User {
   @Column({ type: 'varchar', length: 20, nullable: true })
   phone: string;
 
-  // Relationships to buyer and seller entities
-  @OneToOne(() => Buyer, (buyer) => buyer.user)
+  // Relationship to buyer or seller entity (based on role)
+  // A user can only be either a buyer OR a seller, not both
+  @OneToOne(() => Buyer, (buyer) => buyer.user, { nullable: true })
   buyer: Buyer;
 
-  @OneToOne(() => Seller, (seller) => seller.user)
+  @OneToOne(() => Seller, (seller) => seller.user, { nullable: true })
   seller: Seller;
 }

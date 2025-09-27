@@ -25,7 +25,7 @@ export class SellerStatsService {
         .createQueryBuilder('order')
         .innerJoin('order.items', 'orderItem')
         .innerJoin('orderItem.product', 'product')
-        .where('product.sellerId = :sellerId', { sellerId: parseInt(sellerId) })
+        .where('product.sellerId = :sellerId', { sellerId })
         .getCount();
 
       // Tính tổng doanh thu
@@ -34,7 +34,7 @@ export class SellerStatsService {
         .select('SUM(order.totalPrice)', 'totalRevenue')
         .innerJoin('order.items', 'orderItem')
         .innerJoin('orderItem.product', 'product')
-        .where('product.sellerId = :sellerId', { sellerId: parseInt(sellerId) })
+        .where('product.sellerId = :sellerId', { sellerId })
         .andWhere('order.status = :status', { status: OrderStatus.PAID })
         .getRawOne();
 
@@ -42,7 +42,7 @@ export class SellerStatsService {
 
       // Tính tổng số sản phẩm
       const totalProducts = await this.productRepository.count({
-        where: { sellerId: parseInt(sellerId) },
+        where: { sellerId },
       });
 
       // Bỏ logic pending orders vì không có waiting_payment status
@@ -50,7 +50,7 @@ export class SellerStatsService {
 
       // Lưu hoặc cập nhật thống kê
       let stats = await this.sellerStatsRepository.findOne({
-        where: { id: parseInt(sellerId) },
+        where: { id: sellerId },
       });
 
       if (stats) {
@@ -60,7 +60,7 @@ export class SellerStatsService {
         stats.pendingOrders = pendingOrders;
       } else {
         stats = this.sellerStatsRepository.create({
-          id: parseInt(sellerId),
+          id: sellerId,
           totalOrders,
           totalRevenue,
           totalProducts,

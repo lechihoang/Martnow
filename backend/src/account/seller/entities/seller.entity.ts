@@ -12,8 +12,8 @@ import { SellerStats } from '../../../seller-stats/entities/seller-stats.entity'
 
 @Entity('seller')
 export class Seller {
-  @PrimaryColumn({ type: 'int' })
-  id: number; // This is the userId from User table
+  @PrimaryColumn({ type: 'varchar', length: 255 })
+  id: string; // This will be the same as user.id (supabase_id)
 
   @OneToOne(() => User, (user) => user.seller)
   @JoinColumn({ name: 'id' })

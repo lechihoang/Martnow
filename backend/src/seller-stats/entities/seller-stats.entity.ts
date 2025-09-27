@@ -3,8 +3,8 @@ import { Seller } from '../../account/seller/entities/seller.entity';
 
 @Entity('seller_stats')
 export class SellerStats {
-  @PrimaryColumn({ type: 'int' })
-  id: number; // This is the seller.id which is userId
+  @PrimaryColumn({ type: 'varchar', length: 255 })
+  id: string; // This is the seller.id which is supabase_id
 
   @OneToOne(() => Seller, (seller) => seller.stats)
   @JoinColumn({ name: 'id' })

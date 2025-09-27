@@ -2,13 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Product } from '@/types/entities';
+import { ProductResponseDto } from '@/types/dtos';
+import { productApi } from '@/lib/api';
 
 const ProductsTab: React.FC = () => {
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<number | null>(null);
+  const [editingDiscount, setEditingDiscount] = useState<number | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<number | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -17,11 +20,12 @@ const ProductsTab: React.FC = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      // Import mock data for now
-      const { mockProducts } = await import('@/lib/mockData');
-      setProducts(mockProducts);
+      // Gọi API để lấy sản phẩm của seller
+      const sellerProducts = await productApi.getSellerProducts();
+      setProducts(sellerProducts);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -49,13 +53,43 @@ const ProductsTab: React.FC = () => {
   };
 
   const updateStock = (productId: number, newStock: number) => {
-    setProducts(prev => 
-      prev.map(product => 
-        product.id === productId 
+    setProducts(prev =>
+      prev.map(product =>
+        product.id === productId
           ? { ...product, stock: newStock, isAvailable: newStock > 0 }
           : product
       )
     );
+  };
+
+  const handleDiscountUpdate = (productId: number, newDiscount: number) => {
+    setProducts(prev =>
+      prev.map(product =>
+        product.id === productId
+          ? { ...product, discount: newDiscount }
+          : product
+      )
+    );
+    setEditingDiscount(null);
+  };
+
+  const handleDeleteProduct = async (productId: number) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này? Hành động này không thể hoàn tác.')) {
+      return;
+    }
+
+    try {
+      setDeletingProduct(productId);
+      // Call API to delete product
+      await productApi.deleteProduct(productId);
+      // Remove from local state
+      setProducts(prev => prev.filter(product => product.id !== productId));
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      alert('Có lỗi xảy ra khi xóa sản phẩm. Vui lòng thử lại.');
+    } finally {
+      setDeletingProduct(null);
+    }
   };
 
   if (loading) {
@@ -145,7 +179,7 @@ const ProductsTab: React.FC = () => {
             {/* Product Image */}
             <div className="aspect-w-16 aspect-h-12 bg-gray-100">
               <img
-                src={product.imageUrl || product.images?.[0]?.imageData || '/placeholder-product.jpg'}
+                src={product.imageUrl || '/placeholder-product.jpg'}
                 alt={product.name}
                 className="w-full h-48 object-cover"
               />
@@ -189,14 +223,64 @@ const ProductsTab: React.FC = () => {
                   </div>
                 ) : (
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-green-600">
-                      {product.price.toLocaleString('vi-VN')}đ
-                    </span>
+                    <div>
+                      <span className="text-lg font-bold text-green-600">
+                        {product.price.toLocaleString('vi-VN')}đ
+                      </span>
+                      {product.discount && product.discount > 0 && (
+                        <div className="text-xs text-red-600 font-medium">
+                          Giảm {product.discount}%
+                        </div>
+                      )}
+                    </div>
                     <button
                       onClick={() => setEditingProduct(product.id)}
                       className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                     >
                       Sửa giá
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Discount Management */}
+              <div className="mb-3">
+                {editingDiscount === product.id ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      defaultValue={product.discount || 0}
+                      min="0"
+                      max="100"
+                      className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                      placeholder="% giảm giá (0-100)"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          const newDiscount = parseFloat((e.target as HTMLInputElement).value);
+                          if (newDiscount >= 0 && newDiscount <= 100) {
+                            handleDiscountUpdate(product.id, newDiscount);
+                          }
+                        }
+                      }}
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => setEditingDiscount(null)}
+                      className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">
+                      Giảm giá: {product.discount || 0}%
+                    </span>
+                    <button
+                      onClick={() => setEditingDiscount(product.id)}
+                      className="px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
+                    >
+                      Sửa giảm giá
                     </button>
                   </div>
                 )}
@@ -251,6 +335,17 @@ const ProductsTab: React.FC = () => {
                   className="flex-1 py-2 px-3 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
                 >
                   👁️ Xem
+                </button>
+                <button
+                  onClick={() => handleDeleteProduct(product.id)}
+                  disabled={deletingProduct === product.id}
+                  className={`flex-1 py-2 px-3 text-sm rounded transition-colors ${
+                    deletingProduct === product.id
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-red-500 text-white hover:bg-red-600'
+                  }`}
+                >
+                  {deletingProduct === product.id ? '⏳ Xóa...' : '🗑️ Xóa'}
                 </button>
               </div>
             </div>

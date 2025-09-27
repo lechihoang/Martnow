@@ -5,9 +5,10 @@ export class CreateCommentDto {
   @MinLength(1)
   content: string;
 
-  @IsOptional()
-  @IsNumber()
-  parentId?: number;
+  // Removed parentId since we no longer support reply functionality
+  // @IsOptional()
+  // @IsNumber()
+  // parentId?: number;
 }
 
 export class UpdateCommentDto {
@@ -21,10 +22,12 @@ export class CommentResponseDto {
   content: string;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt?: Date;
   user: {
     id: number;
     name: string;
   };
-  parentId?: number;
-  replies: CommentResponseDto[];
+  // Removed parentId and replies since we no longer support reply functionality
+  // parentId?: number;
+  // replies: CommentResponseDto[];
 }

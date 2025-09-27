@@ -1,54 +1,52 @@
-import { IsEmail, IsString, IsOptional, IsEnum } from 'class-validator';
-import { UserRole } from '../roles.enum';
+import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
 
-// ✅ Simplified RegisterDto
-export class RegisterDto {
-  @IsString()
-  name: string;
+export class SignupDto {
+  @IsEmail()
+  email: string;
 
   @IsString()
-  username: string;
+  @MinLength(6)
+  password: string;
 
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  username?: string;
+}
+
+export class SigninDto {
   @IsEmail()
   email: string;
 
   @IsString()
   password: string;
-
-  @IsEnum(UserRole)
-  role: UserRole;
-
-  @IsString()
-  @IsOptional()
-  avatar?: string;
-
-  // ✅ Seller info as nested object (optional)
-  @IsOptional()
-  sellerInfo?: {
-    shopName?: string;
-    shopAddress?: string;
-    shopPhone?: string;
-    description?: string;
-  };
 }
 
-export class LoginDto {
-  @IsEmail({}, { message: 'Please provide a valid email address' })
-  email: string;
+export class RefreshTokenDto {
+  @IsString()
+  refresh_token: string;
+}
 
-  @IsString({ message: 'Password must be a string' })
+export class ForgotPasswordDto {
+  @IsEmail()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @IsString()
+  @MinLength(6)
   password: string;
 }
 
-// ✅ Import UserResponseDto instead of duplicating
-import { UserResponseDto } from '../../account/user/dto/user.dto';
+export class ChangePasswordDto {
+  @IsString()
+  @MinLength(6)
+  current_password: string;
 
-// ✅ Use existing UserResponseDto instead of duplicate AuthUserResponseDto
-export class LoginResponseDto {
-  user: UserResponseDto;
-  accessToken?: string; // If using JWT
-}
-
-export class LogoutResponseDto {
-  message: string;
+  @IsString()
+  @MinLength(6)
+  new_password: string;
 }
