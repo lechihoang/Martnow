@@ -6,7 +6,7 @@ import ProfileLayout from '@/components/profile/ProfileLayout';
 import { Stats, Order, OrderStatus } from '../../../../types/entities';
 import { useAuth } from '@/hooks/useAuth';
 import { sellerApi } from '@/lib/api';
-import { TrendingUp, ShoppingBag, Users, Package, DollarSign, Calendar } from 'lucide-react';
+import {ShoppingBag, Users, Package, DollarSign} from 'lucide-react';
 
 const AnalyticsPage: React.FC = () => {
   const params = useParams();
@@ -64,7 +64,7 @@ const AnalyticsPage: React.FC = () => {
       console.error('Error fetching data:', error);
       setLoading(false);
     }
-  }, [currentUser, userId, router]);
+  }, [currentUser, userId, router, userProfile]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -201,7 +201,7 @@ const AnalyticsPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Doanh thu theo tháng</h3>
             <div className="space-y-3">
-              {stats.monthlySales.map((month, index) => (
+              {stats.monthlySales.map((month) => (
                 <div key={month.month} className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">{month.month}</span>
                   <div className="flex items-center space-x-4">

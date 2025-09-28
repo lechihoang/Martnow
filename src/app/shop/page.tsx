@@ -20,14 +20,14 @@ const ShopContent = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
 
   // ✅ Sử dụng unified store
-  const { favoriteProducts, isFavorite } = useStore();
+  const {isFavorite } = useStore();
 
   // Get category from URL params
   const categoryFromUrl = searchParams.get('category');
 
   // Fetch user profile when user changes
   useEffect(() => {
-    if (user && user.id && user.email && user.aud === 'authenticated') {
+    if (user && user.aud === 'authenticated') {
       getUserProfile().then(profile => {
         if (profile && profile.id) {
           setUserProfile(profile);
@@ -56,7 +56,7 @@ const ShopContent = () => {
       setSelectedCategory(categoryFromUrl);
       setCurrentPage(1); // Reset to first page when category changes
     }
-  }, [categoryFromUrl]);
+  }, [categoryFromUrl, selectedCategory]);
   
   // Use the new useProducts hook
   const {
@@ -64,7 +64,6 @@ const ShopContent = () => {
     loading: productsLoading,
     error,
     totalPages,
-    totalProducts,
     refetch
   } = useProducts({
     page: currentPage,
@@ -177,9 +176,10 @@ const ShopContent = () => {
                   </svg>
                 }
               >
-                <ProductGrid 
+                <ProductGrid
                   products={products}
                   favoriteStatus={favoriteStatus}
+                  user={user}
                   userProfile={userProfile}
                   loading={loading}
                 />
@@ -209,9 +209,10 @@ const ShopContent = () => {
               </svg>
             }
           >
-            <ProductGrid 
+            <ProductGrid
               products={products}
               favoriteStatus={favoriteStatus}
+              user={user}
               userProfile={userProfile}
               loading={loading}
             />

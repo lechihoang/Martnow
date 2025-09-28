@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { Calendar, User, MessageCircle, Edit, Trash2 } from 'lucide-react';
 import { blogApi } from '../lib/api';
@@ -18,11 +18,7 @@ const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBlog();
-  }, [blogId]);
-
-  const fetchBlog = async () => {
+  const fetchBlog = useCallback(async () => {
     try {
       setLoading(true);
       const data = await blogApi.getBlog(blogId);
@@ -33,7 +29,11 @@ const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [blogId]);
+
+  useEffect(() => {
+    fetchBlog();
+  }, [fetchBlog]);
 
   const handleDeleteBlog = async () => {
     if (!blog || !window.confirm('Bạn có chắc chắn muốn xóa bài viết này?')) return;

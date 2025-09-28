@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState } from 'react';
+import React from 'react';
 import { Menu, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import useStore from '@/stores/store';
@@ -18,7 +18,7 @@ import FavoritesDropdown from './FavoritesDropdown';
 import { UserAvatar } from './header/UserAvatar';
 import AuthButtons from './header/AuthButtons';
 import MobileMenu from './header/MobileMenu';
-import { UserProfile, UserRole } from '@/types/auth';
+import { UserProfile} from '@/types/auth';
 
 const Header = () => {
   const { getCartTotalItems } = useStore();
@@ -59,7 +59,7 @@ const Header = () => {
       setUserProfile(null);
       setProfileLoading(false);
     }
-  }, [user]);
+  }, [user, userProfile]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

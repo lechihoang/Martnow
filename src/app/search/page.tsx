@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProductGrid from '@/components/ProductGrid';
 import { PageState } from '@/components/ui';
@@ -36,7 +36,7 @@ const SearchContent = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const searchProducts = async () => {
+  const searchProducts = useCallback(async () => {
     if (!query.trim()) {
       setProducts([]);
       return;
@@ -52,10 +52,8 @@ const SearchContent = () => {
         limit: 20
       });
 
-      // Backend có thể trả về { products: [], total, page, totalPages } hoặc array trực tiếp
-      if (results && results.products) {
-        setProducts(results.products);
-      } else if (Array.isArray(results)) {
+      // Backend trả về array trực tiếp
+      if (Array.isArray(results)) {
         setProducts(results);
       } else {
         setProducts([]);
@@ -67,11 +65,11 @@ const SearchContent = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [query]);
 
   useEffect(() => {
     searchProducts();
-  }, [query]);
+  }, [searchProducts]);
 
   return (
     <div className="py-8">
@@ -100,9 +98,10 @@ const SearchContent = () => {
           </svg>
         }
       >
-        <ProductGrid 
+        <ProductGrid
           products={products}
           favoriteStatus={{}}
+          user={user}
           userProfile={userProfile}
           loading={loading}
         />

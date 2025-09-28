@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef } from 'react';
+import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { Camera } from 'lucide-react';
 import ProfileCard from './ProfileCard';
@@ -130,9 +131,11 @@ const UserInfo: React.FC<UserInfoProps> = ({ user, onUpdate, readOnly = false })
       
       <div className="flex items-center mb-6">
         <div className="relative group">
-          <img
+          <Image
             src={user.avatar || '/default-avatar.jpg'}
             alt={user.name}
+            width={80}
+            height={80}
             className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
           />
           {!readOnly && (

@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import StarRating from './StarRating';
 
 interface Review {
@@ -30,7 +31,6 @@ const ReviewList: React.FC<ReviewListProps> = ({
   currentBuyerId,
   onEditReview,
   onDeleteReview,
-  onHelpfulClick,
   onRetry,
   hideActions = false
 }) => {
@@ -112,9 +112,11 @@ const ReviewList: React.FC<ReviewListProps> = ({
             {/* Avatar */}
             <div className="flex-shrink-0">
               {review.buyerAvatar ? (
-                <img
+                <Image
                   src={review.buyerAvatar}
                   alt={review.buyerName}
+                  width={48}
+                  height={48}
                   className="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;

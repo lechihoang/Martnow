@@ -8,19 +8,21 @@ import AddToCartButton from "./AddToCartButton";
 import FavoriteButton from "./FavoriteButton";
 import { Star } from 'lucide-react';
 import { UserProfile } from '@/types/auth';
+import { User } from '@supabase/supabase-js';
 
 interface ProductCardProps {
   product: ProductResponseDto;
   isFavorite?: boolean;
+  user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ 
-  product, 
-  isFavorite, 
+const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  user,
   userProfile,
-  loading 
+  loading
 }) => {
   return (
     <div className="group relative card-quickcart-product w-full max-w-full">
@@ -48,7 +50,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <div className="absolute top-2 right-2 z-20">
           <FavoriteButton
             product={product}
-            user={userProfile ? { id: userProfile.id, email: userProfile.email } as any : null}
+            user={user}
             userProfile={userProfile}
             loading={loading}
             className="bg-gray-500/70 backdrop-blur-sm hover:bg-white transition-all duration-200 rounded-full"
@@ -114,9 +116,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
         />
 
         {/* Add to Cart Button */}
-        <AddToCartButton 
+        <AddToCartButton
           product={product}
-          user={userProfile ? { id: userProfile.id, email: userProfile.email } as any : null}
+          user={user}
           userProfile={userProfile}
         />
       </div>

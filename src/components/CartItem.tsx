@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
 import useStore from '@/stores/store';
@@ -52,9 +53,11 @@ const CartItem: React.FC<CartItemProps> = ({
         {/* Product Image */}
         <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
           {item.product.imageUrl ? (
-            <img
+            <Image
               src={item.product.imageUrl}
               alt={item.product.name}
+              width={80}
+              height={80}
               className="w-full h-full object-cover"
             />
           ) : (

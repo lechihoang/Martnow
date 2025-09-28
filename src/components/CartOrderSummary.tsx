@@ -18,16 +18,14 @@ interface CartOrderSummaryProps {
   user: any; // Truyền user từ parent component
 }
 
-const CartOrderSummary: React.FC<CartOrderSummaryProps> = React.memo(({
+const CartOrderSummary: React.FC<CartOrderSummaryProps> = ({
   items,
   checkoutResult,
   showPayment,
   isCreatingOrder,
   onCreateOrder,
-  onContinueShopping,
   formatCurrency,
   getTotalPrice,
-  getTotalItems,
   user,
 }) => {
 
@@ -45,28 +43,8 @@ const CartOrderSummary: React.FC<CartOrderSummaryProps> = React.memo(({
         const errorData = await response.json();
         toast.error(errorData.message || 'Không thể hủy đơn hàng');
       }
-    } catch (error) {
+    } catch {
       toast.error('Có lỗi xảy ra khi hủy đơn hàng');
-    }
-  };
-
-  const handleCancelAllOrders = async () => {
-    if (confirm('Bạn có chắc muốn hủy tất cả đơn hàng này?')) {
-      try {
-        const cancelPromises = checkoutResult.orders.map(async (order: any) => {
-          const headers = await getHeadersWithContentType();
-          return fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/orders/cart/cancel/${order.id}`, {
-            method: 'DELETE',
-            headers,
-          });
-        });
-        
-        await Promise.all(cancelPromises);
-        toast.success('Đã hủy tất cả đơn hàng thành công!');
-        window.location.reload();
-      } catch (error) {
-        toast.error('Có lỗi xảy ra khi hủy đơn hàng');
-      }
     }
   };
 
@@ -137,7 +115,7 @@ const CartOrderSummary: React.FC<CartOrderSummaryProps> = React.memo(({
               
               {/* Hiển thị thông tin các orders */}
               <div className="space-y-2 mb-4">
-                {checkoutResult.orders.map((order: any, index: number) => (
+                {checkoutResult.orders.map((order: any) => (
                   <div key={order.id} className="bg-gray-50 p-3 rounded-lg text-sm">
                     <div className="flex justify-between items-center">
                       <div>
@@ -186,19 +164,12 @@ const CartOrderSummary: React.FC<CartOrderSummaryProps> = React.memo(({
                 Tiến hành thanh toán VNPAY
               </button>
               
-              {/* Nút hủy tất cả đơn hàng */}
-              <button
-                onClick={handleCancelAllOrders}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg mb-3"
-              >
-                Hủy tất cả đơn hàng
-              </button>
               
               {/* Hiển thị các payment links riêng lẻ nếu cần */}
               {checkoutResult.paymentInfos && checkoutResult.paymentInfos.length > 1 && (
                 <div className="space-y-2">
                   <p className="text-sm text-gray-600 text-center">Hoặc thanh toán từng đơn:</p>
-                  {checkoutResult.paymentInfos.map((payment: any, index: number) => (
+                  {checkoutResult.paymentInfos.map((payment: any) => (
                     <button
                       key={payment.orderId}
                       onClick={() => window.location.href = payment.paymentUrl}
@@ -223,6 +194,6 @@ const CartOrderSummary: React.FC<CartOrderSummaryProps> = React.memo(({
       </div>
     </div>
   );
-});
+}
 
 export default CartOrderSummary;

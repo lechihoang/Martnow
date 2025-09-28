@@ -1,12 +1,13 @@
 import React from 'react'
-import Container from './Container'
 import ProductCard from './ProductCard'
 import type { ProductResponseDto } from '../types/dtos'
 import { UserProfile } from '@/types/auth';
+import { User } from '@supabase/supabase-js';
 
 type ProductGridProps = {
   products: ProductResponseDto[]
   favoriteStatus?: Record<number, boolean>
+  user: User | null
   userProfile: UserProfile | null
   loading: boolean
 }
@@ -14,6 +15,7 @@ type ProductGridProps = {
 const ProductGrid = ({
   products,
   favoriteStatus = {},
+  user,
   userProfile,
   loading
 }: ProductGridProps) => {
@@ -27,6 +29,7 @@ const ProductGrid = ({
           key={product.id}
           product={product}
           isFavorite={favoriteStatus[product.id]}
+          user={user}
           userProfile={userProfile}
           loading={loading}
         />

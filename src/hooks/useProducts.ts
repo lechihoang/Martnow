@@ -2,12 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { productApi } from '@/lib/api';
 import type { ProductResponseDto } from '@/types/dtos';
 
-interface ProductApiResponse {
-  products: ProductResponseDto[];
-  total: number;
-  totalPages: number;
-  page: number;
-}
 
 interface UseProductsOptions {
   page?: number;

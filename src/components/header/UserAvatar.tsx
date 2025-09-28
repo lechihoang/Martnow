@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, User, Settings, LogOut, ShoppingCart, Heart, FileText, Mail } from 'lucide-react';
+import { ChevronDown, User, Settings, LogOut, ShoppingCart, Heart } from 'lucide-react';
 import { UserProfile } from '@/types/auth';
 import { useAuth } from '@/hooks/useAuth';
 import useStore from '@/stores/store';
@@ -20,18 +20,6 @@ export function UserAvatar({ userProfile }: UserAvatarProps) {
   const { signout } = useAuth();
   const { clearCart } = useStore();
 
-
-
-  if (!userProfile) {
-    return null;
-  }
-
-  // Hiển thị tên người dùng từ userProfile
-  const displayName = userProfile?.name || userProfile?.username || 'User';
-  
-  // Xử lý avatar URL
-  const avatarUrl = imageError ? '/default-avatar.jpg' : (userProfile?.avatar || '/default-avatar.jpg');
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -44,6 +32,16 @@ export function UserAvatar({ userProfile }: UserAvatarProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  if (!userProfile) {
+    return null;
+  }
+
+  // Hiển thị tên người dùng từ userProfile
+  const displayName = userProfile?.name || userProfile?.username || 'User';
+
+  // Xử lý avatar URL
+  const avatarUrl = imageError ? '/default-avatar.jpg' : (userProfile?.avatar || '/default-avatar.jpg');
+
   const handleLogout = async () => {
     try {
       await clearCart();
@@ -52,33 +50,6 @@ export function UserAvatar({ userProfile }: UserAvatarProps) {
       router.push('/');
     } catch (error) {
       console.error('Error during logout:', error);
-    }
-  };
-
-  const handleExportRevenueReport = async () => {
-    try {
-      setIsDropdownOpen(false);
-
-      // Show loading state
-      const loadingToast = alert('Đang tạo báo cáo doanh thu...');
-
-      // Call API to generate and send revenue report
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/order/seller/export-revenue-report`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-        },
-      });
-
-      if (response.ok) {
-        alert('Báo cáo doanh thu đã được gửi đến email của bạn!');
-      } else {
-        throw new Error('Failed to export report');
-      }
-    } catch (error) {
-      console.error('Error exporting revenue report:', error);
-      alert('Có lỗi xảy ra khi xuất báo cáo. Vui lòng thử lại.');
     }
   };
 

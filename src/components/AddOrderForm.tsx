@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import toast from 'react-hot-toast';
 import type { Product } from '../types/entities';
 import { productApi } from '../lib/api';
@@ -330,9 +331,11 @@ const AddProductForm = () => {
           <div className="grid grid-cols-2 gap-2">
             {imagePreviews.map((preview, index) => (
               <div key={index} className="relative">
-                <img
+                <Image
                   src={preview}
                   alt={`Preview ${index + 1}`}
+                  width={96}
+                  height={96}
                   className="w-full h-24 object-cover rounded border"
                 />
                 <button

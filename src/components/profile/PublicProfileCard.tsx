@@ -16,7 +16,6 @@ interface PublicProfileCardProps {
 const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
   user,
   isOwnProfile,
-  onMessage,
   onViewShop,
   currentUser
 }) => {

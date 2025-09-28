@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, User as UserIcon, Store, Lock, Bell, Eye } from 'lucide-react';
+import { Settings, User as UserIcon } from 'lucide-react';
 import { UserRole } from '@/types/entities';
 
 export interface SettingsTab {

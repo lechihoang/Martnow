@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { userApi, orderApi, getUserProfile } from '@/lib/api';
+import { orderApi, getUserProfile } from '@/lib/api';
 import useStore from '@/stores/store';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -107,7 +107,7 @@ export default function CartPage() {
       console.log('🛒 Starting direct checkout from cart:', checkoutItems);
 
       // Call checkout API
-      const result = await orderApi.checkout(checkoutItems, 'Thanh toán từ giỏ hàng');
+      const result = await orderApi.checkout(checkoutItems, 'Thanh toán từ giỏ hàng') as any;
       console.log('✅ Checkout result:', result);
 
       if (result.data.paymentRequired && result.data.primaryPaymentUrl) {

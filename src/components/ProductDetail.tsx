@@ -6,6 +6,7 @@ import AddToCartButton from "./AddToCartButton";
 import ProductReviewSection from "./ProductReviewSection";
 import FavoriteButton from "./FavoriteButton";
 import type { Product } from "../types/entities";
+import type { ProductResponseDto } from "../types/dtos";
 import { UserProfile } from '@/types/auth';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -21,6 +22,45 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   userProfile
 }) => {
   const { user } = useAuth();
+
+  // Convert Product to ProductResponseDto format for FavoriteButton
+  const convertToProductDto = (product: Product): ProductResponseDto => {
+    return {
+      id: product.id,
+      sellerId: parseInt(product.sellerId), // Convert string to number
+      categoryId: product.categoryId,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      discountedPrice: product.discountedPrice || product.price,
+      imageUrl: product.imageUrl,
+      isAvailable: product.isAvailable,
+      stock: product.stock,
+      discount: product.discount,
+      createdAt: product.createdAt || new Date(),
+      updatedAt: product.updatedAt || new Date(),
+      seller: {
+        id: parseInt(product.sellerId),
+        shopName: product.seller?.shopName,
+        shopAddress: product.seller?.shopAddress,
+        user: {
+          name: product.seller?.user?.name || '',
+          username: product.seller?.user?.username || '',
+        },
+      },
+      category: {
+        id: product.categoryId,
+        name: product.category?.name || '',
+        description: product.category?.description,
+      },
+      averageRating: product.averageRating,
+      totalReviews: product.totalReviews,
+      totalSold: product.totalSold,
+    };
+  };
+
+  const productDto = convertToProductDto(product);
+
   // Create array of images - expandable for multiple images in future
   const getProductImages = (product: Product): string[] => {
     // TODO: When backend supports multiple images, update this logic
@@ -55,7 +95,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             {/* Favorite Button Overlay */}
             <div className="absolute top-3 right-3 z-10">
               <FavoriteButton
-                product={product}
+                product={productDto}
                 user={user}
                 userProfile={userProfile}
                 loading={false}

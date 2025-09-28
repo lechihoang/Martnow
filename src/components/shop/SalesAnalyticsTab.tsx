@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface SalesData {
   date: string;
@@ -13,11 +13,7 @@ const SalesAnalyticsTab: React.FC = () => {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '3m'>('7d');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    generateMockData();
-  }, [timeRange]);
-
-  const generateMockData = () => {
+  const generateMockData = useCallback(() => {
     setLoading(true);
     
     // Generate mock data based on time range
@@ -40,7 +36,11 @@ const SalesAnalyticsTab: React.FC = () => {
     
     setSalesData(data);
     setTimeout(() => setLoading(false), 500); // Simulate loading
-  };
+  }, [timeRange]);
+
+  useEffect(() => {
+    generateMockData();
+  }, [generateMockData]);
 
   const totalRevenue = salesData.reduce((sum, day) => sum + day.revenue, 0);
   const totalOrders = salesData.reduce((sum, day) => sum + day.orders, 0);

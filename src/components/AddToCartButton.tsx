@@ -5,7 +5,7 @@ import type { ProductResponseDto } from "../types/dtos";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import { ShoppingBag } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState} from "react";
 import useStore from "@/stores/store";
 import { User } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';

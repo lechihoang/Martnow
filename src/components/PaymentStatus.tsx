@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
@@ -38,28 +38,7 @@ export const PaymentStatus: React.FC<PaymentStatusProps> = ({
   const [countdown, setCountdown] = useState(redirectDelay / 1000);
   const router = useRouter();
 
-  useEffect(() => {
-    checkPaymentStatus();
-  }, [paymentId, orderId]);
-
-  useEffect(() => {
-    if (autoRedirect && status === PaymentStatusEnum.SUCCESS && countdown > 0) {
-      const timer = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            router.push('/profile');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(timer);
-    }
-  }, [status, countdown, autoRedirect, router]);
-
-  const checkPaymentStatus = async () => {
+  const checkPaymentStatus = useCallback(async () => {
     if (!paymentId && !orderId) {
       setStatus(PaymentStatusEnum.FAILED);
       setLoading(false);
@@ -107,7 +86,28 @@ export const PaymentStatus: React.FC<PaymentStatusProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [paymentId, orderId]);
+
+  useEffect(() => {
+    checkPaymentStatus();
+  }, [checkPaymentStatus]);
+
+  useEffect(() => {
+    if (autoRedirect && status === PaymentStatusEnum.SUCCESS && countdown > 0) {
+      const timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            router.push('/profile');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [status, countdown, autoRedirect, router]);
 
   const getStatusIcon = () => {
     switch (status) {

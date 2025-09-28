@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, User, Plus, Edit, Trash2 } from 'lucide-react';
@@ -12,21 +12,15 @@ interface BlogListProps {
 }
 
 const BlogList: React.FC<BlogListProps> = ({ userProfile }) => {
-  const [allBlogs, setAllBlogs] = useState<BlogResponseDto[]>([]);
   const [userBlogs, setUserBlogs] = useState<BlogResponseDto[]>([]);
   const [latestBlogs, setLatestBlogs] = useState<BlogResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBlogs();
-  }, [userProfile]);
-
-  const fetchBlogs = async () => {
+  const fetchBlogs = useCallback(async () => {
     try {
       setLoading(true);
       const data = await blogApi.getBlogs();
-      setAllBlogs(data);
 
       if (userProfile && userProfile.id) {
         // Lọc blog của user hiện tại
@@ -44,7 +38,11 @@ const BlogList: React.FC<BlogListProps> = ({ userProfile }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userProfile]);
+
+  useEffect(() => {
+    fetchBlogs();
+  }, [fetchBlogs]);
 
   const handleDeleteBlog = async (blogId: number) => {
     if (!confirm('Bạn có chắc chắn muốn xóa bài viết này?')) return;

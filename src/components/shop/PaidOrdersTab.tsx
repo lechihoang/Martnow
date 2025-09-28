@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { sellerApi } from '@/lib/api';
 import { OrderStatus } from '@/types/entities';
 
@@ -22,13 +22,7 @@ const PaidOrdersTab: React.FC<PaidOrdersTabProps> = ({ userProfile }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (userProfile?.seller?.id) {
-      fetchPaidOrders();
-    }
-  }, [userProfile]);
-
-  const fetchPaidOrders = async () => {
+  const fetchPaidOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -54,7 +48,13 @@ const PaidOrdersTab: React.FC<PaidOrdersTabProps> = ({ userProfile }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userProfile?.seller?.id]);
+
+  useEffect(() => {
+    if (userProfile?.seller?.id) {
+      fetchPaidOrders();
+    }
+  }, [userProfile?.seller?.id, fetchPaidOrders]);
 
   if (loading) {
     return (

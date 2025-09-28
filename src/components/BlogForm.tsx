@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Save, X, Upload } from 'lucide-react';
 import { blogApi, uploadApi } from '../lib/api';
@@ -30,28 +31,7 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userL
 
   const isEdit = Boolean(blogId);
 
-  useEffect(() => {
-    // Wait for user loading to complete before checking authentication
-    if (userLoading) {
-      return;
-    }
-
-    // Add delay to prevent race condition with userProfile fetch
-    const timeoutId = setTimeout(() => {
-      if (!userProfile) {
-        router.push('/auth/login');
-        return;
-      }
-    }, 2000); // Increase timeout to 2 seconds
-
-    if (isEdit && blogId && userProfile) {
-      fetchBlog();
-    }
-
-    return () => clearTimeout(timeoutId);
-  }, [userProfile, userLoading, blogId, isEdit, router]);
-
-  const fetchBlog = async () => {
+  const fetchBlog = useCallback(async () => {
     if (!blogId) return;
 
     try {
@@ -82,7 +62,28 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userL
     } finally {
       setLoading(false);
     }
-  };
+  }, [blogId, userProfile, router]);
+
+  useEffect(() => {
+    // Wait for user loading to complete before checking authentication
+    if (userLoading) {
+      return;
+    }
+
+    // Add delay to prevent race condition with userProfile fetch
+    const timeoutId = setTimeout(() => {
+      if (!userProfile) {
+        router.push('/auth/login');
+        return;
+      }
+    }, 2000); // Increase timeout to 2 seconds
+
+    if (isEdit && blogId && userProfile) {
+      fetchBlog();
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [userProfile, userLoading, blogId, isEdit, router, fetchBlog]);
 
   const handleFeaturedImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -222,9 +223,11 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userL
                 <div className="space-y-4">
                   {featuredImagePreview && (
                     <div className="relative">
-                      <img
+                      <Image
                         src={featuredImagePreview}
                         alt="Preview"
+                        width={600}
+                        height={192}
                         className="w-full h-48 object-cover rounded-lg"
                       />
                       <button

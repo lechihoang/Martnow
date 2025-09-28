@@ -1,6 +1,4 @@
 import React from "react";
-import Container from "@/components/Container";
-import { Button } from "@/components/ui/button";
 import { 
   ShoppingBag, 
   Users, 

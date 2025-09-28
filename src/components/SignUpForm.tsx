@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { UserRole } from "@/types/entities";
 import { User, Mail, Lock, Eye, EyeOff, Store, ShoppingBag } from "lucide-react";
 
 const registerSchema = z
@@ -48,7 +47,8 @@ export default function RegisterForm() {
 
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
     setLoading(true);
-    const { confirmPassword: _, ...submitData } = data;
+    const { confirmPassword, ...submitData } = data;
+    void confirmPassword; // Suppress unused variable warning
     try {
       const result = await signup(
         submitData.email, 
@@ -65,7 +65,7 @@ export default function RegisterForm() {
       } else {
         toast.error("Đăng ký thất bại!");
       }
-    } catch (error) {
+    } catch {
       toast.error("Đăng ký thất bại!");
     } finally {
       setLoading(false);

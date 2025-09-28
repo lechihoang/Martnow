@@ -7,7 +7,6 @@ import { useAuth } from '../../hooks/useAuth';
 export default function BlogsPage() {
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -20,7 +19,6 @@ export default function BlogsPage() {
         role: 'BUYER'
       });
     }
-    setLoading(false);
   }, [user]);
 
   return (

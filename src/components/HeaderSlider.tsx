@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { assets } from "@/assets/assets";
-import Image from "next/image";
 
 const HeaderSlider = () => {
   const sliderData = [
@@ -53,7 +52,7 @@ const HeaderSlider = () => {
           transform: `translateX(-${currentSlide * 100}%)`,
         }}
       >
-        {sliderData.map((slide, index) => (
+        {sliderData.map((slide) => (
           <div
             key={slide.id}
             className="flex flex-col-reverse md:flex-row items-center justify-between bg-[#E6E9F2] py-16 md:py-20 md:px-14 px-5 mt-6 rounded-xl min-w-full"

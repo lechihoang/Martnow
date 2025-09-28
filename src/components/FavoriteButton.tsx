@@ -35,6 +35,8 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
     e.preventDefault();
     e.stopPropagation();
 
+    if (isLoading) return;
+
     if (!user) {
       toast.error('Bạn cần đăng nhập để sử dụng tính năng yêu thích');
       return;
@@ -51,8 +53,6 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       toast.error('Chỉ có buyer mới có thể thêm sản phẩm vào yêu thích.');
       return;
     }
-
-    if (isLoading) return;
 
     setIsLoading(true);
 

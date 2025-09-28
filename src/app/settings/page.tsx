@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { getUserProfile } from '@/lib/api';
 import { UserProfile } from '@/types/auth';
+import { UserRole } from '@/types/entities';
 import { User as UserIcon, Store, Lock, Bell, Eye } from 'lucide-react';
 import SettingsLayout, { SettingsTab } from '@/components/settings/SettingsLayout';
 import ProfileTab from '@/components/settings/ProfileTab';
@@ -22,7 +23,7 @@ const SETTINGS_TABS: SettingsTab[] = [
     id: 'shop',
     label: 'Cửa hàng',
     icon: Store,
-    show: (userRole) => userRole === 'SELLER',
+    show: (userRole) => userRole === UserRole.SELLER,
   },
   {
     id: 'security',
@@ -41,7 +42,7 @@ const SETTINGS_TABS: SettingsTab[] = [
   },
 ];
 
-const getVisibleTabs = (userRole?: string): SettingsTab[] => {
+const getVisibleTabs = (userRole?: UserRole): SettingsTab[] => {
   return SETTINGS_TABS.filter(tab => !tab.show || tab.show(userRole));
 };
 
@@ -100,15 +101,15 @@ const SettingsPage: React.FC = () => {
         return (
           <ProfileTab
             user={userProfile}
-            onUpdate={() => {}}
+            onUpdate={async () => {}}
           />
         );
       case 'shop':
-        return userProfile.role === 'SELLER' ? (
+        return userProfile.role === UserRole.SELLER ? (
           <ShopTab
             seller={null}
-            onUpdate={() => {}}
-            onCreate={() => {}}
+            onUpdate={async () => {}}
+            onCreate={async () => {}}
           />
         ) : null;
       case 'security':

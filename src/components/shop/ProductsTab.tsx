@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ProductResponseDto } from '@/types/dtos';
 import { productApi } from '@/lib/api';
@@ -178,9 +179,11 @@ const ProductsTab: React.FC = () => {
           <div key={product.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
             {/* Product Image */}
             <div className="aspect-w-16 aspect-h-12 bg-gray-100">
-              <img
+              <Image
                 src={product.imageUrl || '/placeholder-product.jpg'}
                 alt={product.name}
+                width={300}
+                height={192}
                 className="w-full h-48 object-cover"
               />
               {!product.isAvailable && (

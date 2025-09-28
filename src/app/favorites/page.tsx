@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect } from 'react';
+import Image from 'next/image';
 import Container from '@/components/Container';
 import useStore from '@/stores/store';
 import { useAuth } from '@/hooks/useAuth';
@@ -54,17 +55,11 @@ const FavoritesPage: React.FC = () => {
     try {
       await addToFavorites(product); // This will toggle and remove from favorites
       toast.success(`Đã xóa ${product.name} khỏi danh sách yêu thích`);
-    } catch (error) {
+    } catch {
       toast.error('Có lỗi xảy ra khi xóa khỏi yêu thích');
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
-  };
 
   // Show loading state while fetching user data
   if (loading) {
@@ -146,10 +141,11 @@ const FavoritesPage: React.FC = () => {
               >
                 {/* Product Image */}
                 <div className="relative h-48 bg-gray-200">
-                  <img
+                  <Image
                     src={product.imageUrl || '/default-product.jpg'}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                   <button
                     onClick={() => handleRemoveFavorite(product)}

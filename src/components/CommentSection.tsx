@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MessageCircle, Edit, Trash2, Send } from 'lucide-react';
 import { blogApi } from '../lib/api';
 import { BlogCommentDto } from '../types/dtos';
@@ -19,7 +19,6 @@ interface CommentItemProps {
 
 const CommentItem: React.FC<CommentItemProps> = ({
   comment,
-  blogId,
   onUpdate,
   userProfile
 }) => {
@@ -130,11 +129,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogId, userProfile }) 
   const [submitting, setSubmitting] = useState(false);
   const [newComment, setNewComment] = useState('');
 
-  useEffect(() => {
-    fetchComments();
-  }, [blogId]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       setLoading(true);
       const data = await blogApi.getBlogComments(blogId);
@@ -145,7 +140,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogId, userProfile }) 
     } finally {
       setLoading(false);
     }
-  };
+  }, [blogId]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();

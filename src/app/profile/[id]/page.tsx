@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { User, MapPin, Calendar, Star, Package, MessageCircle, ArrowLeft, Eye, Heart, ShoppingBag } from 'lucide-react';
+import { User, MapPin, Calendar, Star, Package, MessageCircle, ArrowLeft, Eye, ShoppingBag } from 'lucide-react';
 
 import { UserResponseDto, SellerResponseDto, BuyerResponseDto } from '@/types/dtos';
 import { userApi } from '@/lib/api';
@@ -142,11 +142,11 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Số điện thoại</label>
-                  <p className="text-gray-900">{profileUser?.phone || 'Chưa cập nhật'}</p>
+                  <p className="text-gray-900">{'Chưa cập nhật'}</p>
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium text-gray-500">Địa chỉ</label>
-                  <p className="text-gray-900">{profileUser?.address || 'Chưa cập nhật'}</p>
+                  <p className="text-gray-900">{'Chưa cập nhật'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Ngày tham gia</label>
@@ -266,10 +266,10 @@ const ProfilePage: React.FC = () => {
                         <Calendar className="w-4 h-4" />
                         Tham gia {new Date(profileUser?.createdAt || '').toLocaleDateString('vi-VN')}
                       </div>
-                      {profileUser?.address && (
+                      {profileUser?.seller?.shopAddress && (
                         <div className="flex items-center gap-1">
                           <MapPin className="w-4 h-4" />
-                          {profileUser.address}
+                          {profileUser.seller.shopAddress}
                         </div>
                       )}
                     </div>

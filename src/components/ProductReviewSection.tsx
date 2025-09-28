@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { reviewApi } from '@/lib/api';
 import { ReviewResponseDto } from '@/types/dtos';
@@ -34,12 +34,7 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
   const [editingReview, setEditingReview] = useState<ReviewResponseDto | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchReviews();
-    fetchRatingStats();
-  }, [productId]);
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       const reviewsData = await reviewApi.getProductReviews(productId);
       setReviews(reviewsData);
@@ -47,9 +42,9 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
       console.error('Error fetching reviews:', error);
       setReviews([]);
     }
-  };
+  }, [productId]);
 
-  const fetchRatingStats = async () => {
+  const fetchRatingStats = useCallback(async () => {
     try {
       const statsData = await reviewApi.getProductRatingStats(productId);
       setRatingStats(statsData);
@@ -58,7 +53,12 @@ const ProductReviewSection: React.FC<ProductReviewSectionProps> = ({
     } finally {
       setReviewsLoading(false);
     }
-  };
+  }, [productId]);
+
+  useEffect(() => {
+    fetchReviews();
+    fetchRatingStats();
+  }, [fetchReviews, fetchRatingStats]);
 
   const handleSubmitReview = async (reviewData: { rating: number; comment: string }) => {
     try {

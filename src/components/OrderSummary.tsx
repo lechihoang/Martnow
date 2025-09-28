@@ -24,7 +24,6 @@ export function OrderSummary({
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
   const [showPayment, setShowPayment] = useState(false);
-  const [orderStatus, setOrderStatus] = useState<string>('pending');
 
   const handleCreateOrder = async () => {
     if (cartItems.length === 0) {

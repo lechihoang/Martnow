@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { User } from '@supabase/supabase-js';
 import useStore from '@/stores/store';
 import { useRouter } from 'next/navigation';
@@ -115,14 +115,13 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             <nav className="p-4 space-y-2">
               {user ? (
                 <>
-                  <a
-                    href="/profile"
-                    className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition-colors text-white"
-                    onClick={onClose}
+                  <button
+                    onClick={() => { router.push('/profile'); onClose(); }}
+                    className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition-colors text-white w-full text-left"
                   >
                     <UserIcon className="w-5 h-5" />
                     <span>Thông tin cá nhân</span>
-                  </a>
+                  </button>
                   
                   {/* Cart - Only for BUYER */}
                   {userProfile?.role === 'BUYER' && (

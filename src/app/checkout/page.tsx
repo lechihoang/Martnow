@@ -9,17 +9,23 @@ import PriceFormatter from '@/components/PriceFormatter';
 import { toast } from 'react-hot-toast';
 import { ArrowLeft, CreditCard, ShoppingBag } from 'lucide-react';
 
+interface CheckoutOrder {
+  id: number;
+  totalPrice: number;
+}
+
 interface CheckoutResult {
-  orders: any[];
-  totalAmount: number;
-  paymentRequired: boolean;
-  sellerCount: number;
-  primaryPaymentUrl?: string;
-  paymentInfos?: Array<{
-    orderId: number;
-    amount: number;
+  data: {
+    paymentRequired: boolean;
+    orders: CheckoutOrder[];
+    primaryPaymentUrl?: string;
+  };
+}
+
+interface PaymentResult {
+  data: {
     paymentUrl: string;
-  }>;
+  };
 }
 
 export default function CheckoutPage() {
@@ -27,7 +33,6 @@ export default function CheckoutPage() {
   const { cartItems, clearCart } = useStore();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [checkoutResult, setCheckoutResult] = useState<CheckoutResult | null>(null);
   const [step, setStep] = useState<'review' | 'processing' | 'payment'>('review');
   const [note, setNote] = useState('');
 
@@ -65,10 +70,9 @@ export default function CheckoutPage() {
       console.log('🛒 Starting checkout with items:', checkoutItems);
 
       // Step 1: Create orders
-      const result = await orderApi.checkout(checkoutItems, note);
+      const result = await orderApi.checkout(checkoutItems, note) as CheckoutResult;
       console.log('✅ Checkout result:', result);
 
-      setCheckoutResult(result.data);
       setStep('payment');
 
       // Step 2: Handle payment
@@ -77,7 +81,7 @@ export default function CheckoutPage() {
         const firstOrder = result.data.orders[0];
 
         console.log('💳 Creating payment for order:', firstOrder.id);
-        const paymentResult = await paymentApi.createPayment(firstOrder.id);
+        const paymentResult = await paymentApi.createPayment(firstOrder.id) as PaymentResult;
 
         console.log('🔗 Payment URL:', paymentResult.data.paymentUrl);
 
