@@ -29,6 +29,7 @@ export class SellerStatsService {
         .getCount();
 
       // Tính tổng doanh thu
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const revenueResult = await this.orderRepository
         .createQueryBuilder('order')
         .select('SUM(order.totalPrice)', 'totalRevenue')
@@ -38,7 +39,8 @@ export class SellerStatsService {
         .andWhere('order.status = :status', { status: OrderStatus.PAID })
         .getRawOne();
 
-      const totalRevenue = parseFloat(revenueResult.totalRevenue) || 0;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+      const totalRevenue = parseFloat(revenueResult?.totalRevenue ?? '0') || 0;
 
       // Tính tổng số sản phẩm
       const totalProducts = await this.productRepository.count({
@@ -71,6 +73,7 @@ export class SellerStatsService {
       await this.sellerStatsRepository.save(stats);
 
       return new SellerStatsDto({
+        id: sellerId,
         totalOrders,
         totalRevenue,
         totalProducts,
@@ -78,11 +81,11 @@ export class SellerStatsService {
         completedOrders: totalOrders - pendingOrders,
         averageRating: 0,
         totalReviews: 0,
-        sellerId,
-      });
+      } as SellerStats);
     } catch (error) {
       console.error('Error calculating seller stats:', error);
       return new SellerStatsDto({
+        id: sellerId,
         totalOrders: 0,
         totalRevenue: 0,
         totalProducts: 0,
@@ -90,8 +93,7 @@ export class SellerStatsService {
         completedOrders: 0,
         averageRating: 0,
         totalReviews: 0,
-        sellerId,
-      });
+      } as SellerStats);
     }
   }
 

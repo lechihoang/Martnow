@@ -16,6 +16,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Buyer } from '../account/buyer/entities/buyer.entity';
 
+interface RequestWithUser {
+  user: {
+    id: string;
+  };
+}
+
 @Controller('favorites')
 @UseGuards(SupabaseAuthGuard, RoleGuard)
 @Roles(UserRole.BUYER)
@@ -46,7 +52,7 @@ export class FavoriteController {
   @Post(':productId/toggle')
   async toggleFavorite(
     @Param('productId') productId: number,
-    @Request() req: any,
+    @Request() req: RequestWithUser,
   ) {
     const buyerId = await this.getBuyerId(req.user.id);
     const result = await this.favoriteService.toggleFavorite(
@@ -61,7 +67,7 @@ export class FavoriteController {
 
   // Lấy danh sách yêu thích của user hiện tại
   @Get()
-  async getMyFavorites(@Request() req: any) {
+  async getMyFavorites(@Request() req: RequestWithUser) {
     const buyerId = await this.getBuyerId(req.user.id);
     const products = await this.favoriteService.getFavoritesByBuyer(buyerId);
     return {
@@ -74,7 +80,7 @@ export class FavoriteController {
   @Get('check/:productId')
   async checkIsFavorite(
     @Param('productId') productId: number,
-    @Request() req: any,
+    @Request() req: RequestWithUser,
   ) {
     try {
       const buyerId = await this.getBuyerId(req.user.id);
@@ -83,7 +89,7 @@ export class FavoriteController {
         productId,
       );
       return { isFavorite };
-    } catch (error) {
+    } catch {
       // Nếu không phải buyer thì trả về false
       return { isFavorite: false };
     }

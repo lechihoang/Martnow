@@ -77,6 +77,10 @@ export class ReviewService {
       relations: ['buyer', 'buyer.user', 'product', 'product.seller'],
     });
 
+    if (!reviewWithRelations) {
+      throw new NotFoundException('Failed to retrieve created review');
+    }
+
     return new ReviewResponseDto(reviewWithRelations);
   }
 
@@ -184,11 +188,7 @@ export class ReviewService {
   async incrementHelpfulCount(
     reviewId: number,
   ): Promise<{ helpfulCount: number }> {
-    const result = await this.reviewRepository.increment(
-      { id: reviewId },
-      'helpfulCount',
-      1,
-    );
+    await this.reviewRepository.increment({ id: reviewId }, 'helpfulCount', 1);
 
     const review = await this.reviewRepository.findOne({
       where: { id: reviewId },

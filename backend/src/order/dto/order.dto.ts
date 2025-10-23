@@ -3,11 +3,9 @@ import {
   IsString,
   IsOptional,
   IsArray,
-  IsEnum,
   Min,
   ValidateNested,
   IsPositive,
-  IsDateString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OrderStatus } from '../../shared/enums';

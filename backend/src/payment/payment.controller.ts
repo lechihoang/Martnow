@@ -8,7 +8,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { CreatePaymentDto, PaymentCallbackDto } from './dto/payment.dto';
+import { PaymentCallbackDto } from './dto/payment.dto';
 
 @Controller('payment')
 export class PaymentController {
@@ -18,10 +18,7 @@ export class PaymentController {
    * Tạo URL thanh toán cho order
    */
   @Post('create/:orderId')
-  async createPayment(
-    @Param('orderId', ParseIntPipe) orderId: number,
-    @Body() createPaymentDto: CreatePaymentDto,
-  ) {
+  async createPayment(@Param('orderId', ParseIntPipe) orderId: number) {
     // Không cần truyền amount, service sẽ tự lấy từ order
     const result = await this.paymentService.createPaymentUrl(orderId);
     return {

@@ -30,7 +30,7 @@ export class ProductController {
    * Health check endpoint để test module
    */
   @Get('health')
-  async healthCheck() {
+  healthCheck() {
     return {
       message: 'Product module is healthy',
       timestamp: new Date().toISOString(),
@@ -68,7 +68,7 @@ export class ProductController {
       maxPrice: parsedMaxPrice,
       sortBy,
       sortOrder,
-      search
+      search,
     });
 
     return this.productService.findAll({
@@ -83,23 +83,22 @@ export class ProductController {
     });
   }
 
-
   @Get('popular')
   async getPopularProducts(@Query('limit') limit: number = 10) {
     return this.productService.getPopularProducts(limit);
   }
 
-  @Get(':id')
-  async getProduct(@Param('id') id: number) {
-    return this.productService.findOne(id);
-  }
-
   @Get('seller')
   @UseGuards(SupabaseAuthGuard, RoleGuard)
   @Roles(UserRole.SELLER)
-  async getSellerProducts(@Request() req: any) {
+  async getSellerProducts(@Request() req: { user: { id: string } }) {
     const sellerId = await this.productService.getSellerIdByUserId(req.user.id);
     return this.productService.findProductsBySeller(sellerId);
+  }
+
+  @Get(':id')
+  async getProduct(@Param('id') id: number) {
+    return this.productService.findOne(id);
   }
 
   @Get('seller/:sellerId')
@@ -116,7 +115,7 @@ export class ProductController {
   @Roles(UserRole.SELLER)
   async createProduct(
     @Body() createProductDto: CreateProductDto,
-    @Request() req: any,
+    @Request() req: { user: { id: string } },
   ) {
     const sellerId = await this.productService.getSellerIdByUserId(req.user.id);
     return this.productService.createProduct(createProductDto, sellerId);
@@ -128,7 +127,7 @@ export class ProductController {
   async updateProduct(
     @Param('id') id: number,
     @Body() updateProductDto: UpdateProductDto,
-    @Request() req: any,
+    @Request() req: { user: { id: string } },
   ) {
     const sellerId = await this.productService.getSellerIdByUserId(req.user.id);
     return this.productService.updateProduct(id, updateProductDto, sellerId);
@@ -137,7 +136,10 @@ export class ProductController {
   @Delete(':id')
   @UseGuards(SupabaseAuthGuard, RoleGuard)
   @Roles(UserRole.SELLER)
-  async deleteProduct(@Param('id') id: number, @Request() req: any) {
+  async deleteProduct(
+    @Param('id') id: number,
+    @Request() req: { user: { id: string } },
+  ) {
     const sellerId = await this.productService.getSellerIdByUserId(req.user.id);
     return this.productService.deleteProduct(id, sellerId);
   }

@@ -81,10 +81,7 @@ async function clearAllData() {
       .execute();
     console.log(`✅ Deleted ${blogCommentResult.affected} blog comments`);
 
-    const blogResult = await blogRepo
-      .createQueryBuilder()
-      .delete()
-      .execute();
+    const blogResult = await blogRepo.createQueryBuilder().delete().execute();
     console.log(`✅ Deleted ${blogResult.affected} blogs`);
 
     // 1. Delete order items first (depends on orders and products)
@@ -158,4 +155,4 @@ async function clearAllData() {
   }
 }
 
-clearAllData();
+void clearAllData();

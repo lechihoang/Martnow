@@ -36,14 +36,24 @@ export class ReviewResponseDto {
   createdAt: Date;
 
   // Essential user info only
-  buyerId: number;
+  buyerId: string;
   buyerName: string;
   buyerAvatar?: string;
 
   // Essential product info only
   productName: string;
 
-  constructor(review: any) {
+  constructor(review: {
+    id: number;
+    productId: number;
+    rating: number;
+    comment?: string;
+    helpfulCount?: number;
+    createdAt: Date;
+    buyerId?: string;
+    buyer?: { id: string; user?: { name?: string; avatar?: string } };
+    product?: { name?: string };
+  }) {
     this.id = review.id;
     this.productId = review.productId;
     this.rating = review.rating;
@@ -52,7 +62,7 @@ export class ReviewResponseDto {
     this.createdAt = review.createdAt;
 
     // ✅ Simple buyer info from nested relation
-    this.buyerId = review.buyer?.id || review.buyerId;
+    this.buyerId = review.buyer?.id || review.buyerId || '';
     this.buyerName = review.buyer?.user?.name || 'Anonymous';
     this.buyerAvatar = review.buyer?.user?.avatar;
 
@@ -64,20 +74,42 @@ export class ReviewResponseDto {
 // ✅ Detailed DTO for review management (admin/owner view)
 export class ReviewDetailDto extends ReviewResponseDto {
   buyer: {
-    id: number;
+    id: string;
     user: { name: string; username: string; email: string };
   };
   product: {
     id: number;
     name: string;
-    seller: { id: number; shopName?: string };
+    seller: { id: string; shopName?: string };
   };
 
-  constructor(review: any) {
+  constructor(review: {
+    id: number;
+    productId: number;
+    rating: number;
+    comment?: string;
+    helpfulCount?: number;
+    createdAt: Date;
+    buyerId?: string;
+    buyer?: {
+      id: string;
+      user?: {
+        name?: string;
+        avatar?: string;
+        username?: string;
+        email?: string;
+      };
+    };
+    product?: {
+      id?: number;
+      name?: string;
+      seller?: { id?: string; shopName?: string };
+    };
+  }) {
     super(review);
 
     this.buyer = {
-      id: review.buyer?.id || 0,
+      id: review.buyer?.id || '',
       user: {
         name: review.buyer?.user?.name || '',
         username: review.buyer?.user?.username || '',
@@ -89,7 +121,7 @@ export class ReviewDetailDto extends ReviewResponseDto {
       id: review.product?.id || 0,
       name: review.product?.name || '',
       seller: {
-        id: review.product?.seller?.id || 0,
+        id: review.product?.seller?.id || '',
         shopName: review.product?.seller?.shopName,
       },
     };

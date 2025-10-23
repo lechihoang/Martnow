@@ -17,13 +17,28 @@ import { SellerStats } from './seller-stats/entities/seller-stats.entity';
 config({ path: resolve(__dirname, '../.env') });
 
 const CATEGORIES = [
-  { name: 'Đồ uống', description: 'Nước ngọt, bia, rượu, nước suối, trà, cà phê' },
+  {
+    name: 'Đồ uống',
+    description: 'Nước ngọt, bia, rượu, nước suối, trà, cà phê',
+  },
   { name: 'Bánh kẹo', description: 'Bánh quy, kẹo, chocolate, snack các loại' },
   { name: 'Gia vị', description: 'Nước mắm, tương ớt, dầu ăn, giấm, gia vị' },
-  { name: 'Lương thực', description: 'Gạo, đậu, ngũ cốc, bột mì, thực phẩm khô' },
-  { name: 'Thực phẩm chế biến', description: 'Mì tôm, cháo gói, thức ăn đóng hộp, đông lạnh' },
-  { name: 'Đồ dùng vệ sinh', description: 'Bột giặt, nước rửa chén, giấy vệ sinh, xà phòng' },
-  { name: 'Đồ gia dụng', description: 'Dụng cụ nhà bếp, đồ dùng sinh hoạt, thiết bị gia đình' },
+  {
+    name: 'Lương thực',
+    description: 'Gạo, đậu, ngũ cốc, bột mì, thực phẩm khô',
+  },
+  {
+    name: 'Thực phẩm chế biến',
+    description: 'Mì tôm, cháo gói, thức ăn đóng hộp, đông lạnh',
+  },
+  {
+    name: 'Đồ dùng vệ sinh',
+    description: 'Bột giặt, nước rửa chén, giấy vệ sinh, xà phòng',
+  },
+  {
+    name: 'Đồ gia dụng',
+    description: 'Dụng cụ nhà bếp, đồ dùng sinh hoạt, thiết bị gia đình',
+  },
 ];
 
 const USERS = [
@@ -73,7 +88,8 @@ const USERS = [
       shopName: 'Tạp Hóa Minh Phát',
       shopAddress: '45 Chợ Bến Thành, Quận 1, TP.HCM',
       shopPhone: '0901111111',
-      description: 'Tạp hóa truyền thống với đầy đủ các mặt hàng thiết yếu hàng ngày.',
+      description:
+        'Tạp hóa truyền thống với đầy đủ các mặt hàng thiết yếu hàng ngày.',
     },
   },
   {
@@ -89,7 +105,8 @@ const USERS = [
       shopName: 'Thực Phẩm Sạch Hương',
       shopAddress: '123 Chợ Tân Định, Quận 1, TP.HCM',
       shopPhone: '0902222222',
-      description: 'Chuyên cung cấp rau củ quả tươi, thịt cá sạch từ nông trại.',
+      description:
+        'Chuyên cung cấp rau củ quả tươi, thịt cá sạch từ nông trại.',
     },
   },
   {
@@ -105,7 +122,8 @@ const USERS = [
       shopName: 'Siêu Thị Mini Đức Long',
       shopAddress: '789 Nguyễn Thị Minh Khai, Quận 3, TP.HCM',
       shopPhone: '0903333333',
-      description: 'Siêu thị mini với đầy đủ mặt hàng tiêu dùng, giá cả hợp lý.',
+      description:
+        'Siêu thị mini với đầy đủ mặt hàng tiêu dùng, giá cả hợp lý.',
     },
   },
   {
@@ -121,7 +139,8 @@ const USERS = [
       shopName: 'Cửa Hàng Gia Dụng Lan Anh',
       shopAddress: '234 Võ Văn Tần, Quận 3, TP.HCM',
       shopPhone: '0904444444',
-      description: 'Chuyên bán đồ gia dụng, vệ sinh nhà cửa với chất lượng tốt.',
+      description:
+        'Chuyên bán đồ gia dụng, vệ sinh nhà cửa với chất lượng tốt.',
     },
   },
   {
@@ -287,8 +306,8 @@ const PRODUCTS = [
     sellerUsername: 'seller_duc',
   },
   {
-    name: 'Snack khoai tây Lay\'s (60g)',
-    description: 'Snack khoai tây Lay\'s vị BBQ thơm ngon',
+    name: "Snack khoai tây Lay's (60g)",
+    description: "Snack khoai tây Lay's vị BBQ thơm ngon",
     price: 22000,
     categoryName: 'Bánh kẹo',
     stock: 80,
@@ -524,7 +543,6 @@ async function seed() {
     const sellerRepo = dataSource.getRepository(Seller);
     const categoryRepo = dataSource.getRepository(Category);
     const productRepo = dataSource.getRepository(Product);
-    const sellerStatsRepo = dataSource.getRepository(SellerStats);
 
     // Seed categories
     console.log('📂 Seeding categories...');
@@ -643,10 +661,18 @@ async function seed() {
     console.log('Buyer 3: mai@foodee.com / 123456 (Nguyễn Thị Mai)');
     console.log('\n=== SELLERS ===');
     console.log('Tạp Hóa: minh@foodee.com / 123456 (Tạp Hóa Minh Phát)');
-    console.log('Thực Phẩm Sạch: huong@foodee.com / 123456 (Thực Phẩm Sạch Hương)');
-    console.log('Siêu Thị Mini: duc@foodee.com / 123456 (Siêu Thị Mini Đức Long)');
-    console.log('Đồ Gia Dụng: lan@foodee.com / 123456 (Cửa Hàng Gia Dụng Lan Anh)');
-    console.log('Nhập Khẩu: tung@foodee.com / 123456 (Thực Phẩm Nhập Khẩu Tùng)');
+    console.log(
+      'Thực Phẩm Sạch: huong@foodee.com / 123456 (Thực Phẩm Sạch Hương)',
+    );
+    console.log(
+      'Siêu Thị Mini: duc@foodee.com / 123456 (Siêu Thị Mini Đức Long)',
+    );
+    console.log(
+      'Đồ Gia Dụng: lan@foodee.com / 123456 (Cửa Hàng Gia Dụng Lan Anh)',
+    );
+    console.log(
+      'Nhập Khẩu: tung@foodee.com / 123456 (Thực Phẩm Nhập Khẩu Tùng)',
+    );
     console.log('Sữa & Trứng: kim@foodee.com / 123456 (Trang Trại Sữa Kim)');
   } catch (error) {
     console.error('❌ Error during seeding:', error);

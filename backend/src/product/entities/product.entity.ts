@@ -12,7 +12,6 @@ import { Category } from './category.entity';
 import { Review } from '../../review/entities/review.entity';
 import { OrderItem } from '../../order/entities/order-item.entity';
 import { Favorite } from '../../favorite/entities/favorite.entity';
-import { ProductStatus } from '../../shared/enums';
 
 @Entity()
 @Index(['sellerId']) // Index cho việc lấy products của seller
@@ -61,6 +60,9 @@ export class Product {
 
   @Column({ type: 'int', default: 0 })
   discount: number;
+
+  @Column({ type: 'text', nullable: true })
+  imageUrl: string;
 
   // Các field để cache statistics (denormalization for performance)
   @Column({ type: 'decimal', precision: 3, scale: 2, default: 0 })

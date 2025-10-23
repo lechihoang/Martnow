@@ -12,6 +12,13 @@ import {
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { MediaService } from './media.service';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
+import { IFile } from 'nestjs-cloudinary';
+
+interface RequestWithUser {
+  user: {
+    id: string;
+  };
+}
 
 @Controller('media')
 @UseGuards(SupabaseAuthGuard)
@@ -23,7 +30,7 @@ export class MediaController {
    */
   @Post('avatar')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadAvatar(@UploadedFile() file: any, @Req() req: any) {
+  async uploadAvatar(@UploadedFile() file: IFile, @Req() req: RequestWithUser) {
     const avatarUrl = await this.mediaService.uploadAvatar(req.user.id, file);
 
     return {
@@ -40,7 +47,7 @@ export class MediaController {
   @UseInterceptors(FilesInterceptor('files', 5)) // Max 5 images
   async uploadProductImages(
     @Param('productId') productId: string,
-    @UploadedFiles() files: any[],
+    @UploadedFiles() files: IFile[],
   ) {
     const imageUrls = await this.mediaService.uploadProductImages(
       productId,
@@ -59,7 +66,10 @@ export class MediaController {
    */
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(@UploadedFile() file: any, @Body() body: { type?: string }) {
+  async uploadFile(
+    @UploadedFile() file: IFile,
+    @Body() body: { type?: string },
+  ) {
     const type = body.type || 'general';
     const uploadResult = await this.mediaService.uploadFile(file, type);
 

@@ -33,7 +33,7 @@ export class OrderService {
   // ========== CORE CHECKOUT FUNCTIONALITY ==========
 
   /**
-   * Xử lý checkout cart với multiple sellers
+   * Xử lý checkout cart - tạo một đơn hàng duy nhất cho toàn bộ cart
    */
   async checkoutCart(
     cartCheckoutDto: CartCheckoutDto,
@@ -54,129 +54,128 @@ export class OrderService {
       const productIds = cartCheckoutDto.items.map((item) => item.productId);
       const products = await manager.find(Product, {
         where: { id: In(productIds) },
-        relations: ['seller'],
+        relations: ['seller', 'seller.user'],
       });
 
       const productMap = new Map(products.map((p) => [p.id, p]));
-      const sellerGroups = this.groupItemsBySeller(
-        cartCheckoutDto.items,
-        productMap,
-      );
 
-      this.logger.log(
-        `📦 Found ${sellerGroups.size} sellers with items: ${Array.from(sellerGroups.keys()).join(', ')}`,
-      );
-
-      const createdOrders: Order[] = [];
-      let totalAmount = 0;
-
-      for (const [sellerId, sellerItems] of sellerGroups) {
-        const orderData = {
-          items: sellerItems,
-          note: cartCheckoutDto.note || `Đơn hàng từ seller ${sellerId}`,
-        };
-
-        const order = await this.createOrderForSeller(
-          orderData,
-          buyer.id,
-          manager,
-        );
-        createdOrders.push(order);
-        totalAmount += order.totalPrice;
-
-        this.logger.log(
-          `✅ Created order ${order.id} for seller ${sellerId} - Amount: ${order.totalPrice}đ`,
-        );
-      }
-
-      // Tạo payment URLs cho từng order
-      const paymentInfos: Array<{
-        orderId: number;
-        amount: number;
-        paymentUrl: string;
-      }> = [];
-      let primaryPaymentUrl = '';
-
-      this.logger.log('🔄 Starting to create payment URLs for orders...');
-
-      for (const order of createdOrders) {
-        try {
-          this.logger.log(
-            `📝 Creating payment URL for order ${order.id} with amount ${order.totalPrice}`,
+      // Validate all products exist and have sufficient stock
+      for (const item of cartCheckoutDto.items) {
+        const product = productMap.get(item.productId);
+        if (!product) {
+          throw new NotFoundException(`Product ${item.productId} not found`);
+        }
+        if (product.stock < item.quantity) {
+          throw new Error(
+            `Insufficient stock for product ${product.name}. Available: ${product.stock}, Required: ${item.quantity}`,
           );
-
-          // Gọi PaymentService để tạo payment URL - truyền manager để dùng cùng transaction
-          const paymentUrl = await this.paymentService.createPaymentUrl(
-            order.id,
-            undefined,
-            manager,
-          );
-
-          this.logger.log(`✅ Payment URL created for order ${order.id}:`, {
-            url: paymentUrl,
-            type: typeof paymentUrl,
-            isValid:
-              typeof paymentUrl === 'string' && paymentUrl.startsWith('http'),
-          });
-
-          // PaymentService trả về string URL
-          paymentInfos.push({
-            orderId: order.id,
-            amount: order.totalPrice,
-            paymentUrl: paymentUrl,
-          });
-
-          // Sử dụng payment URL đầu tiên làm primary
-          if (!primaryPaymentUrl) {
-            primaryPaymentUrl = paymentUrl;
-            this.logger.log(`🎯 Set primary payment URL: ${primaryPaymentUrl}`);
-          }
-        } catch (error) {
-          this.logger.error(
-            `❌ Failed to create payment URL for order ${order.id}:`,
-            error,
-          );
-          this.logger.error(`Error details:`, {
-            message: error.message,
-            stack: error.stack,
-            orderId: order.id,
-            amount: order.totalPrice,
-          });
         }
       }
 
-      this.logger.log('📊 Payment URLs creation summary:', {
-        totalOrders: createdOrders.length,
-        successfulPayments: paymentInfos.length,
-        hasPrimaryPaymentUrl: !!primaryPaymentUrl,
-        primaryPaymentUrl,
-        paymentInfos,
+      // Tạo một đơn hàng duy nhất
+      const order = new Order();
+      order.buyerId = buyer.id;
+      order.status = OrderStatus.PENDING;
+      order.note = cartCheckoutDto.note || 'Đơn hàng từ giỏ hàng';
+
+      // Tính tổng tiền và tạo order items
+      let totalPrice = 0;
+      const orderItems: OrderItem[] = [];
+
+      this.logger.log(
+        `📋 Processing ${cartCheckoutDto.items.length} items from cart`,
+      );
+
+      for (const item of cartCheckoutDto.items) {
+        const product = productMap.get(item.productId);
+        if (!product) {
+          throw new NotFoundException(`Product ${item.productId} not found`);
+        }
+
+        const itemTotal = item.quantity * item.price;
+        totalPrice += itemTotal;
+
+        const orderItem = new OrderItem();
+        orderItem.productId = item.productId;
+        orderItem.quantity = item.quantity;
+        orderItem.price = item.price;
+        orderItems.push(orderItem);
+
+        this.logger.log(
+          `📦 Item: ${product.name} (seller: ${product.seller.user.name}) x${item.quantity} @ ${item.price}đ = ${itemTotal}đ | Running total: ${totalPrice}đ`,
+        );
+      }
+
+      this.logger.log(
+        `💰 Final total price calculated: ${totalPrice}đ for ${orderItems.length} items`,
+      );
+
+      order.totalPrice = totalPrice;
+      const savedOrder = await manager.save(Order, order);
+
+      this.logger.log(
+        `💾 Order saved to DB with ID ${savedOrder.id} and totalPrice: ${savedOrder.totalPrice}đ`,
+      );
+
+      // Save order items
+      for (const item of orderItems) {
+        item.orderId = savedOrder.id;
+      }
+      await manager.save(OrderItem, orderItems);
+
+      // Count unique sellers
+      const sellerCount = new Set(
+        Array.from(productMap.values()).map((p) => p.seller.id),
+      ).size;
+
+      this.logger.log(
+        `✅ Created single order ${savedOrder.id} with ${orderItems.length} items from ${sellerCount} sellers - Total: ${totalPrice}đ`,
+      );
+
+      // Tạo payment URL cho đơn hàng - truyền totalPrice để không phải load lại từ DB
+      const paymentUrl = await this.paymentService.createPaymentUrl(
+        savedOrder.id,
+        totalPrice,
+        manager,
+      );
+
+      this.logger.log(`✅ Payment URL created: ${paymentUrl}`);
+
+      // Load order with items for response
+      const orderWithItems = await manager.findOne(Order, {
+        where: { id: savedOrder.id },
+        relations: [
+          'items',
+          'items.product',
+          'items.product.seller',
+          'items.product.seller.user',
+        ],
       });
 
+      if (!orderWithItems) {
+        throw new NotFoundException(
+          `Order ${savedOrder.id} not found after creation`,
+        );
+      }
+
       const result: CheckoutResultDto = {
-        orders: createdOrders.map((order) => this.mapOrderToResponseDto(order)),
-        totalAmount,
+        orders: [this.mapOrderToResponseDto(orderWithItems)],
+        totalAmount: totalPrice,
         paymentRequired: true,
-        sellerCount: sellerGroups.size,
-        primaryPaymentUrl,
-        paymentInfos,
+        sellerCount: sellerCount,
+        primaryPaymentUrl: paymentUrl,
+        paymentInfos: [
+          {
+            orderId: savedOrder.id,
+            amount: totalPrice,
+            paymentUrl: paymentUrl,
+          },
+        ],
       };
 
       this.logger.log(
-        `🎉 Cart checkout completed: ${createdOrders.length} orders, total: ${totalAmount}đ`,
+        `🎉 Cart checkout completed: 1 order with ${orderItems.length} items, total: ${totalPrice}đ`,
       );
-
-      // Debug logging để kiểm tra response structure
-      this.logger.log('🔍 CheckoutResult structure:', {
-        hasOrders: !!result.orders,
-        ordersCount: result.orders?.length,
-        hasPrimaryPaymentUrl: !!result.primaryPaymentUrl,
-        primaryPaymentUrl: result.primaryPaymentUrl,
-        hasPaymentInfos: !!result.paymentInfos,
-        paymentInfosCount: result.paymentInfos?.length,
-        totalAmount: result.totalAmount,
-        sellerCount: result.sellerCount,
-      });
 
       return result;
     });
@@ -248,10 +247,13 @@ export class OrderService {
    * Lấy tất cả đơn hàng của user
    */
   async getOrdersByUser(userId: string): Promise<Order[]> {
-    this.logger.log(`🔍 Getting orders for user ${userId}`);
+    this.logger.log(`🔍 Getting PAID orders for user ${userId}`);
 
     const orders = await this.orderRepository.find({
-      where: { buyer: { user: { id: userId } } },
+      where: {
+        buyer: { user: { id: userId } },
+        status: OrderStatus.PAID, // Chỉ lấy đơn hàng đã thanh toán
+      },
       relations: [
         'items',
         'items.product',
@@ -268,9 +270,11 @@ export class OrderService {
   // ========== SELLER TRACKING ==========
 
   /**
-   * Lấy tất cả orders có sản phẩm của một seller cụ thể
+   * Lấy tất cả orders đã thanh toán có sản phẩm của một seller cụ thể
    */
   async getOrdersBySeller(sellerId: string): Promise<any[]> {
+    this.logger.log(`🔍 Getting PAID orders for seller ${sellerId}`);
+
     const orders = await this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.buyer', 'buyer')
@@ -280,6 +284,7 @@ export class OrderService {
       .leftJoinAndSelect('product.seller', 'seller')
       .leftJoinAndSelect('seller.user', 'sellerUser')
       .where('product.sellerId = :sellerId', { sellerId })
+      .andWhere('order.status = :status', { status: OrderStatus.PAID })
       .orderBy('order.createdAt', 'DESC')
       .getMany();
 
@@ -312,90 +317,6 @@ export class OrderService {
   }
 
   // ========== HELPER METHODS ==========
-
-  /**
-   * Group cart items theo seller ID
-   */
-  private groupItemsBySeller(
-    items: CartCheckoutDto['items'],
-    productMap: Map<number, Product>,
-  ): Map<string, CartCheckoutDto['items']> {
-    const sellerGroups = new Map<string, CartCheckoutDto['items']>();
-
-    for (const item of items) {
-      const product = productMap.get(item.productId);
-      if (!product) {
-        throw new NotFoundException(
-          `Product with ID ${item.productId} not found`,
-        );
-      }
-
-      if (product.stock < item.quantity) {
-        throw new Error(
-          `Insufficient stock for product ${product.name}. Available: ${product.stock}, Required: ${item.quantity}`,
-        );
-      }
-
-      const sellerId = product.seller.id;
-      if (!sellerGroups.has(sellerId)) {
-        sellerGroups.set(sellerId, []);
-      }
-
-      sellerGroups.get(sellerId)!.push({
-        productId: item.productId,
-        quantity: item.quantity,
-        price: Number(product.price),
-      });
-    }
-
-    return sellerGroups;
-  }
-
-  /**
-   * Tạo order cho một seller cụ thể
-   */
-  private async createOrderForSeller(
-    orderData: { items: CartCheckoutDto['items']; note: string },
-    buyerId: string,
-    manager: any,
-  ): Promise<Order> {
-    let totalPrice = 0;
-    for (const item of orderData.items) {
-      totalPrice += item.price * item.quantity;
-    }
-
-    const order = manager.create(Order, {
-      buyerId,
-      note: orderData.note,
-      totalPrice,
-    });
-
-    const savedOrder = await manager.save(Order, order);
-
-    const orderItems = orderData.items.map((item) =>
-      manager.create(OrderItem, {
-        orderId: savedOrder.id,
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price,
-      }),
-    );
-
-    await manager.save(OrderItem, orderItems);
-
-    // Load order với đầy đủ relations để map response
-    const orderWithRelations = await manager.findOne(Order, {
-      where: { id: savedOrder.id },
-      relations: [
-        'items',
-        'items.product',
-        'items.product.seller',
-        'items.product.seller.user',
-      ],
-    });
-
-    return orderWithRelations;
-  }
 
   /**
    * Map Order entity sang OrderResponseDto
@@ -457,7 +378,10 @@ export class OrderService {
 
       // Tính toán thống kê doanh thu
       const totalOrders = orders.length;
-      const totalRevenue = orders.reduce((sum, order) => sum + order.totalPrice, 0);
+      const totalRevenue = orders.reduce(
+        (sum, order) => sum + order.totalPrice,
+        0,
+      );
       const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
       // Tạo nội dung báo cáo
@@ -487,7 +411,10 @@ export class OrderService {
         message: `Báo cáo doanh thu đã được tạo và gửi đến ${sellerEmail}`,
       };
     } catch (error) {
-      this.logger.error(`❌ Failed to generate revenue report for seller ${sellerId}:`, error);
+      this.logger.error(
+        `❌ Failed to generate revenue report for seller ${sellerId}:`,
+        error,
+      );
       throw new Error('Không thể tạo báo cáo doanh thu');
     }
   }

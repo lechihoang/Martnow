@@ -2,8 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Favorite } from './entities/favorite.entity';
-import { Buyer } from '../account/buyer/entities/buyer.entity';
-import { Product } from '../product/entities/product.entity';
 import { ProductResponseDto } from '../product/dto/create-product.dto';
 
 @Injectable()

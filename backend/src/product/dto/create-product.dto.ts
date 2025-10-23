@@ -3,11 +3,11 @@ import {
   IsNumber,
   IsOptional,
   IsBoolean,
-  IsArray,
   IsPositive,
   Min,
   Max,
 } from 'class-validator';
+import { Product } from '../entities/product.entity';
 
 export class CreateProductDto {
   @IsString()
@@ -42,6 +42,10 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   tags?: string; // JSON string of tags
+
+  @IsString()
+  @IsOptional()
+  imageUrl?: string;
 }
 
 export class ProductResponseDto {
@@ -77,9 +81,9 @@ export class ProductResponseDto {
   totalReviews?: number;
   totalSold?: number;
 
-  constructor(product: any) {
+  constructor(product: Product) {
     this.id = product.id;
-    this.sellerId = product.sellerId;
+    this.sellerId = Number(product.sellerId);
     this.categoryId = product.categoryId;
     this.name = product.name;
     this.description = product.description;
@@ -94,7 +98,7 @@ export class ProductResponseDto {
     this.stock = product.stock || 0;
 
     this.seller = {
-      id: product.seller?.id,
+      id: Number(product.seller?.id) || 0,
       shopName: product.seller?.shopName,
       shopAddress: product.seller?.shopAddress,
       user: {
@@ -103,12 +107,12 @@ export class ProductResponseDto {
     };
 
     this.category = {
-      id: product.category?.id,
+      id: product.category?.id || 0,
       name: product.category?.name || '',
       description: product.category?.description,
     };
 
-    this.averageRating = product.averageRating || 0;
+    this.averageRating = Number(product.averageRating) || 0;
     this.totalReviews = product.totalReviews || 0;
     this.totalSold = product.totalSold || 0;
   }
@@ -123,11 +127,11 @@ export class ProductDetailDto extends ProductResponseDto {
     user: { name: string; username: string };
   };
   category: { id: number; name: string; description?: string };
-  constructor(product: any) {
+  constructor(product: Product) {
     super(product);
 
     this.seller = {
-      id: product.seller?.id,
+      id: Number(product.seller?.id) || 0,
       shopName: product.seller?.shopName,
       shopAddress: product.seller?.shopAddress,
       user: {
@@ -137,7 +141,7 @@ export class ProductDetailDto extends ProductResponseDto {
     };
 
     this.category = {
-      id: product.category?.id,
+      id: product.category?.id || 0,
       name: product.category?.name || '',
       description: product.category?.description,
     };

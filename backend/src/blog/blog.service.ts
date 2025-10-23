@@ -47,12 +47,7 @@ export class BlogService {
   async findBlogById(id: number, userId?: number): Promise<Blog> {
     const blog = await this.blogRepository.findOne({
       where: { id },
-      relations: [
-        'author',
-        'comments',
-        'comments.user',
-        'votes',
-      ],
+      relations: ['author', 'comments', 'comments.user', 'votes'],
     });
 
     if (!blog) {
@@ -93,7 +88,7 @@ export class BlogService {
     createCommentDto: CreateCommentDto,
     userId: number,
   ): Promise<BlogComment> {
-    const blog = await this.findBlogById(blogId);
+    await this.findBlogById(blogId);
 
     const comment = this.commentRepository.create({
       ...createCommentDto,
@@ -167,7 +162,7 @@ export class BlogService {
     voteBlogDto: VoteBlogDto,
     userId: number,
   ): Promise<VoteResponseDto> {
-    const blog = await this.findBlogById(blogId);
+    await this.findBlogById(blogId);
 
     // Check if user already voted
     const existingVote = await this.voteRepository.findOne({

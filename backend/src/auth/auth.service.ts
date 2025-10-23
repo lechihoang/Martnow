@@ -1,4 +1,4 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { supabase, UserRole } from '../lib/supabase';
@@ -77,7 +77,7 @@ export class AuthService {
         session: authData.session,
       };
     } catch (error) {
-      throw new Error(`Signup failed: ${error.message}`);
+      throw new Error(`Signup failed: ${(error as Error).message}`);
     }
   }
 
@@ -122,26 +122,20 @@ export class AuthService {
         session: authData.session,
       };
     } catch (error) {
-      throw new Error(`Signin failed: ${error.message}`);
+      throw new Error(`Signin failed: ${(error as Error).message}`);
     }
   }
 
-  async signout(userId: string) {
-    try {
-      // 1. Sign out from Supabase Auth
-      if (!supabase) {
-        throw new Error('Supabase client not initialized');
-      }
-      const { error } = await supabase.auth.signOut();
+  signout(userId: string) {
+    // Backend is stateless - signout is handled client-side by removing token
+    // The client will delete their access_token and refresh_token from local storage
+    // No server-side action is needed as JWT tokens are validated on each request
 
-      if (error) {
-        throw new Error(error.message);
-      }
+    // Log the signout for audit purposes (optional)
+    console.log(`User ${userId} initiated signout`);
 
-      return { message: 'Signed out successfully' };
-    } catch (error) {
-      throw new Error(`Signout failed: ${error.message}`);
-    }
+    // Return success - actual token removal happens client-side
+    return { message: 'Signed out successfully' };
   }
 
   async getProfile(userId: string) {
@@ -168,15 +162,15 @@ export class AuthService {
         phone: user.phone,
       };
 
-      if (user.role === 'BUYER' && user.buyer) {
+      if (user.role === UserRole.BUYER && user.buyer) {
         profileData = { ...profileData, ...user.buyer };
-      } else if (user.role === 'SELLER' && user.seller) {
+      } else if (user.role === UserRole.SELLER && user.seller) {
         profileData = { ...profileData, ...user.seller };
       }
 
       return profileData;
     } catch (error) {
-      throw new Error(`Failed to get profile: ${error.message}`);
+      throw new Error(`Failed to get profile: ${(error as Error).message}`);
     }
   }
 
@@ -203,7 +197,7 @@ export class AuthService {
         session: authData.session,
       };
     } catch (error) {
-      throw new Error(`Token refresh failed: ${error.message}`);
+      throw new Error(`Token refresh failed: ${(error as Error).message}`);
     }
   }
 
@@ -248,7 +242,7 @@ export class AuthService {
           'User deleted successfully from both Supabase Auth and database',
       };
     } catch (error) {
-      throw new Error(`Delete user failed: ${error.message}`);
+      throw new Error(`Delete user failed: ${(error as Error).message}`);
     }
   }
 
@@ -277,7 +271,7 @@ export class AuthService {
       });
 
       if (error) {
-        throw new Error(error.message);
+        throw new Error((error as Error).message);
       }
 
       return {
@@ -285,7 +279,7 @@ export class AuthService {
         message: 'If the email exists, a password reset link has been sent',
       };
     } catch (error) {
-      throw new Error(`Forgot password failed: ${error.message}`);
+      throw new Error(`Forgot password failed: ${(error as Error).message}`);
     }
   }
 
@@ -314,7 +308,7 @@ export class AuthService {
         message: 'Password reset successfully',
       };
     } catch (error) {
-      throw new Error(`Reset password failed: ${error.message}`);
+      throw new Error(`Reset password failed: ${(error as Error).message}`);
     }
   }
 
@@ -337,28 +331,34 @@ export class AuthService {
         throw new Error('User not found');
       }
 
-      // 2. Verify current password by attempting to sign in
-      const { error: verifyError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: currentPassword,
-      });
+      // 2. Verify current password using a separate client instance
+      // This prevents affecting the current user's session
+      const { createClient } = await import('@supabase/supabase-js');
+      const verifyClient = createClient(
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_ANON_KEY!,
+      );
+
+      const { error: verifyError } = await verifyClient.auth.signInWithPassword(
+        {
+          email: user.email,
+          password: currentPassword,
+        },
+      );
 
       if (verifyError) {
         throw new Error('Current password is incorrect');
       }
 
-      // 3. Update password
-      const { data: authData, error: updateError } =
-        await supabase.auth.updateUser({
-          password: newPassword,
-        });
+      // 3. Update password using Admin API (doesn't require current password)
+      // This ensures we don't create unnecessary sessions
+      const { error: updateError } = await supabase.auth.admin.updateUserById(
+        userId,
+        { password: newPassword },
+      );
 
       if (updateError) {
         throw new Error(updateError.message);
-      }
-
-      if (!authData.user) {
-        throw new Error('Failed to change password');
       }
 
       return {
@@ -366,7 +366,7 @@ export class AuthService {
         message: 'Password changed successfully',
       };
     } catch (error) {
-      throw new Error(`Change password failed: ${error.message}`);
+      throw new Error(`Change password failed: ${(error as Error).message}`);
     }
   }
 }

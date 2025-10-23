@@ -21,7 +21,7 @@ export class SupabaseService {
         autoRefreshToken: false,
         persistSession: false,
       },
-    });
+    }) as SupabaseClient;
   }
 
   getClient(): SupabaseClient {

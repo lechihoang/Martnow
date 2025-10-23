@@ -25,13 +25,18 @@ export class BlogController {
 
   // Blog endpoints
   @Get()
-  async getAllBlogs(@Request() req?: ExpressRequest & { user?: { id: number } }) {
+  async getAllBlogs(
+    @Request() req?: ExpressRequest & { user?: { id: number } },
+  ) {
     const userId = req?.user?.id;
     return this.blogService.findAllBlogs(userId);
   }
 
   @Get(':id')
-  async getBlogById(@Param('id') id: string, @Request() req?: ExpressRequest & { user?: { id: number } }) {
+  async getBlogById(
+    @Param('id') id: string,
+    @Request() req?: ExpressRequest & { user?: { id: number } },
+  ) {
     const userId = req?.user?.id;
     return this.blogService.findBlogById(+id, userId);
   }
@@ -39,7 +44,10 @@ export class BlogController {
   @Post()
   @UseGuards(SupabaseAuthGuard, RoleGuard)
   @Roles(UserRole.BUYER, UserRole.SELLER)
-  async createBlog(@Body() createBlogDto: CreateBlogDto, @Request() req: ExpressRequest & { user: { id: number } }) {
+  async createBlog(
+    @Body() createBlogDto: CreateBlogDto,
+    @Request() req: ExpressRequest & { user: { id: number } },
+  ) {
     return this.blogService.createBlog(createBlogDto, req.user.id);
   }
 
@@ -57,7 +65,10 @@ export class BlogController {
   @Delete(':id')
   @UseGuards(SupabaseAuthGuard, RoleGuard)
   @Roles(UserRole.BUYER, UserRole.SELLER)
-  async deleteBlog(@Param('id') id: string, @Request() req: ExpressRequest & { user: { id: number } }) {
+  async deleteBlog(
+    @Param('id') id: string,
+    @Request() req: ExpressRequest & { user: { id: number } },
+  ) {
     return this.blogService.deleteBlog(+id, req.user.id);
   }
 
@@ -100,7 +111,10 @@ export class BlogController {
   @Delete('comments/:commentId')
   @UseGuards(SupabaseAuthGuard, RoleGuard)
   @Roles(UserRole.BUYER, UserRole.SELLER)
-  async deleteComment(@Param('commentId') commentId: string, @Request() req: ExpressRequest & { user: { id: number } }) {
+  async deleteComment(
+    @Param('commentId') commentId: string,
+    @Request() req: ExpressRequest & { user: { id: number } },
+  ) {
     return this.blogService.deleteComment(+commentId, req.user.id);
   }
 
@@ -119,12 +133,18 @@ export class BlogController {
   @Delete(':id/vote')
   @UseGuards(SupabaseAuthGuard, RoleGuard)
   @Roles(UserRole.BUYER, UserRole.SELLER)
-  async unvoteBlog(@Param('id') blogId: string, @Request() req: ExpressRequest & { user: { id: number } }) {
+  async unvoteBlog(
+    @Param('id') blogId: string,
+    @Request() req: ExpressRequest & { user: { id: number } },
+  ) {
     return this.blogService.unvoteBlog(+blogId, req.user.id);
   }
 
   @Get(':id/vote-stats')
-  async getVoteStats(@Param('id') blogId: string, @Request() req?: ExpressRequest & { user?: { id: number } }) {
+  async getVoteStats(
+    @Param('id') blogId: string,
+    @Request() req?: ExpressRequest & { user?: { id: number } },
+  ) {
     const userId = req?.user?.id;
     return this.blogService.getVoteStats(+blogId, userId);
   }

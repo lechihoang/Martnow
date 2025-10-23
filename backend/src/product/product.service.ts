@@ -138,7 +138,7 @@ export class ProductService {
     }
 
     // Xóa media files trước khi xóa product
-    await this.mediaService.deleteAllMediaFiles('product', id.toString());
+    this.mediaService.deleteAllMediaFiles('product', id.toString());
 
     await this.productRepository.remove(productEntity);
     return { message: 'Product deleted successfully' };
@@ -199,9 +199,10 @@ export class ProductService {
     // Apply search filter
     if (search && search.trim()) {
       const searchLower = search.toLowerCase().trim();
-      filteredProducts = filteredProducts.filter((p) =>
-        p.name.toLowerCase().includes(searchLower) ||
-        p.description?.toLowerCase().includes(searchLower)
+      filteredProducts = filteredProducts.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchLower) ||
+          p.description?.toLowerCase().includes(searchLower),
       );
     }
 
@@ -241,7 +242,7 @@ export class ProductService {
       limit,
       startIndex,
       endIndex,
-      returnedCount: paginatedProducts.length
+      returnedCount: paginatedProducts.length,
     });
 
     const result = {
@@ -257,7 +258,7 @@ export class ProductService {
       productsCount: result.products.length,
       total: result.total,
       page: result.page,
-      totalPages: result.totalPages
+      totalPages: result.totalPages,
     });
 
     return result;

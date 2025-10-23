@@ -1,3 +1,5 @@
+import { SellerStats } from '../entities/seller-stats.entity';
+
 // ✅ Simplified SellerStatsDto - Plain data object without business logic
 export class SellerStatsDto {
   id: number;
@@ -11,9 +13,9 @@ export class SellerStatsDto {
   totalReviews: number;
   completionRate: number; // ✅ Computed once when creating DTO
 
-  constructor(stats: any) {
-    this.id = stats.id || 0;
-    this.sellerId = stats.sellerId || '';
+  constructor(stats: SellerStats) {
+    this.id = Number(stats.id) || 0;
+    this.sellerId = stats.id || '';
     this.totalOrders = stats.totalOrders || 0;
     this.totalRevenue = Number(stats.totalRevenue || 0);
     this.totalProducts = stats.totalProducts || 0;

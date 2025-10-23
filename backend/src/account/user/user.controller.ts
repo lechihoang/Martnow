@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto, UserResponseDto } from './dto/user.dto';
@@ -22,10 +21,18 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  async create(@Body() createUserDto: any) {
+  async create(
+    @Body()
+    createUserDto: {
+      id: string;
+      email: string;
+      name: string;
+      username: string;
+      role: UserRole;
+    },
+  ) {
     return this.userService.create(createUserDto);
   }
-
 
   @Get(':id')
   async findOne(@Param('id') id: string) {

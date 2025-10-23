@@ -7,7 +7,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Use cookie parser middleware
-  app.use(cookieParser());
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  app.use(cookieParser() as never);
 
   // Enable CORS for frontend with cookie support
   app.enableCors({
@@ -19,4 +20,4 @@ async function bootstrap() {
 
   await app.listen(3001);
 }
-bootstrap();
+void bootstrap();

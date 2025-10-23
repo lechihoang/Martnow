@@ -6,7 +6,15 @@ import { Buyer } from '../buyer/entities/buyer.entity';
 import { Seller } from '../seller/entities/seller.entity';
 import { SellerStats } from '../../seller-stats/entities/seller-stats.entity';
 import { UserRole } from '../../lib/supabase';
-import { CreateUserDto, UpdateUserDto, UserResponseDto } from './dto/user.dto';
+import { UpdateUserDto, UserResponseDto } from './dto/user.dto';
+
+interface CreateUserData {
+  id: string;
+  email: string;
+  name: string;
+  username: string;
+  role: UserRole;
+}
 
 @Injectable()
 export class UserService {
@@ -26,7 +34,7 @@ export class UserService {
     return this.userRepository.findOne({ where: { id: supabaseId } });
   }
 
-  async create(createUserDto: any): Promise<User> {
+  async create(createUserDto: CreateUserData): Promise<User> {
     return await this.dataSource.transaction(async (manager) => {
       // Check if user already exists
       const existingUser = await manager.findOne(User, {

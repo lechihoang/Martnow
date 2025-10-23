@@ -18,6 +18,13 @@ import { RoleGuard } from '../auth/role.guard';
 import { Roles } from '../auth/role.decorator';
 import { UserRole } from '../lib/supabase';
 
+interface RequestWithUser {
+  user: {
+    id: string;
+    email?: string;
+  };
+}
+
 @Controller('order') // Đổi từ 'orders' thành 'order' để match với app.module.ts
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
@@ -32,7 +39,7 @@ export class OrderController {
   @Roles(UserRole.BUYER)
   async checkoutCart(
     @Body() cartCheckoutDto: CartCheckoutDto,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     try {
       const userId = req.user.id;
@@ -54,7 +61,7 @@ export class OrderController {
     } catch (error) {
       console.error('❌ Checkout failed:', error);
       throw new HttpException(
-        error.message || 'Checkout failed',
+        (error as Error).message || 'Checkout failed',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -68,7 +75,7 @@ export class OrderController {
   @Roles(UserRole.BUYER)
   async cancelOrder(
     @Param('orderId', ParseIntPipe) orderId: number,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     try {
       const userId = req.user.id;
@@ -84,7 +91,7 @@ export class OrderController {
     } catch (error) {
       console.error('❌ Cancel order failed:', error);
       throw new HttpException(
-        error.message || 'Cancel order failed',
+        (error as Error).message || 'Cancel order failed',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -99,7 +106,7 @@ export class OrderController {
   @UseGuards(SupabaseAuthGuard)
   async getOrder(
     @Param('orderId', ParseIntPipe) orderId: number,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     try {
       console.log('🔍 Get order request:', { orderId, userId: req.user.id });
@@ -121,7 +128,7 @@ export class OrderController {
         throw error;
       }
       throw new HttpException(
-        error.message || 'Get order failed',
+        (error as Error).message || 'Get order failed',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -132,7 +139,10 @@ export class OrderController {
    */
   @Get('user/:userId')
   @UseGuards(SupabaseAuthGuard)
-  async getUserOrders(@Param('userId') userId: string, @Req() req: any) {
+  async getUserOrders(
+    @Param('userId') userId: string,
+    @Req() req: RequestWithUser,
+  ) {
     try {
       // Kiểm tra user chỉ có thể xem đơn hàng của mình
       if (req.user.id !== userId) {
@@ -157,7 +167,7 @@ export class OrderController {
         throw error;
       }
       throw new HttpException(
-        error.message || 'Get user orders failed',
+        (error as Error).message || 'Get user orders failed',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -171,7 +181,10 @@ export class OrderController {
   @Get('seller/:sellerId')
   @UseGuards(SupabaseAuthGuard, RoleGuard)
   @Roles(UserRole.SELLER)
-  async getSellerOrders(@Param('sellerId') sellerId: string, @Req() req: any) {
+  async getSellerOrders(
+    @Param('sellerId') sellerId: string,
+    @Req() req: RequestWithUser,
+  ) {
     try {
       // Kiểm tra seller chỉ có thể xem đơn hàng của mình
       if (req.user.id !== sellerId) {
@@ -196,7 +209,7 @@ export class OrderController {
         throw error;
       }
       throw new HttpException(
-        error.message || 'Get seller orders failed',
+        (error as Error).message || 'Get seller orders failed',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -208,12 +221,22 @@ export class OrderController {
   @Post('seller/export-revenue-report')
   @UseGuards(SupabaseAuthGuard, RoleGuard)
   @Roles(UserRole.SELLER)
-  async exportRevenueReport(@Req() req: any) {
+  async exportRevenueReport(@Req() req: RequestWithUser) {
     try {
       const sellerId = req.user.id;
       const sellerEmail = req.user.email;
 
-      console.log('📊 Export revenue report request:', { sellerId, sellerEmail });
+      if (!sellerEmail) {
+        throw new HttpException(
+          'Email address is required',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      console.log('📊 Export revenue report request:', {
+        sellerId,
+        sellerEmail,
+      });
 
       // Generate and send revenue report
       const result = await this.orderService.generateAndEmailRevenueReport(
@@ -229,7 +252,7 @@ export class OrderController {
     } catch (error) {
       console.error('❌ Export revenue report failed:', error);
       throw new HttpException(
-        error.message || 'Failed to export revenue report',
+        (error as Error).message || 'Failed to export revenue report',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -241,7 +264,7 @@ export class OrderController {
    * Health check endpoint để test module
    */
   @Get('health')
-  async healthCheck() {
+  healthCheck() {
     return {
       message: 'Order module is healthy',
       timestamp: new Date().toISOString(),

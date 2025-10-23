@@ -7,6 +7,14 @@ import {
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '../lib/supabase';
 
+interface RequestWithUser {
+  user?: {
+    profile?: {
+      role: UserRole;
+    };
+  };
+}
+
 @Injectable()
 export class RoleGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
@@ -21,13 +29,14 @@ export class RoleGuard implements CanActivate {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
+    const user = request.user;
 
     if (!user || !user.profile) {
       throw new ForbiddenException('User not authenticated');
     }
 
-    const hasRole = requiredRoles.some((role) => user.profile.role === role);
+    const hasRole = requiredRoles.some((role) => user.profile?.role === role);
 
     if (!hasRole) {
       throw new ForbiddenException(

@@ -18,6 +18,12 @@ import { RoleGuard } from '../auth/role.guard';
 import { Roles } from '../auth/role.decorator';
 import { UserRole } from '../lib/supabase';
 
+interface RequestWithUser {
+  user: {
+    id: string;
+  };
+}
+
 @Controller('reviews')
 export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
@@ -26,7 +32,10 @@ export class ReviewController {
   @Post()
   @UseGuards(SupabaseAuthGuard, RoleGuard)
   @Roles(UserRole.BUYER)
-  async createReview(@Body() createReviewDto: CreateReviewDto, @Request() req) {
+  async createReview(
+    @Body() createReviewDto: CreateReviewDto,
+    @Request() req: RequestWithUser,
+  ) {
     // Lấy userId từ Supabase payload
     const userId = req.user.id;
 
@@ -54,7 +63,7 @@ export class ReviewController {
   async updateReview(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateReviewDto: UpdateReviewDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     const userId = req.user.id;
     return this.reviewService.updateReview(id, updateReviewDto, userId);
@@ -64,7 +73,10 @@ export class ReviewController {
   @Delete(':id')
   @UseGuards(SupabaseAuthGuard, RoleGuard)
   @Roles(UserRole.BUYER)
-  async deleteReview(@Param('id', ParseIntPipe) id: number, @Request() req) {
+  async deleteReview(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: RequestWithUser,
+  ) {
     const userId = req.user.id;
     await this.reviewService.deleteReview(id, userId);
     return { message: 'Xóa đánh giá thành công' };

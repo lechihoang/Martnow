@@ -16,7 +16,8 @@ async function clearSupabaseUsers() {
 
   try {
     // List all users
-    const { data: users, error: listError } = await supabase.auth.admin.listUsers();
+    const { data: users, error: listError } =
+      await supabase.auth.admin.listUsers();
 
     if (listError) {
       console.error('Error listing users:', listError);
@@ -27,7 +28,9 @@ async function clearSupabaseUsers() {
 
     // Delete each user
     for (const user of users.users) {
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(
+        user.id,
+      );
       if (deleteError) {
         console.error(`Error deleting user ${user.email}:`, deleteError);
       } else {
@@ -41,4 +44,4 @@ async function clearSupabaseUsers() {
   }
 }
 
-clearSupabaseUsers();
+void clearSupabaseUsers();

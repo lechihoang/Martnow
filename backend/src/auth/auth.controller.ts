@@ -7,8 +7,6 @@ import {
   Request,
   HttpException,
   HttpStatus,
-  Delete,
-  Param,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SupabaseAuthGuard } from './supabase-auth.guard';
@@ -20,6 +18,12 @@ import {
   ResetPasswordDto,
   ChangePasswordDto,
 } from './dto/auth.dto';
+
+interface RequestWithUser {
+  user: {
+    id: string;
+  };
+}
 
 @Controller('auth')
 export class AuthController {
@@ -38,7 +42,7 @@ export class AuthController {
       throw new HttpException(
         {
           success: false,
-          message: error.message || 'Registration failed',
+          message: (error as Error).message || 'Registration failed',
         },
         HttpStatus.BAD_REQUEST,
       );
@@ -58,7 +62,7 @@ export class AuthController {
       throw new HttpException(
         {
           success: false,
-          message: error.message || 'Login failed',
+          message: (error as Error).message || 'Login failed',
         },
         HttpStatus.UNAUTHORIZED,
       );
@@ -67,9 +71,9 @@ export class AuthController {
 
   @Post('signout')
   @UseGuards(SupabaseAuthGuard)
-  async signout(@Request() req) {
+  signout(@Request() req: RequestWithUser) {
     try {
-      await this.authService.signout(req.user.id);
+      this.authService.signout(req.user.id);
       return {
         success: true,
         message: 'Logout successful',
@@ -78,7 +82,7 @@ export class AuthController {
       throw new HttpException(
         {
           success: false,
-          message: error.message || 'Logout failed',
+          message: (error as Error).message || 'Logout failed',
         },
         HttpStatus.BAD_REQUEST,
       );
@@ -87,7 +91,7 @@ export class AuthController {
 
   @Get('profile')
   @UseGuards(SupabaseAuthGuard)
-  async getProfile(@Request() req) {
+  async getProfile(@Request() req: RequestWithUser) {
     try {
       const profile = await this.authService.getProfile(req.user.id);
       return {
@@ -99,7 +103,7 @@ export class AuthController {
       throw new HttpException(
         {
           success: false,
-          message: error.message || 'Failed to get profile',
+          message: (error as Error).message || 'Failed to get profile',
         },
         HttpStatus.BAD_REQUEST,
       );
@@ -121,7 +125,7 @@ export class AuthController {
       throw new HttpException(
         {
           success: false,
-          message: error.message || 'Token refresh failed',
+          message: (error as Error).message || 'Token refresh failed',
         },
         HttpStatus.UNAUTHORIZED,
       );
@@ -143,7 +147,7 @@ export class AuthController {
       throw new HttpException(
         {
           success: false,
-          message: error.message || 'Forgot password failed',
+          message: (error as Error).message || 'Forgot password failed',
         },
         HttpStatus.BAD_REQUEST,
       );
@@ -168,7 +172,7 @@ export class AuthController {
       throw new HttpException(
         {
           success: false,
-          message: error.message || 'Reset password failed',
+          message: (error as Error).message || 'Reset password failed',
         },
         HttpStatus.BAD_REQUEST,
       );
@@ -179,7 +183,7 @@ export class AuthController {
   @UseGuards(SupabaseAuthGuard)
   async changePassword(
     @Body() changePasswordDto: ChangePasswordDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     try {
       const result = await this.authService.changePassword(
@@ -196,35 +200,7 @@ export class AuthController {
       throw new HttpException(
         {
           success: false,
-          message: error.message || 'Change password failed',
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  @Delete('users/:id')
-  @UseGuards(SupabaseAuthGuard)
-  async deleteUser(@Param('id') userId: string, @Request() req) {
-    try {
-      // Chỉ cho phép user xóa chính mình hoặc admin
-      if (req.user.id !== userId) {
-        throw new HttpException(
-          {
-            success: false,
-            message: 'You can only delete your own account',
-          },
-          HttpStatus.FORBIDDEN,
-        );
-      }
-
-      const result = await this.authService.deleteUser(userId);
-      return result;
-    } catch (error) {
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message || 'Delete user failed',
+          message: (error as Error).message || 'Change password failed',
         },
         HttpStatus.BAD_REQUEST,
       );

@@ -1,5 +1,6 @@
 import { IsString, IsEmail, IsOptional, IsEnum } from 'class-validator';
 import { UserRole } from '../../../lib/supabase';
+import { User } from '../entities/user.entity';
 
 export class CreateUserDto {
   @IsString()
@@ -77,7 +78,7 @@ export class UserResponseDto {
     description?: string;
   };
 
-  constructor(user: any) {
+  constructor(user: User) {
     if (!user) {
       throw new Error('User data is required for UserResponseDto constructor');
     }

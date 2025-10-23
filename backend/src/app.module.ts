@@ -2,8 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { AccountModule } from './account/account.module';
 import { ProductModule } from './product/product.module';
 import { OrderModule } from './order/order.module';
@@ -77,7 +75,7 @@ import { BlogModule } from './blog/blog.module';
     PaymentModule,
     BlogModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

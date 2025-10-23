@@ -2,10 +2,16 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { VnpayService } from 'nestjs-vnpay';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, EntityManager } from 'typeorm';
 import { Order } from '../order/entities/order.entity';
-import { CreatePaymentDto, PaymentResponseDto } from './dto/payment.dto';
+import { PaymentResponseDto } from './dto/payment.dto';
 import { OrderStatus } from '../shared/enums';
+import {
+  ReturnQueryFromVNPay,
+  VnpCurrCode,
+  VnpLocale,
+  ProductCode,
+} from 'vnpay';
 
 @Injectable()
 export class PaymentService {
@@ -24,7 +30,7 @@ export class PaymentService {
   async createPaymentUrl(
     orderId: number,
     amount?: number,
-    manager?: any,
+    manager?: EntityManager,
   ): Promise<string> {
     console.log('🔍 createPaymentUrl called for cart checkout:', {
       orderId,
@@ -33,8 +39,9 @@ export class PaymentService {
     });
 
     // Lấy thông tin order - sử dụng manager nếu có để dùng cùng transaction
-    const orderRepository =
-      manager?.getRepository(Order) || this.orderRepository;
+    const orderRepository = manager
+      ? manager.getRepository(Order)
+      : this.orderRepository;
     const order = await orderRepository.findOne({
       where: { id: orderId },
       relations: ['buyer', 'buyer.user', 'items', 'items.product'],
@@ -44,34 +51,57 @@ export class PaymentService {
       throw new Error('Order not found');
     }
 
+    this.logger.log(`📋 Order ${orderId} loaded from DB:`, {
+      totalPrice: order.totalPrice,
+      totalPriceType: typeof order.totalPrice,
+      itemsCount: order.items?.length,
+    });
+
+    // Tính lại tổng tiền từ items để đảm bảo chính xác
+    const calculatedTotal =
+      order.items?.reduce((sum, item) => {
+        const itemTotal = Number(item.price) * item.quantity;
+        this.logger.log(
+          `  - Item ${item.productId}: ${item.price} x ${item.quantity} = ${itemTotal}`,
+        );
+        return sum + itemTotal;
+      }, 0) || 0;
+
+    this.logger.log(`💰 Calculated total from items: ${calculatedTotal}`);
+    this.logger.log(`💰 Order.totalPrice from DB: ${order.totalPrice}`);
+
     // Sử dụng amount từ order nếu không truyền vào
-    const finalAmount = amount || order.totalPrice;
+    const finalAmount = amount || Number(order.totalPrice);
 
     // Tạo transaction reference (unique)
     const txnRef = `ORDER_${orderId}_${Date.now()}`;
 
     // Build payment URL theo đúng repo nestjs-vnpay
     const returnUrl =
-      this.configService.get('VNPAY_RETURN_URL') ||
+      this.configService.get<string>('VNPAY_RETURN_URL') ||
       'http://localhost:3002/payment/vnpay-return';
 
+    // Library nestjs-vnpay tự động xử lý format, không cần nhân 100
+    const vnpayAmount = Math.round(finalAmount);
+
     console.log('🔧 VNPay Config Debug:', {
-      tmnCode: this.configService.get('VNPAY_TMN_CODE'),
-      hasSecureSecret: !!this.configService.get('VNPAY_SECURE_SECRET'),
+      tmnCode: this.configService.get<string>('VNPAY_TMN_CODE'),
+      hasSecureSecret: !!this.configService.get<string>('VNPAY_SECURE_SECRET'),
       returnUrl,
-      amount: Math.round(finalAmount),
+      originalAmount: finalAmount,
+      vnpayAmount: vnpayAmount,
       orderId,
       txnRef,
     });
 
     const paymentUrl = this.vnpayService.buildPaymentUrl({
-      vnp_Amount: Math.round(finalAmount),
+      vnp_Amount: vnpayAmount,
       vnp_CreateDate: parseInt(this.formatDate(new Date())),
-      vnp_CurrCode: 'VND' as any,
+      vnp_CurrCode: VnpCurrCode.VND,
       vnp_IpAddr: '127.0.0.1',
-      vnp_Locale: 'vn' as any,
+      vnp_Locale: VnpLocale.VN,
       vnp_OrderInfo: order.note || `Thanh toán đơn hàng #${order.id}`,
-      vnp_OrderType: 'other' as any,
+      vnp_OrderType: ProductCode.Other,
       vnp_ReturnUrl: returnUrl,
       vnp_TxnRef: txnRef,
     });
@@ -97,7 +127,6 @@ export class PaymentService {
    */
   private async createFullPaymentUrl(
     orderId: number,
-    createPaymentDto: CreatePaymentDto,
   ): Promise<PaymentResponseDto> {
     // Lấy thông tin order
     const order = await this.orderRepository.findOne({
@@ -109,14 +138,14 @@ export class PaymentService {
       throw new Error('Order not found');
     }
 
-    // Tính tổng tiền (VNPay nhận VND trực tiếp, không cần nhân 100)
+    // Tính tổng tiền - library nestjs-vnpay tự động xử lý
     const amount = Math.round(order.totalPrice);
 
     console.log('Payment Debug:', {
       orderId,
       originalAmount: order.totalPrice,
       convertedAmount: amount,
-      description: `${order.totalPrice} VND -> ${amount} VND (không nhân 100)`,
+      description: `${order.totalPrice} VND -> ${amount} (nhân 100)`,
     });
 
     // Tạo transaction reference (unique)
@@ -126,11 +155,11 @@ export class PaymentService {
     const paymentUrl = this.vnpayService.buildPaymentUrl({
       vnp_Amount: amount,
       vnp_CreateDate: parseInt(this.formatDate(new Date())),
-      vnp_CurrCode: 'VND' as any,
+      vnp_CurrCode: VnpCurrCode.VND,
       vnp_IpAddr: '127.0.0.1',
-      vnp_Locale: 'vn' as any,
+      vnp_Locale: VnpLocale.VN,
       vnp_OrderInfo: order.note || `Thanh toán đơn hàng #${order.id}`,
-      vnp_OrderType: 'other' as any,
+      vnp_OrderType: ProductCode.Other,
       vnp_ReturnUrl: this.configService.get('VNPAY_RETURN_URL') || '',
       vnp_TxnRef: txnRef,
     });
@@ -151,7 +180,7 @@ export class PaymentService {
   /**
    * Xác thực callback từ VNPay
    */
-  async verifyPayment(query: any) {
+  async verifyPayment(query: ReturnQueryFromVNPay) {
     const verifyResult = await this.vnpayService.verifyReturnUrl(query);
 
     if (verifyResult.isSuccess) {
@@ -160,6 +189,7 @@ export class PaymentService {
 
       const order = await this.orderRepository.findOne({
         where: { paymentReference: txnRef },
+        relations: ['items', 'items.product'],
       });
 
       if (order) {
@@ -169,6 +199,28 @@ export class PaymentService {
           paidAt: new Date(),
         });
         this.logger.log(`🎉 Order ${order.id} status updated to paid`);
+
+        // Trừ stock của các sản phẩm
+        for (const item of order.items) {
+          const product = item.product;
+          const newStock = product.stock - item.quantity;
+
+          if (newStock < 0) {
+            this.logger.warn(
+              `⚠️ Product ${product.id} stock will be negative: ${newStock}`,
+            );
+          }
+
+          await this.orderRepository.manager.update(
+            'product',
+            { id: product.id },
+            { stock: newStock },
+          );
+
+          this.logger.log(
+            `📦 Product ${product.id} stock updated: ${product.stock} -> ${newStock}`,
+          );
+        }
       } else {
         this.logger.error(`❌ Order not found for transaction: ${txnRef}`);
       }
@@ -182,7 +234,7 @@ export class PaymentService {
   /**
    * Xử lý IPN (Instant Payment Notification) từ VNPay
    */
-  async handleIPN(query: any) {
+  async handleIPN(query: ReturnQueryFromVNPay) {
     const ipnResult = await this.vnpayService.verifyIpnCall(query);
 
     if (ipnResult.isSuccess) {
@@ -191,6 +243,7 @@ export class PaymentService {
 
       const order = await this.orderRepository.findOne({
         where: { paymentReference: txnRef },
+        relations: ['items', 'items.product'],
       });
 
       if (order && order.status !== OrderStatus.PAID) {
@@ -200,6 +253,28 @@ export class PaymentService {
           paidAt: new Date(),
         });
         this.logger.log(`🎉 IPN: Order ${order.id} status updated to paid`);
+
+        // Trừ stock của các sản phẩm
+        for (const item of order.items) {
+          const product = item.product;
+          const newStock = product.stock - item.quantity;
+
+          if (newStock < 0) {
+            this.logger.warn(
+              `⚠️ Product ${product.id} stock will be negative: ${newStock}`,
+            );
+          }
+
+          await this.orderRepository.manager.update(
+            'product',
+            { id: product.id },
+            { stock: newStock },
+          );
+
+          this.logger.log(
+            `📦 IPN: Product ${product.id} stock updated: ${product.stock} -> ${newStock}`,
+          );
+        }
       } else if (order?.status === OrderStatus.PAID) {
         this.logger.log(`ℹ️  IPN: Order ${order.id} already processed`);
       } else {
