@@ -11,8 +11,12 @@ async function bootstrap() {
   app.use(cookieParser() as never);
 
   // Enable CORS for frontend with cookie support
+  const corsOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+    : [];
+
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'], // Support multiple origins
+    origin: corsOrigins,
     credentials: true, // Required for HTTP-only cookies
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
