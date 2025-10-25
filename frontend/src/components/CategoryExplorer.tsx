@@ -3,6 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { productApi } from '@/lib/api';
+import {
+  FaCookie,
+  FaSprayCan,
+  FaBlender,
+  FaCoffee,
+  FaPepperHot,
+  FaBreadSlice,
+  FaHamburger,
+  FaShoePrints,
+  FaBoxOpen
+} from 'react-icons/fa';
 
 interface Category {
   id: number;
@@ -11,16 +22,17 @@ interface Category {
   icon?: string;
 }
 
-// Default category icons mapping
-const categoryIcons: { [key: string]: string } = {
-  'Bánh kẹo': '🍰',
-  'Đồ dùng vệ sinh': '🧴',
-  'Đồ gia dụng': '🔧',
-  'Đồ uống': '🥤',
-  'Gia vị': '🧂',
-  'Lương thực': '🌾',
-  'Thực phẩm chế biến': '🍱',
-  'default': '📦'
+// Default category icons mapping with Font Awesome icons
+const categoryIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
+  'Bánh kẹo': FaCookie,
+  'Đồ dùng vệ sinh': FaSprayCan,
+  'Đồ gia dụng': FaBlender,
+  'Đồ uống': FaCoffee,
+  'Gia vị': FaPepperHot,
+  'Lương thực': FaBreadSlice,
+  'Thực phẩm chế biến': FaHamburger,
+  'Giày dép': FaShoePrints,
+  'default': FaBoxOpen
 };
 
 const CategoryExplorer: React.FC = () => {
@@ -53,24 +65,25 @@ const CategoryExplorer: React.FC = () => {
     }
   };
 
-  const getCategoryIcon = (categoryName: string): string => {
-    return categoryIcons[categoryName] || categoryIcons['default'];
+  const getCategoryIcon = (categoryName: string) => {
+    const IconComponent = categoryIcons[categoryName] || categoryIcons['default'];
+    return IconComponent;
   };
 
   if (loading) {
     return (
       <section className="py-12">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
+          <div className="mb-8 text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Khám phá danh mục</h2>
             <p className="text-gray-600">Tìm kiếm sản phẩm theo danh mục yêu thích</p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+          <div className="flex justify-between items-start gap-4 overflow-x-auto py-4 scrollbar-hide">
             {[...Array(8)].map((_, index) => (
-              <div key={index} className="bg-white rounded-xl p-10 text-center shadow-sm animate-pulse">
-                <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4"></div>
-                <div className="h-10 bg-gray-200 rounded w-3/4 mx-auto flex items-center"></div>
+              <div key={index} className="flex flex-col items-center flex-1 min-w-[80px] max-w-[120px] animate-pulse">
+                <div className="w-16 h-16 bg-gray-200 rounded-full mb-2 flex items-center justify-center"></div>
+                <div className="h-4 bg-gray-200 rounded w-16"></div>
               </div>
             ))}
           </div>
@@ -82,40 +95,29 @@ const CategoryExplorer: React.FC = () => {
   return (
     <section className="py-12">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-8">
+        <div className="mb-8 text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Khám phá danh mục</h2>
           <p className="text-gray-600">Tìm kiếm sản phẩm theo danh mục yêu thích</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-          {categories.map((category) => (
-            <Link
-              key={category.id}
-              href={`/shop?category=${encodeURIComponent(category.name)}`}
-              className="group"
-            >
-              <div className="bg-white rounded-xl p-10 text-center shadow-sm hover:shadow-md transition-all duration-200 group-hover:scale-105">
-                <div className="text-5xl mb-6">
-                  {getCategoryIcon(category.name)}
+        <div className="flex justify-between items-start gap-4 overflow-x-auto py-4 scrollbar-hide">
+          {categories.map((category) => {
+            const Icon = getCategoryIcon(category.name);
+            return (
+              <Link
+                key={category.id}
+                href={`/shop?category=${encodeURIComponent(category.name)}`}
+                className="group flex flex-col items-center flex-1 min-w-[80px] max-w-[120px]"
+              >
+                <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-full mb-2 flex items-center justify-center group-hover:from-emerald-500 group-hover:to-emerald-600 transition-all duration-300 group-hover:scale-110 shadow-sm group-hover:shadow-md">
+                  <Icon className="w-8 h-8 text-emerald-600 group-hover:text-white transition-colors duration-300" />
                 </div>
-                <h3 className="font-semibold text-gray-900 text-lg group-hover:text-orange-600 transition-colors h-10 flex items-center justify-center leading-tight">
+                <span className="text-sm font-medium text-gray-700 group-hover:text-emerald-600 transition-colors text-center w-full">
                   {category.name}
-                </h3>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        <div className="text-center mt-8">
-          <Link
-            href="/shop"
-            className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium transition-colors"
-          >
-            Xem tất cả danh mục
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>

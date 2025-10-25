@@ -1,15 +1,33 @@
+"use client";
+
 import React from "react";
-import { 
-  ShoppingBag, 
-  Users, 
-  Shield, 
-  Truck, 
-  Star, 
+import {
+  ShoppingBag,
+  Users,
+  Shield,
+  Truck,
+  Star,
   Heart,
   CheckCircle,
   ArrowRight
 } from "lucide-react";
 import Link from "next/link";
+import { useCountUp } from "@/hooks/useCountUp";
+
+const StatItem = ({ end, suffix, label }: { end: number; suffix: string; label: string }) => {
+  const { count, ref } = useCountUp({ end, duration: 1000 });
+
+  return (
+    <div ref={ref} className="text-center">
+      <div className="text-2xl md:text-3xl font-semibold text-emerald-600 mb-2">
+        {count.toLocaleString()}{suffix}
+      </div>
+      <div className="text-gray-600 text-sm">
+        {label}
+      </div>
+    </div>
+  );
+};
 
 const IntroductionPage = () => {
   const features = [
@@ -46,10 +64,10 @@ const IntroductionPage = () => {
   ];
 
   const stats = [
-    { number: "10,000+", label: "Sản phẩm" },
-    { number: "500+", label: "Cửa hàng" },
-    { number: "50,000+", label: "Khách hàng" },
-    { number: "99%", label: "Hài lòng" }
+    { end: 10000, suffix: "+", label: "Sản phẩm" },
+    { end: 500, suffix: "+", label: "Cửa hàng" },
+    { end: 50000, suffix: "+", label: "Khách hàng" },
+    { end: 99, suffix: "%", label: "Hài lòng" }
   ];
 
   const benefits = [
@@ -68,7 +86,7 @@ const IntroductionPage = () => {
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-medium text-gray-900 mb-6">
             Chào mừng đến với{" "}
-            <span className="text-orange-600">MartNow</span>
+            <span className="text-emerald-600">MartNow</span>
           </h1>
             <p className="text-base text-gray-600 mb-8 leading-relaxed">
               Nền tảng mua sắm trực tuyến hàng đầu Việt Nam, kết nối người mua và người bán
@@ -94,14 +112,7 @@ const IntroductionPage = () => {
       <section className="py-16 px-6 md:px-16 lg:px-32">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((stat, index) => (
-            <div key={index} className="text-center">
-              <div className="text-2xl md:text-3xl font-semibold text-orange-600 mb-2">
-                {stat.number}
-              </div>
-              <div className="text-gray-600 text-sm">
-                {stat.label}
-              </div>
-            </div>
+            <StatItem key={index} end={stat.end} suffix={stat.suffix} label={stat.label} />
           ))}
         </div>
       </section>
@@ -120,8 +131,8 @@ const IntroductionPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <div key={index} className="card-quickcart p-6">
-              <div className="w-12 h-12 bg-gray-500/10 rounded-full flex items-center justify-center mb-4">
-                <feature.icon className="w-6 h-6 text-orange-600" />
+              <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                <feature.icon className="w-6 h-6 text-emerald-600" />
               </div>
               <h3 className="text-base font-semibold text-gray-900 mb-3">
                 {feature.title}
@@ -181,7 +192,7 @@ const IntroductionPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 px-6 md:px-16 lg:px-32 bg-orange-600">
+      <section className="py-16 px-6 md:px-16 lg:px-32 bg-emerald-600">
         <div className="text-center text-white">
           <h2 className="text-2xl font-medium mb-4">
             Sẵn sàng trải nghiệm?
@@ -196,7 +207,7 @@ const IntroductionPage = () => {
               </button>
             </Link>
             <Link href="/blog">
-              <button className="px-8 py-3 border border-white text-white bg-transparent hover:bg-white hover:text-orange-600 transition-all rounded-lg">
+              <button className="px-8 py-3 border border-white text-white bg-transparent hover:bg-white hover:text-emerald-600 transition-all rounded-lg">
                 Đọc tin tức
               </button>
             </Link>

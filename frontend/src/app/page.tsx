@@ -1,6 +1,7 @@
 
 import HeaderSlider from "../components/HeaderSlider";
 import CategoryExplorer from "../components/CategoryExplorer";
+import FeaturedProducts from "../components/FeaturedProducts";
 
 export default function Home() {
   return (
@@ -13,26 +14,7 @@ export default function Home() {
 
       <div>
         {/* Featured Products Section */}
-        <section className="pt-14 mt-6 pb-14">
-        <div className="flex items-center justify-center">
-          <h2 className="text-2xl font-medium text-center text-gray-900">
-            Popular products
-          </h2>
-        </div>
-
-        {/* Product Grid will be added here */}
-        <div className="text-center py-12">
-          <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-800 px-4 py-2 rounded-full text-sm font-medium">
-            🚀 Đang phát triển - Sẽ có sản phẩm mẫu sớm!
-          </div>
-        </div>
-
-        <div className="flex items-center justify-center mt-6">
-          <button className="text-gray-600 hover:text-orange-600 transition-colors">
-            See more
-          </button>
-        </div>
-      </section>
+        <FeaturedProducts />
 
       {/* Features Section */}
       <section className="py-16">
@@ -48,8 +30,8 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Feature 1 */}
           <div className="text-center">
-            <div className="w-14 h-14 bg-gray-500/10 rounded-full mx-auto mb-3 flex items-center justify-center">
-              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-14 h-14 bg-emerald-100 rounded-full mx-auto mb-3 flex items-center justify-center">
+              <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
@@ -59,8 +41,8 @@ export default function Home() {
 
           {/* Feature 2 */}
           <div className="text-center">
-            <div className="w-14 h-14 bg-gray-500/10 rounded-full mx-auto mb-3 flex items-center justify-center">
-              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-14 h-14 bg-emerald-100 rounded-full mx-auto mb-3 flex items-center justify-center">
+              <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -70,8 +52,8 @@ export default function Home() {
 
           {/* Feature 3 */}
           <div className="text-center">
-            <div className="w-14 h-14 bg-gray-500/10 rounded-full mx-auto mb-3 flex items-center justify-center">
-              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-14 h-14 bg-emerald-100 rounded-full mx-auto mb-3 flex items-center justify-center">
+              <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
               </svg>
             </div>
@@ -81,8 +63,8 @@ export default function Home() {
 
           {/* Feature 4 */}
           <div className="text-center">
-            <div className="w-14 h-14 bg-gray-500/10 rounded-full mx-auto mb-3 flex items-center justify-center">
-              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-14 h-14 bg-emerald-100 rounded-full mx-auto mb-3 flex items-center justify-center">
+              <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 109.75 9.75A9.75 9.75 0 0012 2.25z" />
               </svg>
             </div>

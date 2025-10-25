@@ -35,6 +35,8 @@ export interface UpdateUserDto {
   password?: string;
   role?: UserRole;
   avatar?: string;
+  address?: string;
+  phone?: string;
 }
 
 export interface UserResponseDto {
@@ -44,6 +46,8 @@ export interface UserResponseDto {
   email: string;
   role: UserRole;
   avatar?: string;
+  address?: string;
+  phone?: string;
   createdAt: Date;
   updatedAt: Date;
   buyer?: {
@@ -52,8 +56,15 @@ export interface UserResponseDto {
   seller?: {
     id: string;
     shopName?: string;
-    shopAddress?: string;
-    shopPhone?: string;
+    description?: string;
+  };
+  // Backend returns these fields
+  buyerInfo?: {
+    id: string;
+  };
+  sellerInfo?: {
+    id: string;
+    shopName?: string;
     description?: string;
   };
 }
@@ -100,10 +111,11 @@ export interface ProductResponseDto {
   seller: {
     id: string;
     shopName?: string;
-    shopAddress?: string;
     user: {
       name: string;
       username: string;
+      address?: string;
+      phone?: string;
     };
   };
   category: {
@@ -220,15 +232,11 @@ export interface ReviewResponseDto {
 export interface CreateSellerDto {
   userId: number;
   shopName?: string;
-  shopAddress?: string;
-  shopPhone?: string;
   description?: string;
 }
 
 export interface UpdateSellerDto {
   shopName?: string;
-  shopAddress?: string;
-  shopPhone?: string;
   description?: string;
 }
 
@@ -236,8 +244,6 @@ export interface SellerResponseDto {
   id: string;
   userId: string;
   shopName?: string;
-  shopAddress?: string;
-  shopPhone?: string;
   description?: string;
   user: {
     id: string;
@@ -245,6 +251,8 @@ export interface SellerResponseDto {
     username: string;
     email: string;
     avatar?: string;
+    address?: string;
+    phone?: string;
   };
   totalProducts: number;
   stats?: {

@@ -46,7 +46,7 @@ const VNPayReturnContent = () => {
             isSuccess: true,
             message: 'Thanh toán thành công!',
             transactionNo: searchParams.get('vnp_TransactionNo') || '',
-            amount: parseInt(searchParams.get('vnp_Amount') || '0'),
+            amount: parseInt(searchParams.get('vnp_Amount') || '0') / 100, // VNPay returns amount * 100
             bankCode: searchParams.get('vnp_BankCode') || '',
             payDate: searchParams.get('vnp_PayDate') || '',
             orderId: searchParams.get('vnp_TxnRef') || ''

@@ -79,7 +79,7 @@ export class PaymentService {
     // Build payment URL theo đúng repo nestjs-vnpay
     const returnUrl =
       this.configService.get<string>('VNPAY_RETURN_URL') ||
-      'http://localhost:3002/payment/vnpay-return';
+      'http://localhost:3000/payment/vnpay-return';
 
     // Library nestjs-vnpay tự động xử lý format, không cần nhân 100
     const vnpayAmount = Math.round(finalAmount);

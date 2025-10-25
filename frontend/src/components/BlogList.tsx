@@ -149,7 +149,7 @@ const BlogList: React.FC<BlogListProps> = ({ userProfile }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-white py-12">
         {/* Header */}
         <div className="mb-12">
           <div className="flex justify-between items-center mb-6">

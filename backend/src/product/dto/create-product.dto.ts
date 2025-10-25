@@ -50,7 +50,7 @@ export class CreateProductDto {
 
 export class ProductResponseDto {
   id: number;
-  sellerId: number;
+  sellerId: string;
   categoryId: number;
   name: string;
   description?: string;
@@ -63,11 +63,12 @@ export class ProductResponseDto {
 
   // Relations
   seller: {
-    id: number;
+    id: string;
     shopName?: string;
-    shopAddress?: string;
     user: {
       name: string;
+      address?: string;
+      phone?: string;
     };
   };
   category: {
@@ -83,7 +84,7 @@ export class ProductResponseDto {
 
   constructor(product: Product) {
     this.id = product.id;
-    this.sellerId = Number(product.sellerId);
+    this.sellerId = product.sellerId;
     this.categoryId = product.categoryId;
     this.name = product.name;
     this.description = product.description;
@@ -98,11 +99,12 @@ export class ProductResponseDto {
     this.stock = product.stock || 0;
 
     this.seller = {
-      id: Number(product.seller?.id) || 0,
+      id: product.seller?.id || '',
       shopName: product.seller?.shopName,
-      shopAddress: product.seller?.shopAddress,
       user: {
         name: product.seller?.user?.name || '',
+        address: product.seller?.user?.address,
+        phone: product.seller?.user?.phone,
       },
     };
 
@@ -121,22 +123,27 @@ export class ProductResponseDto {
 // ✅ Detailed DTO for single product view (when you need full details)
 export class ProductDetailDto extends ProductResponseDto {
   seller: {
-    id: number;
+    id: string;
     shopName?: string;
-    shopAddress?: string;
-    user: { name: string; username: string };
+    user: {
+      name: string;
+      username: string;
+      address?: string;
+      phone?: string;
+    };
   };
   category: { id: number; name: string; description?: string };
   constructor(product: Product) {
     super(product);
 
     this.seller = {
-      id: Number(product.seller?.id) || 0,
+      id: product.seller?.id || '',
       shopName: product.seller?.shopName,
-      shopAddress: product.seller?.shopAddress,
       user: {
         name: product.seller?.user?.name || '',
         username: product.seller?.user?.username || '',
+        address: product.seller?.user?.address,
+        phone: product.seller?.user?.phone,
       },
     };
 

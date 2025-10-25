@@ -84,7 +84,7 @@ export function UserAvatar({ userProfile }: UserAvatarProps) {
             <p className="text-sm font-medium text-gray-900">{displayName}</p>
             <p className="text-xs text-gray-500">{userProfile.email}</p>
             <span className="inline-block mt-1 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-              {userProfile?.role || 'BUYER'}
+              {userProfile?.role === 'SELLER' ? 'Người bán' : 'Người mua'}
             </span>
           </div>
 

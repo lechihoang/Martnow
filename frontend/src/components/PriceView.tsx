@@ -23,15 +23,6 @@ const PriceView = ({ price, discount, discountedPrice, className }: Props) => {
         amount={finalDiscountedPrice}
         className={cn("text-shop_dark_green", className)}
       />
-      {hasRealDiscount && price && (
-        <PriceFormatter
-          amount={price}
-          className={twMerge(
-            "line-through text-xs font-normal text-zinc-500",
-            className
-          )}
-        />
-      )}
     </div>
   );
 };

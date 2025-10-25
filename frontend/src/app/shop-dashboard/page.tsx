@@ -49,7 +49,7 @@ const ShopDashboard: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
           <div className="flex flex-col items-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-400"></div>
             <h2 className="text-lg font-semibold text-gray-900">Đang tải quản lý cửa hàng...</h2>
             <p className="text-sm text-gray-600 text-center">
               Vui lòng chờ trong giây lát
@@ -86,35 +86,27 @@ const ShopDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                🏪 Quản lý cửa hàng
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Quản lý cửa hàng của bạn một cách dễ dàng
-              </p>
-            </div>
-            <button
-              onClick={() => router.push('/product/add')}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
-            >
-              ➕ Thêm sản phẩm mới
-            </button>
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              🏪 Quản lý cửa hàng
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Quản lý cửa hàng của bạn một cách dễ dàng
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="flex gap-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar */}
-          <div className="w-80 flex-shrink-0">
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <div className="p-4 bg-gradient-to-r from-green-500 to-green-600 text-white">
+          <div className="w-full lg:w-72 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-4 bg-gradient-to-r from-gray-700 to-gray-800 text-white">
                 <h2 className="font-semibold">Danh mục quản lý</h2>
-                <p className="text-green-100 text-sm">Chọn chức năng bạn muốn sử dụng</p>
+                <p className="text-gray-300 text-sm">Chọn chức năng bạn muốn sử dụng</p>
               </div>
 
               <nav className="p-2">
@@ -124,13 +116,13 @@ const ShopDashboard: React.FC = () => {
                     onClick={() => setActiveTab(item.key)}
                     className={`w-full text-left p-4 rounded-lg mb-2 transition-all duration-200 group ${
                       activeTab === item.key
-                        ? 'bg-green-50 border-l-4 border-green-500 text-green-700'
-                        : 'hover:bg-gray-50 text-gray-700 hover:text-green-600'
+                        ? 'bg-emerald-50 border-l-4 border-emerald-600 text-emerald-700'
+                        : 'hover:bg-gray-50 text-gray-700 hover:text-gray-900'
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       <span className="text-2xl">{item.icon}</span>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <div className="font-medium">{item.label}</div>
                         <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-600">
                           {item.description}
@@ -144,9 +136,9 @@ const ShopDashboard: React.FC = () => {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1">
-            <div className="bg-white rounded-lg shadow-sm">
-              <div className="p-6">
+          <div className="flex-1 min-w-0">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-4 sm:p-6">
                 {activeTab === 'orders' && <PaidOrdersTab userProfile={userProfile} />}
                 {activeTab === 'products' && <ProductsTab />}
                 {activeTab === 'analytics' && <SalesAnalyticsTab />}

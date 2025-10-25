@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import type { Product } from '../types/entities';
-import { productApi } from '../lib/api';
+import { productApi, uploadApi } from '../lib/api';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Category {
   id: number;
@@ -12,6 +14,8 @@ interface Category {
 }
 
 const AddProductForm = () => {
+  const router = useRouter();
+  const { user } = useAuth();
   const [form, setForm] = useState<
     Partial<Product> & { categoryId?: number }
   >({
@@ -20,10 +24,11 @@ const AddProductForm = () => {
     categoryId: undefined,
     price: 0,
     stock: 0,
+    discount: 0,
   });
   const [loading, setLoading] = useState(false);
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
@@ -53,75 +58,52 @@ const AddProductForm = () => {
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    
-    // Giới hạn số lượng ảnh (tối đa 5 ảnh)
-    if (files.length > 5) {
-      toast.error('Chỉ được chọn tối đa 5 ảnh');
-      return;
-    }
+    const file = e.target.files?.[0];
 
-    // Kiểm tra kích thước file (tối đa 5MB mỗi ảnh)
+    if (!file) return;
+
+    // Kiểm tra kích thước file (tối đa 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
-    const invalidFiles = files.filter(file => file.size > maxSize);
-    if (invalidFiles.length > 0) {
-      toast.error('Mỗi ảnh phải nhỏ hơn 5MB');
+    if (file.size > maxSize) {
+      toast.error('Ảnh phải nhỏ hơn 5MB');
       return;
     }
 
-    setSelectedImages(files);
+    // Kiểm tra loại file
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file ảnh');
+      return;
+    }
 
-    // Tạo preview cho các ảnh
-    const previews: string[] = [];
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        previews.push(e.target?.result as string);
-        if (previews.length === files.length) {
-          setImagePreviews([...previews]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    setSelectedImage(file);
+
+    // Tạo preview cho ảnh
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
-  const removeImage = (index: number) => {
-    const newImages = selectedImages.filter((_, i) => i !== index);
-    const newPreviews = imagePreviews.filter((_, i) => i !== index);
-    setSelectedImages(newImages);
-    setImagePreviews(newPreviews);
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview('');
   };
 
-  const uploadProductImages = async (productId: number): Promise<string[]> => {
-    if (selectedImages.length === 0) return [];
+  const uploadProductImage = async (): Promise<string | null> => {
+    if (!selectedImage) return null;
 
     try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      
-      // Add all selected images to FormData
-      selectedImages.forEach((file) => {
-        formData.append('files', file);
-      });
-      
-      formData.append('entityType', 'product');
-      formData.append('entityId', productId.toString());
+      console.log('📤 Uploading image...');
+      const response = await uploadApi.uploadFile(selectedImage, 'product');
 
-      // Upload to backend media endpoint
-      const response = await fetch('http://localhost:3001/media/upload', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      if (response.data && response.data.length > 0) {
+        const imageUrl = response.data[0].secureUrl;
+        console.log('✅ Image uploaded:', imageUrl);
+        return imageUrl;
       }
 
-      const uploadedFiles = await response.json();
-
-      // Return array of secure URLs
-      return uploadedFiles.map((file: { secureUrl: string }) => file.secureUrl);
+      return null;
     } catch (error) {
       console.error('Image upload error:', error);
       throw new Error('Không thể tải ảnh lên');
@@ -130,65 +112,67 @@ const AddProductForm = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Kiểm tra đăng nhập
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để thêm sản phẩm');
+      router.push('/auth/login');
+      return;
+    }
+
+    // Kiểm tra validation
+    if (!form.name?.trim()) {
+      toast.error('Tên sản phẩm không được để trống');
+      return;
+    }
+
+    if (!form.categoryId) {
+      toast.error('Vui lòng chọn danh mục sản phẩm');
+      return;
+    }
+
+    if (!form.price || form.price <= 0) {
+      toast.error('Giá sản phẩm phải lớn hơn 0');
+      return;
+    }
+
     setLoading(true);
-    
+
     try {
-      // Kiểm tra validation
-      if (!form.categoryId) {
-        toast.error('Vui lòng chọn danh mục sản phẩm');
-        return;
-      }
-
-      // Step 1: Create product without images first
-      const productResponse = await fetch('http://localhost:3001/product', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json' 
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: form.name,
-          description: form.description,
-          categoryId: form.categoryId,
-          price: form.price,
-          stock: form.stock,
-        }),
-      });
-      
-      if (!productResponse.ok) {
-        // Handle product creation errors
-        if (productResponse.status === 403) {
-          toast.error('Chỉ người bán mới có thể thêm sản phẩm');
-        } else if (productResponse.status === 401) {
-          toast.error('Vui lòng đăng nhập để thêm sản phẩm.');
-        } else {
-          try {
-            const errorData = await productResponse.json();
-            toast.error(errorData.message || `Lỗi ${productResponse.status}: Không thể thêm sản phẩm`);
-          } catch {
-            toast.error(`Lỗi ${productResponse.status}: Không thể thêm sản phẩm`);
-          }
-        }
-        return;
-      }
-
-      const createdProduct = await productResponse.json();
-      const productId = createdProduct.id;
-
-      // Step 2: Upload images if any
-      if (selectedImages.length > 0) {
+      // Step 1: Upload image first (if any)
+      let imageUrl = '';
+      if (selectedImage) {
         try {
-          await uploadProductImages(productId);
-          toast.success('Đã thêm sản phẩm và tải ảnh thành công!');
+          const uploadedImageUrl = await uploadProductImage();
+          if (uploadedImageUrl) {
+            imageUrl = uploadedImageUrl;
+          }
         } catch (error) {
-          // Product created but image upload failed
           console.error('Image upload failed:', error);
-          toast.success('Đã thêm sản phẩm thành công, nhưng có lỗi khi tải ảnh lên');
+          toast.error('Có lỗi khi tải ảnh lên. Vui lòng thử lại.');
+          setLoading(false);
+          return;
         }
-      } else {
-        toast.success('Đã thêm sản phẩm thành công!');
       }
-      
+
+      // Step 2: Create product with image URL
+      const productData = {
+        name: form.name || '',
+        description: form.description || '',
+        categoryId: form.categoryId || 0,
+        price: form.price || 0,
+        stock: form.stock || 0,
+        discount: form.discount || 0,
+        imageUrl: imageUrl,
+        isAvailable: true,
+      };
+
+      console.log('📦 Creating product:', productData);
+      const createdProduct = await productApi.createProduct(productData);
+      console.log('✅ Product created:', createdProduct);
+
+      toast.success('Đã thêm sản phẩm thành công!');
+
       // Reset form after success
       setForm({
         name: '',
@@ -196,163 +180,264 @@ const AddProductForm = () => {
         categoryId: undefined,
         price: 0,
         stock: 0,
+        discount: 0,
       });
-      setSelectedImages([]);
-      setImagePreviews([]);
-      
+      setSelectedImage(null);
+      setImagePreview('');
+
+      // Redirect to shop dashboard after a short delay
+      setTimeout(() => {
+        router.push('/shop-dashboard?tab=products');
+      }, 1000);
+
     } catch (error) {
       console.error('Submit error:', error);
-      toast.error('Có lỗi xảy ra! Vui lòng thử lại.');
+      const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra! Vui lòng thử lại.';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md mx-auto p-4 border rounded bg-white shadow">
-      <h2 className="text-xl font-bold mb-4">Thêm sản phẩm mới</h2>
-      
-      {/* Tên sản phẩm */}
-      <div className="mb-2">
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-          Tên sản phẩm *
-        </label>
-        <input 
-          id="name"
-          name="name" 
-          value={form.name} 
-          onChange={handleChange} 
-          placeholder="Nhập tên sản phẩm" 
-          className="w-full p-2 border rounded"
-          required 
-        />
-      </div>
-
-      {/* Mô tả sản phẩm */}
-      <div className="mb-2">
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          Mô tả sản phẩm
-        </label>
-        <textarea 
-          id="description"
-          name="description" 
-          value={form.description} 
-          onChange={handleChange} 
-          placeholder="Nhập mô tả chi tiết về sản phẩm" 
-          className="w-full p-2 border rounded" 
-          rows={3}
-        />
-      </div>
-      
-      {/* Dropdown chọn danh mục */}
-      <div className="mb-2">
-        <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">
-          Danh mục sản phẩm *
-        </label>
-        {loadingCategories ? (
-          <div className="w-full p-2 border rounded bg-gray-100">Đang tải danh mục...</div>
-        ) : (
-          <select
-            id="categoryId"
-            name="categoryId"
-            value={form.categoryId || ''}
-            onChange={(e) => setForm({ ...form, categoryId: Number(e.target.value) || undefined })}
-            className="w-full p-2 border rounded"
-            required
-          >
-            <option value="">-- Chọn danh mục --</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name} - {category.description}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-      
-      {/* Giá bán */}
-      <div className="mb-2">
-        <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-          Giá bán (VNĐ) *
-        </label>
-        <input 
-          id="price"
-          name="price" 
-          type="number" 
-          min={0} 
-          step="1000"
-          value={form.price} 
-          onChange={handleChange} 
-          placeholder="Nhập giá bán sản phẩm" 
-          className="w-full p-2 border rounded"
-          required 
-        />
-      </div>
-      
-      {/* Số lượng trong kho */}
-      <div className="mb-2">
-        <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-1">
-          Số lượng trong kho *
-        </label>
-        <input 
-          id="stock"
-          name="stock" 
-          type="number" 
-          min={0} 
-          value={form.stock} 
-          onChange={handleChange} 
-          placeholder="Nhập số lượng sản phẩm có sẵn" 
-          className="w-full p-2 border rounded"
-          required 
-        />
-      </div>
-      
-      {/* Input upload ảnh */}
-      <div className="mb-4">
-        <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-2">
-          Hình ảnh sản phẩm (tối đa 5 ảnh)
-        </label>
-        <input
-          id="images"
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleImageChange}
-          className="w-full p-2 border rounded"
-        />
-      </div>
-
-      {/* Preview ảnh */}
-      {imagePreviews.length > 0 && (
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Xem trước ảnh:
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {imagePreviews.map((preview, index) => (
-              <div key={index} className="relative">
-                <Image
-                  src={preview}
-                  alt={`Preview ${index + 1}`}
-                  width={96}
-                  height={96}
-                  className="w-full h-24 object-cover rounded border"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeImage(index)}
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">Thêm sản phẩm mới</h1>
+          <p className="text-gray-600">Điền thông tin sản phẩm của bạn để bắt đầu bán hàng</p>
         </div>
-      )}
-      
-      <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-2 rounded mt-2 disabled:bg-gray-400">{loading ? 'Đang gửi...' : 'Thêm sản phẩm'}</button>
-    </form>
+
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          {/* Form Header */}
+          <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 px-8 py-6">
+            <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              Thông tin sản phẩm
+            </h2>
+          </div>
+
+          <div className="p-8">{/* Form Body */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Tên sản phẩm */}
+              <div className="md:col-span-2">
+                <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Tên sản phẩm <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="name"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  placeholder="Ví dụ: Gạo ST25 túi 5kg"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  required
+                />
+              </div>
+
+              {/* Dropdown chọn danh mục */}
+              <div>
+                <label htmlFor="categoryId" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Danh mục sản phẩm <span className="text-red-500">*</span>
+                </label>
+                {loadingCategories ? (
+                  <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                    Đang tải danh mục...
+                  </div>
+                ) : (
+                  <select
+                    id="categoryId"
+                    name="categoryId"
+                    value={form.categoryId || ''}
+                    onChange={(e) => setForm({ ...form, categoryId: Number(e.target.value) || undefined })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-white"
+                    required
+                  >
+                    <option value="">-- Chọn danh mục --</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Số lượng trong kho */}
+              <div>
+                <label htmlFor="stock" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Số lượng trong kho <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="stock"
+                  name="stock"
+                  type="number"
+                  min={0}
+                  value={form.stock}
+                  onChange={handleChange}
+                  placeholder="100"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  required
+                />
+              </div>
+
+              {/* Giá bán */}
+              <div>
+                <label htmlFor="price" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Giá bán (VNĐ) <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    id="price"
+                    name="price"
+                    type="number"
+                    min={0}
+                    step="1000"
+                    value={form.price}
+                    onChange={handleChange}
+                    placeholder="50000"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                    required
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">đ</span>
+                </div>
+              </div>
+
+              {/* Giảm giá */}
+              <div>
+                <label htmlFor="discount" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Giảm giá (%)
+                </label>
+                <input
+                  id="discount"
+                  name="discount"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={form.discount || 0}
+                  onChange={handleChange}
+                  placeholder="0"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                />
+              </div>
+
+              {/* Mô tả sản phẩm */}
+              <div className="md:col-span-2">
+                <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Mô tả sản phẩm
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  placeholder="Nhập mô tả chi tiết về sản phẩm, nguồn gốc, chất lượng..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all resize-none"
+                  rows={4}
+                />
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="my-8 border-t border-gray-200"></div>
+
+            {/* Input upload ảnh */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Hình ảnh sản phẩm
+                <span className="text-gray-500 font-normal ml-2">(Kích thước &lt; 5MB)</span>
+              </label>
+
+              {!imagePreview ? (
+                <label
+                  htmlFor="images"
+                  className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-emerald-500 transition-colors cursor-pointer"
+                >
+                  <div className="space-y-1 text-center">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <div className="flex text-sm text-gray-600">
+                      <span className="font-medium text-emerald-600 hover:text-emerald-500">
+                        Nhấp để tải ảnh lên
+                      </span>
+                      <p className="pl-1">hoặc kéo thả ảnh vào đây</p>
+                    </div>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF</p>
+                  </div>
+                  <input
+                    id="images"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="sr-only"
+                  />
+                </label>
+              ) : (
+                <div className="mt-2">
+                  <div className="relative inline-block">
+                    <Image
+                      src={imagePreview}
+                      alt="Preview"
+                      width={400}
+                      height={300}
+                      className="w-full max-w-md h-64 object-cover rounded-lg border-2 border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-lg hover:bg-red-600 shadow-lg transition-colors"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2">
+                    <label htmlFor="images" className="text-emerald-600 hover:text-emerald-700 cursor-pointer font-medium">
+                      Chọn ảnh khác
+                    </label>
+                    <input
+                      id="images"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="sr-only"
+                    />
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex gap-4 mt-8">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-4 px-6 rounded-lg font-semibold hover:from-emerald-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang thêm sản phẩm...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Thêm sản phẩm
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 

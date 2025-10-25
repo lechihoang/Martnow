@@ -12,10 +12,11 @@ interface CartItem {
     seller?: {
       id: number | string;
       shopName?: string;
-      shopAddress?: string;
       user?: {
         name: string;
         username: string;
+        address?: string;
+        phone?: string;
       };
     };
   };

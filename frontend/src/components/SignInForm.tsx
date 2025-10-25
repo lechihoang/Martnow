@@ -59,13 +59,7 @@ export default function LoginForm() {
       <div className="max-w-md w-full space-y-8">
         {/* Logo and Header */}
         <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">M</span>
-            </div>
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Chào mừng trở lại</h2>
-          <p className="text-gray-600">Đăng nhập vào tài khoản của bạn</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Đăng nhập</h2>
         </div>
 
         {/* Form */}
@@ -81,11 +75,11 @@ export default function LoginForm() {
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <Input 
-                          {...field} 
-                          type="email" 
+                        <Input
+                          {...field}
+                          type="email"
                           placeholder="Nhập email của bạn"
-                          className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
+                          className="pl-10 border-gray-300 focus-visible:border-gray-400 focus-visible:ring-0"
                         />
                       </div>
                     </FormControl>
@@ -107,7 +101,7 @@ export default function LoginForm() {
                           {...field}
                           type={showPassword ? "text" : "password"}
                           placeholder="Nhập mật khẩu"
-                          className="pl-10 pr-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+                          className="pl-10 pr-10 border-gray-300 focus-visible:border-gray-400 focus-visible:ring-0 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
                           autoComplete="current-password"
                         />
                         <button
@@ -134,7 +128,7 @@ export default function LoginForm() {
                         type="checkbox"
                         checked={field.value}
                         onChange={field.onChange}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 text-gray-900 focus:ring-gray-400 focus:ring-offset-0"
                       />
                       Ghi nhớ đăng nhập
                     </label>
@@ -142,7 +136,7 @@ export default function LoginForm() {
                 />
                 <Link
                   href="/auth/forgot-password"
-                  className="text-sm text-blue-600 hover:text-blue-700 transition-colors duration-200 font-medium"
+                  className="text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium"
                 >
                   Quên mật khẩu?
                 </Link>
@@ -150,7 +144,7 @@ export default function LoginForm() {
 
               <Button 
                 type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 transition-colors duration-200" 
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 transition-colors duration-200" 
                 disabled={loading}
               >
                 {loading ? (
@@ -177,9 +171,9 @@ export default function LoginForm() {
           {/* Sign Up Link */}
           <p className="text-center text-sm text-gray-600 mt-6">
             Chưa có tài khoản?{" "}
-            <Link 
-              href="/auth/register" 
-              className="font-semibold text-blue-600 hover:text-blue-700 transition-colors duration-200"
+            <Link
+              href="/auth/register"
+              className="font-semibold text-gray-900 hover:text-gray-700 transition-colors"
             >
               Đăng ký ngay
             </Link>

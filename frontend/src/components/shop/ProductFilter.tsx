@@ -42,6 +42,13 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
     onPriceRangeChange(localPriceRange);
   };
 
+  // Calculate percentage for range slider background
+  const getSliderBackground = () => {
+    const minPercent = (localPriceRange[0] / maxPrice) * 100;
+    const maxPercent = (localPriceRange[1] / maxPrice) * 100;
+    return `linear-gradient(to right, #e5e7eb ${minPercent}%, #10b981 ${minPercent}%, #10b981 ${maxPercent}%, #e5e7eb ${maxPercent}%)`;
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -68,7 +75,7 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
             <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-blue-600" />
+              <Filter className="w-5 h-5 text-emerald-600" />
               <h3 className="font-semibold text-gray-900">Bộ lọc</h3>
             </div>
             <div className="flex items-center gap-2">
@@ -104,7 +111,7 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
                     value="all"
                     checked={selectedCategory === 'all'}
                     onChange={(e) => onCategoryChange(e.target.value)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
                   />
                   <span className="text-sm text-gray-700">Tất cả danh mục</span>
                 </label>
@@ -116,7 +123,7 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
                       value={category}
                       checked={selectedCategory === category}
                       onChange={(e) => onCategoryChange(e.target.value)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
                     />
                     <span className="text-sm text-gray-700">{category}</span>
                   </label>
@@ -138,7 +145,7 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
                   <span>{formatPrice(maxPrice)}</span>
                 </div>
                 
-                <div className="range-slider">
+                <div className="range-slider" style={{ background: getSliderBackground() }}>
                   <input
                     type="range"
                     min="0"
@@ -170,7 +177,7 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
                       value={localPriceRange[0]}
                       onChange={(e) => handlePriceChange('min', parseInt(e.target.value) || 0)}
                       onBlur={handlePriceRangeCommit}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />
                   </div>
                   <div className="flex-1">
@@ -182,7 +189,7 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
                       value={localPriceRange[1]}
                       onChange={(e) => handlePriceChange('max', parseInt(e.target.value) || 0)}
                       onBlur={handlePriceRangeCommit}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />
                   </div>
                 </div>

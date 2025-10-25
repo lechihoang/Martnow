@@ -22,12 +22,6 @@ export class Seller {
   @Column({ type: 'varchar', length: 255, nullable: true })
   shopName: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  shopAddress: string;
-
-  @Column({ type: 'varchar', length: 20, nullable: true })
-  shopPhone: string;
-
   @Column({ type: 'text', nullable: true })
   description: string;
 

@@ -611,8 +611,6 @@ async function seed() {
           const seller = sellerRepo.create({
             id: savedUser.id,
             shopName: sellerInfo.shopName,
-            shopAddress: sellerInfo.shopAddress,
-            shopPhone: sellerInfo.shopPhone,
             description: sellerInfo.description,
           });
           await sellerRepo.save(seller);

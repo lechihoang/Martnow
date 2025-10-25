@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { Camera } from 'lucide-react';
-import ProfileCard from './ProfileCard';
+import { Upload, User as UserIcon, Mail, AtSign, Phone, MapPin } from 'lucide-react';
 import AvatarUploadModal from '@/components/AvatarUploadModal';
 import { User } from '@/types/entities';
 
@@ -14,32 +13,47 @@ interface UserInfoProps {
 }
 
 const UserInfo: React.FC<UserInfoProps> = ({ user, onUpdate, readOnly = false }) => {
-  const [isEditing, setIsEditing] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: user.name,
     username: user.username,
     email: user.email,
+    phone: user.phone || '',
+    address: user.address || '',
   });
+  const [hasChanges, setHasChanges] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onUpdate(formData);
-    setIsEditing(false);
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Check if any editable field has changed
+    const changed =
+      (field === 'name' && value !== user.name) ||
+      (field === 'phone' && value !== (user.phone || '')) ||
+      (field === 'address' && value !== (user.address || ''));
+    setHasChanges(changed || formData.name !== user.name || formData.phone !== (user.phone || '') || formData.address !== (user.address || ''));
   };
 
-  const handleCancel = () => {
-    setFormData({
-      name: user.name,
-      username: user.username,
-      email: user.email,
-    });
-    setIsEditing(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (hasChanges) {
+      try {
+        await onUpdate({
+          name: formData.name,
+          phone: formData.phone || undefined,
+          address: formData.address || undefined,
+        });
+        toast.success('Cập nhật thông tin thành công!');
+        setHasChanges(false);
+      } catch (error) {
+        console.error('❌ Error updating profile:', error);
+        toast.error('Có lỗi xảy ra khi cập nhật thông tin');
+      }
+    }
   };
 
   const handleAvatarUploadSuccess = async (avatarUrl: string) => {
     try {
-      onUpdate({ avatar: avatarUrl });
+      await onUpdate({ avatar: avatarUrl });
       toast.success('Cập nhật ảnh đại diện thành công!');
     } catch (error) {
       console.error('❌ Error updating avatar:', error);
@@ -48,7 +62,7 @@ const UserInfo: React.FC<UserInfoProps> = ({ user, onUpdate, readOnly = false })
   };
 
   return (
-    <ProfileCard title="Thông tin cá nhân">
+    <div className="space-y-8">
       {/* Avatar Upload Modal */}
       <AvatarUploadModal
         isOpen={isAvatarModalOpen}
@@ -57,123 +71,136 @@ const UserInfo: React.FC<UserInfoProps> = ({ user, onUpdate, readOnly = false })
         onUploadSuccess={handleAvatarUploadSuccess}
       />
 
-      <div className="flex items-center mb-6">
-        <div className="relative group">
+      {/* Avatar Section */}
+      <div className="flex flex-col items-center pb-8 border-b border-gray-200">
+        <div className="relative">
           <Image
+            key={user.avatar || 'default'}
             src={user.avatar || '/default-avatar.jpg'}
             alt={user.name}
-            width={80}
-            height={80}
-            className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+            width={120}
+            height={120}
+            className="w-30 h-30 rounded-full object-cover border-4 border-gray-100 shadow-lg"
+            unoptimized
           />
-          {!readOnly && (
-            <>
-              {/* Upload overlay */}
-              <div
-                className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                onClick={() => setIsAvatarModalOpen(true)}
-              >
-                <Camera className="w-6 h-6 text-white" />
-              </div>
-              {/* Upload button for mobile */}
-              <button
-                type="button"
-                onClick={() => setIsAvatarModalOpen(true)}
-                className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-lg transition-colors"
-              >
-                <Camera className="w-4 h-4" />
-              </button>
-            </>
-          )}
         </div>
-        <div className="ml-4">
-          <h3 className="text-lg font-medium text-gray-900">{user.name}</h3>
-          <p className="text-gray-500">@{user.username}</p>
-          {!readOnly && (
-            <p className="text-xs text-gray-400 mt-1">Nhấp để thay đổi ảnh đại diện</p>
-          )}
-        </div>
+        <h3 className="text-xl font-semibold text-gray-900 mt-4">{user.name}</h3>
+        <p className="text-gray-500">@{user.username}</p>
         {!readOnly && (
           <button
-            onClick={() => setIsEditing(!isEditing)}
-            className="ml-auto px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            type="button"
+            onClick={() => setIsAvatarModalOpen(true)}
+            className="mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors flex items-center gap-2"
           >
-            {isEditing ? 'Hủy' : 'Chỉnh sửa'}
+            <Upload className="w-4 h-4" />
+            Đổi ảnh đại diện
           </button>
         )}
       </div>
 
-      {isEditing && !readOnly ? (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+      {/* Profile Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="flex items-center gap-2">
+              <UserIcon className="w-4 h-4 text-gray-500" />
               Họ và tên
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            </div>
+          </label>
+          <input
+            id="name"
+            type="text"
+            value={formData.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            disabled={readOnly}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-0 focus:border-gray-400 disabled:bg-gray-50 disabled:text-gray-500 transition-colors"
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="flex items-center gap-2">
+              <AtSign className="w-4 h-4 text-gray-500" />
               Tên đăng nhập
-            </label>
-            <input
-              type="text"
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+              <span className="ml-auto text-xs text-gray-500">(Không thể thay đổi)</span>
+            </div>
+          </label>
+          <input
+            id="username"
+            type="text"
+            value={formData.username}
+            disabled
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-gray-500" />
               Email
-            </label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div className="flex gap-2">
+              <span className="ml-auto text-xs text-gray-500">(Không thể thay đổi)</span>
+            </div>
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={formData.email}
+            disabled
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="flex items-center gap-2">
+              <Phone className="w-4 h-4 text-gray-500" />
+              Số điện thoại
+            </div>
+          </label>
+          <input
+            id="phone"
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => handleInputChange('phone', e.target.value)}
+            disabled={readOnly}
+            placeholder="Nhập số điện thoại"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-0 focus:border-gray-400 disabled:bg-gray-50 disabled:text-gray-500 transition-colors"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-gray-500" />
+              Địa chỉ
+            </div>
+          </label>
+          <textarea
+            id="address"
+            value={formData.address}
+            onChange={(e) => handleInputChange('address', e.target.value)}
+            disabled={readOnly}
+            placeholder="Nhập địa chỉ"
+            rows={3}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-0 focus:border-gray-400 disabled:bg-gray-50 disabled:text-gray-500 transition-colors resize-none"
+          />
+        </div>
+
+        {!readOnly && (
+          <div className="pt-4">
             <button
               type="submit"
-              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+              disabled={!hasChanges}
+              className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
             >
-              Lưu thay đổi
-            </button>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-            >
-              Hủy
+              {hasChanges ? 'Lưu thay đổi' : 'Không có thay đổi'}
             </button>
           </div>
-        </form>
-      ) : (
-        <div className="space-y-3">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Họ và tên:</span>
-            <span className="font-medium">{user.name}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Tên đăng nhập:</span>
-            <span className="font-medium">@{user.username}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Email:</span>
-            <span className="font-medium">{user.email}</span>
-          </div>
-        </div>
-      )}
-    </ProfileCard>
+        )}
+      </form>
+    </div>
   );
 };
 

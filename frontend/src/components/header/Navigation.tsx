@@ -27,14 +27,14 @@ const Navigation = () => {
         <Link
           key={link.href}
           href={link.href}
-          className={`relative text-gray-700 hover:text-blue-600 transition-colors font-medium group ${
-            isActive(link.href) ? 'text-blue-600' : ''
+          className={`relative text-gray-700 hover:text-emerald-600 transition-colors font-medium group ${
+            isActive(link.href) ? 'text-emerald-600' : ''
           }`}
         >
           {link.label}
           {/* Underline effect */}
           <span
-            className={`absolute left-0 right-0 bottom-0 h-0.5 bg-blue-600 transform transition-transform duration-300 origin-center ${
+            className={`absolute left-0 right-0 bottom-0 h-0.5 bg-emerald-600 transform transition-transform duration-300 origin-center ${
               isActive(link.href)
                 ? 'scale-x-100'
                 : 'scale-x-0 group-hover:scale-x-100'

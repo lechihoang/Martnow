@@ -40,7 +40,10 @@ export class UserController {
     if (!user) {
       throw new Error('User not found');
     }
-    return new UserResponseDto(user);
+    return {
+      message: 'User retrieved successfully',
+      data: new UserResponseDto(user),
+    };
   }
 
   @Patch(':id')
@@ -51,7 +54,10 @@ export class UserController {
     // Note: This requires Supabase service role key for backend
     // Frontend should also update Supabase user metadata directly
 
-    return updatedUser;
+    return {
+      message: 'User updated successfully',
+      data: updatedUser,
+    };
   }
 
   @Delete(':id')

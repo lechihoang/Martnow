@@ -105,7 +105,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                   <p className="font-medium text-white">{userProfile.name || userProfile.username}</p>
                   <p className="text-sm text-gray-300">{user.email}</p>
                   <span className="inline-block px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full mt-1">
-                    {userProfile.role}
+                    {userProfile.role === 'SELLER' ? 'Người bán' : 'Người mua'}
                   </span>
                 </div>
               </div>

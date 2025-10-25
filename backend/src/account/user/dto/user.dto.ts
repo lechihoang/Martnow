@@ -73,8 +73,6 @@ export class UserResponseDto {
   sellerInfo?: {
     id: string;
     shopName?: string;
-    shopAddress?: string;
-    shopPhone?: string;
     description?: string;
   };
 
@@ -102,8 +100,6 @@ export class UserResponseDto {
       this.sellerInfo = {
         id: user.seller.id,
         shopName: user.seller.shopName,
-        shopAddress: user.seller.shopAddress,
-        shopPhone: user.seller.shopPhone,
         description: user.seller.description,
       };
     }

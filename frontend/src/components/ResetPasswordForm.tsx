@@ -63,7 +63,7 @@ export default function ResetPasswordForm() {
       <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
         <div className="text-center">
           <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded">
-            Password reset successfully! Redirecting to sign in...
+            Đặt lại mật khẩu thành công! Đang chuyển đến trang đăng nhập...
           </div>
         </div>
       </div>
@@ -72,7 +72,7 @@ export default function ResetPasswordForm() {
 
   return (
     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-center">Set New Password</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">Đặt mật khẩu mới</h2>
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
@@ -83,15 +83,15 @@ export default function ResetPasswordForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            New Password
+            Mật khẩu mới
           </label>
           <input
             id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
-            placeholder="Enter new password"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-400 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+            placeholder="Nhập mật khẩu mới"
             required
             disabled={loading}
             minLength={6}
@@ -101,15 +101,15 @@ export default function ResetPasswordForm() {
 
         <div>
           <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-            Confirm New Password
+            Xác nhận mật khẩu mới
           </label>
           <input
             id="confirmPassword"
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
-            placeholder="Confirm new password"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-400 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+            placeholder="Nhập lại mật khẩu mới"
             required
             disabled={loading}
             minLength={6}
@@ -120,15 +120,15 @@ export default function ResetPasswordForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Updating Password...' : 'Update Password'}
+          {loading ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}
         </button>
       </form>
 
       <div className="mt-6 text-center">
-        <a href="/auth/signin" className="text-sm text-blue-600 hover:text-blue-500">
-          Back to Sign In
+        <a href="/auth/login" className="text-sm text-gray-900 hover:text-gray-700 font-medium">
+          Quay lại đăng nhập
         </a>
       </div>
     </div>

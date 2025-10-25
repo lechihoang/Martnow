@@ -47,6 +47,11 @@ const ShopContent = () => {
       setCurrentPage(1); // Reset to first page when category changes
     }
   }, [categoryFromUrl, selectedCategory]);
+
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
   
   // Fetch products function
   const fetchProducts = useCallback(async () => {
@@ -176,19 +181,19 @@ const ShopContent = () => {
 
   return (
     <div className="min-h-screen py-8">
-        {/* Mobile Filter Button */}
-        <div className="lg:hidden mb-6">
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-quickcart hover:shadow-quickcart-lg transition-all"
-          >
-            <Filter className="w-4 h-4 text-orange-600" />
-            <span className="text-gray-700">Bộ lọc</span>
-          </button>
-        </div>
+      {/* Mobile Filter Button */}
+      <div className="lg:hidden mb-6">
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-quickcart hover:shadow-quickcart-lg transition-all"
+        >
+          <Filter className="w-4 h-4 text-emerald-600" />
+          <span className="text-gray-700">Bộ lọc</span>
+        </button>
+      </div>
 
-        {/* Desktop Layout */}
-        <div className="hidden lg:flex gap-6">
+      {/* Desktop Layout */}
+      <div className="hidden lg:flex gap-6">
           {/* Sidebar */}
           <div className="w-64 flex-shrink-0">
             <ProductFilter
@@ -266,7 +271,8 @@ const ShopContent = () => {
             />
           </PageState>
         </div>
-    </div>
+      </div>
+    
   );
 };
 
@@ -275,7 +281,7 @@ const ShopPage = () => {
     <Suspense fallback={
       <div className="min-h-screen py-8">
         <div className="flex justify-center items-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
         </div>
       </div>
     }>

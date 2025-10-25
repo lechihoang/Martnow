@@ -77,11 +77,6 @@ export default function RegisterForm() {
       <div className="max-w-lg w-full space-y-8">
         {/* Logo and Header */}
         <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">M</span>
-            </div>
-          </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Tạo tài khoản mới</h2>
           <p className="text-gray-600">Tham gia cùng chúng tôi ngay hôm nay</p>
         </div>
@@ -101,10 +96,10 @@ export default function RegisterForm() {
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                          <Input 
-                            {...field} 
+                          <Input
+                            {...field}
                             placeholder="Nhập họ và tên"
-                            className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
+                            className="pl-10 border-gray-300 focus-visible:border-gray-400 focus-visible:ring-0"
                           />
                         </div>
                       </FormControl>
@@ -120,10 +115,10 @@ export default function RegisterForm() {
                     <FormItem>
                       <FormLabel className="text-gray-700 font-medium">Tên đăng nhập</FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
+                        <Input
+                          {...field}
                           placeholder="Nhập tên đăng nhập"
-                          className="border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
+                          className="border-gray-300 focus-visible:border-gray-400 focus-visible:ring-0"
                         />
                       </FormControl>
                       <FormMessage />
@@ -141,11 +136,11 @@ export default function RegisterForm() {
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <Input 
-                          {...field} 
-                          type="email" 
+                        <Input
+                          {...field}
+                          type="email"
                           placeholder="Nhập email của bạn"
-                          className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
+                          className="pl-10 border-gray-300 focus-visible:border-gray-400 focus-visible:ring-0"
                         />
                       </div>
                     </FormControl>
@@ -169,7 +164,7 @@ export default function RegisterForm() {
                             {...field}
                             type={showPassword ? "text" : "password"}
                             placeholder="Nhập mật khẩu"
-                            className="pl-10 pr-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+                            className="pl-10 pr-10 border-gray-300 focus-visible:border-gray-400 focus-visible:ring-0 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
                             autoComplete="new-password"
                           />
                           <button
@@ -199,7 +194,7 @@ export default function RegisterForm() {
                             {...field}
                             type={showConfirmPassword ? "text" : "password"}
                             placeholder="Nhập lại mật khẩu"
-                            className="pl-10 pr-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+                            className="pl-10 pr-10 border-gray-300 focus-visible:border-gray-400 focus-visible:ring-0 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
                             autoComplete="new-password"
                           />
                           <button
@@ -225,10 +220,10 @@ export default function RegisterForm() {
                     <FormLabel className="text-gray-700 font-medium">Vai trò</FormLabel>
                     <FormControl>
                       <div className="grid grid-cols-2 gap-3">
-                        <label className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 ${
-                          field.value === 'buyer' 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-200 hover:border-gray-300'
+                        <label className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                          field.value === 'buyer'
+                            ? 'border-gray-900 bg-gray-50'
+                            : 'border-gray-300 hover:border-gray-400'
                         }`}>
                           <input
                             type="radio"
@@ -238,20 +233,20 @@ export default function RegisterForm() {
                             className="sr-only"
                           />
                           <div className="flex items-center gap-3">
-                            <ShoppingBag className={`w-6 h-6 ${field.value === 'buyer' ? 'text-blue-600' : 'text-gray-400'}`} />
+                            <ShoppingBag className={`w-6 h-6 ${field.value === 'buyer' ? 'text-gray-900' : 'text-gray-400'}`} />
                             <div>
-                              <div className={`font-medium ${field.value === 'buyer' ? 'text-blue-900' : 'text-gray-900'}`}>
+                              <div className={`font-medium ${field.value === 'buyer' ? 'text-gray-900' : 'text-gray-700'}`}>
                                 Người mua
                               </div>
                               <div className="text-sm text-gray-500">Mua sắm và đặt hàng</div>
                             </div>
                           </div>
                         </label>
-                        
-                        <label className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 ${
-                          field.value === 'seller' 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-200 hover:border-gray-300'
+
+                        <label className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                          field.value === 'seller'
+                            ? 'border-gray-900 bg-gray-50'
+                            : 'border-gray-300 hover:border-gray-400'
                         }`}>
                           <input
                             type="radio"
@@ -261,9 +256,9 @@ export default function RegisterForm() {
                             className="sr-only"
                           />
                           <div className="flex items-center gap-3">
-                            <Store className={`w-6 h-6 ${field.value === 'seller' ? 'text-blue-600' : 'text-gray-400'}`} />
+                            <Store className={`w-6 h-6 ${field.value === 'seller' ? 'text-gray-900' : 'text-gray-400'}`} />
                             <div>
-                              <div className={`font-medium ${field.value === 'seller' ? 'text-blue-900' : 'text-gray-900'}`}>
+                              <div className={`font-medium ${field.value === 'seller' ? 'text-gray-900' : 'text-gray-700'}`}>
                                 Người bán
                               </div>
                               <div className="text-sm text-gray-500">Bán hàng và quản lý</div>
@@ -279,7 +274,7 @@ export default function RegisterForm() {
 
               <Button 
                 type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 transition-colors duration-200" 
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 transition-colors duration-200" 
                 disabled={loading}
               >
                 {loading ? (
@@ -299,9 +294,9 @@ export default function RegisterForm() {
           {/* Sign In Link */}
           <p className="text-center text-sm text-gray-600 mt-6">
             Đã có tài khoản?{" "}
-            <Link 
-              href="/auth/login" 
-              className="font-semibold text-blue-600 hover:text-blue-700 transition-colors duration-200"
+            <Link
+              href="/auth/login"
+              className="font-semibold text-gray-900 hover:text-gray-700 transition-colors"
             >
               Đăng nhập
             </Link>

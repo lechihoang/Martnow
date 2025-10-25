@@ -13,8 +13,6 @@ const SellerInfo: React.FC<SellerInfoProps> = ({ seller, onUpdate, readOnly = fa
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     shopName: seller.shopName || '',
-    shopAddress: seller.shopAddress || '',
-    shopPhone: seller.shopPhone || '',
     description: seller.description || '',
   });
 
@@ -27,8 +25,6 @@ const SellerInfo: React.FC<SellerInfoProps> = ({ seller, onUpdate, readOnly = fa
   const handleCancel = () => {
     setFormData({
       shopName: seller.shopName || '',
-      shopAddress: seller.shopAddress || '',
-      shopPhone: seller.shopPhone || '',
       description: seller.description || '',
     });
     setIsEditing(false);
@@ -66,30 +62,6 @@ const SellerInfo: React.FC<SellerInfoProps> = ({ seller, onUpdate, readOnly = fa
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Địa chỉ cửa hàng
-            </label>
-            <input
-              type="text"
-              value={formData.shopAddress}
-              onChange={(e) => setFormData({ ...formData, shopAddress: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Nhập địa chỉ cửa hàng"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Số điện thoại cửa hàng
-            </label>
-            <input
-              type="tel"
-              value={formData.shopPhone}
-              onChange={(e) => setFormData({ ...formData, shopPhone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Nhập số điện thoại"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
               Mô tả cửa hàng
             </label>
             <textarea
@@ -99,6 +71,11 @@ const SellerInfo: React.FC<SellerInfoProps> = ({ seller, onUpdate, readOnly = fa
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Mô tả về cửa hàng của bạn"
             />
+          </div>
+          <div className="bg-blue-50 border border-blue-200 p-3 rounded-md">
+            <p className="text-sm text-blue-800">
+              💡 <strong>Lưu ý:</strong> Địa chỉ và số điện thoại được quản lý trong phần "Thông tin cá nhân".
+            </p>
           </div>
           <div className="flex gap-2">
             <button
@@ -124,11 +101,11 @@ const SellerInfo: React.FC<SellerInfoProps> = ({ seller, onUpdate, readOnly = fa
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Địa chỉ:</span>
-            <span className="font-medium">{seller.shopAddress || 'Chưa cập nhật'}</span>
+            <span className="font-medium">{seller.user?.address || 'Chưa cập nhật'}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Số điện thoại:</span>
-            <span className="font-medium">{seller.shopPhone || 'Chưa cập nhật'}</span>
+            <span className="font-medium">{seller.user?.phone || 'Chưa cập nhật'}</span>
           </div>
           <div>
             <span className="text-gray-600 block mb-2">Mô tả:</span>

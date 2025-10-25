@@ -27,20 +27,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div className="group relative card-quickcart-product w-full max-w-full">
       {/* Image Container */}
-      <div className="relative overflow-hidden bg-gray-500/10 rounded-lg">
-        {/* Stock Badge - Top Left */}
-        {product.stock === 0 && (
-          <div className="absolute top-3 left-3 z-10">
-            <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-              Hết hàng
-            </span>
-          </div>
-        )}
-
+      <div className="relative overflow-hidden bg-white rounded-lg">
         {/* Discount Badge - Top Left */}
         {product.discount > 0 && (
           <div className="absolute top-2 left-2 z-10">
-            <span className="bg-orange-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+            <span className="bg-orange-700 text-white text-xs font-medium px-2 py-1 rounded-full">
               -{product.discount}%
             </span>
           </div>
@@ -74,39 +65,39 @@ const ProductCard: React.FC<ProductCardProps> = ({
       </div>
 
       {/* Content Container */}
-      <div className="p-4 space-y-3 flex flex-col">
+      <div className="p-4 space-y-3 flex flex-col bg-gray-100">
         {/* Product Title */}
         <Link href={`/product/${product.id}`}>
-          <Title className="text-base font-medium text-gray-900 line-clamp-2 hover:text-orange-600 transition-colors h-12 leading-6">
+          <Title className="text-base font-medium text-gray-900 line-clamp-2 hover:text-emerald-600 transition-colors h-12 leading-6">
             {product?.name}
           </Title>
         </Link>
 
         {/* Rating */}
         <div className="flex items-center gap-1 text-sm">
-          {/* 5-star rating display */}
-          <div className="flex items-center gap-0.5">
-            {[1, 2, 3, 4, 5].map((star) => {
-              const rating = product.averageRating ? parseFloat(String(product.averageRating)) : 0;
-              const isFilled = star <= Math.round(rating);
-              return (
-                <Star
-                  key={star}
-                  className={`w-4 h-4 ${
-                    isFilled
-                      ? 'fill-yellow-400 text-yellow-400'
-                      : 'text-gray-300'
-                  }`}
-                />
-              );
-            })}
-          </div>
-          <span className="text-gray-500 ml-1">
+          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+          <span className="text-gray-700 font-medium">
             {product.averageRating && parseFloat(String(product.averageRating)) > 0
               ? parseFloat(String(product.averageRating)).toFixed(1)
               : '0.0'
             }
           </span>
+          {product.reviewCount && product.reviewCount > 0 && (
+            <span className="text-gray-500 text-xs">
+              ({product.reviewCount})
+            </span>
+          )}
+        </div>
+
+        {/* Stock Status */}
+        <div className="text-sm">
+          {!product.isAvailable ? (
+            <span className="text-gray-600 font-medium">Ngừng bán</span>
+          ) : product.stock === 0 ? (
+            <span className="text-red-600 font-medium">Hết hàng</span>
+          ) : (
+            <span className="text-emerald-600 font-medium">Còn {product.stock} sản phẩm</span>
+          )}
         </div>
 
         {/* Price */}

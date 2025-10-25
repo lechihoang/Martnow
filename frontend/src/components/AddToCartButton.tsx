@@ -80,15 +80,18 @@ const AddToCartButton = ({
         seller: product.seller ? {
           id: product.seller.id,
           shopName: product.seller.shopName || 'Unknown Shop',
-          shopAddress: product.seller.shopAddress || '',
-          user: product.seller.user || {
+          user: product.seller.user ? {
+            name: product.seller.user.name,
+            username: product.seller.user.username,
+            address: product.seller.user.address,
+            phone: product.seller.user.phone
+          } : {
             name: 'Unknown Seller',
             username: 'unknown'
           }
         } : {
           id: product.sellerId,
           shopName: 'Unknown Shop',
-          shopAddress: '',
           user: {
             name: 'Unknown Seller',
             username: 'unknown'

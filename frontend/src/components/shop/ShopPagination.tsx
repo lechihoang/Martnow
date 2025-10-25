@@ -62,7 +62,7 @@ const ShopPagination: React.FC<ShopPaginationProps> = ({
               onClick={() => onPageChange(page as number)}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 currentPage === page
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-emerald-600 text-white'
                   : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
               }`}
             >

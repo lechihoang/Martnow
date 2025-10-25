@@ -70,11 +70,11 @@ export default function ChangePasswordForm({ onSuccess, onCancel }: ChangePasswo
 
   return (
     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-center">Change Password</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">Đổi mật khẩu</h2>
 
       {success && (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded">
-          Password changed successfully!
+          Đổi mật khẩu thành công!
         </div>
       )}
 
@@ -87,15 +87,15 @@ export default function ChangePasswordForm({ onSuccess, onCancel }: ChangePasswo
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
-            Current Password
+            Mật khẩu hiện tại
           </label>
           <input
             id="currentPassword"
             type="password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
-            placeholder="Enter current password"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-400 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+            placeholder="Nhập mật khẩu hiện tại"
             required
             disabled={loading}
             autoComplete="current-password"
@@ -104,15 +104,15 @@ export default function ChangePasswordForm({ onSuccess, onCancel }: ChangePasswo
 
         <div>
           <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-            New Password
+            Mật khẩu mới
           </label>
           <input
             id="newPassword"
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
-            placeholder="Enter new password"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-400 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+            placeholder="Nhập mật khẩu mới"
             required
             disabled={loading}
             minLength={6}
@@ -122,15 +122,15 @@ export default function ChangePasswordForm({ onSuccess, onCancel }: ChangePasswo
 
         <div>
           <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-            Confirm New Password
+            Xác nhận mật khẩu mới
           </label>
           <input
             id="confirmPassword"
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
-            placeholder="Confirm new password"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-400 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
+            placeholder="Nhập lại mật khẩu mới"
             required
             disabled={loading}
             minLength={6}
@@ -142,9 +142,9 @@ export default function ChangePasswordForm({ onSuccess, onCancel }: ChangePasswo
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Changing...' : 'Change Password'}
+            {loading ? 'Đang đổi...' : 'Đổi mật khẩu'}
           </button>
 
           {onCancel && (
@@ -154,7 +154,7 @@ export default function ChangePasswordForm({ onSuccess, onCancel }: ChangePasswo
               disabled={loading}
               className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Cancel
+              Hủy
             </button>
           )}
         </div>

@@ -38,18 +38,11 @@ const ProductImage = ({
         className={cn(
           "w-full object-contain transition-transform duration-500",
           sizeClasses[size],
-          isAvailable 
-            ? "group-hover:scale-105" 
+          isAvailable
+            ? "group-hover:scale-105"
             : "opacity-50 grayscale"
         )}
       />
-      {!isAvailable && (
-        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-          <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-            Hết hàng
-          </span>
-        </div>
-      )}
     </div>
   );
 };

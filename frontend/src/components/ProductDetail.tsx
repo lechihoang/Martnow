@@ -45,10 +45,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       seller: {
         id: product.seller.id,
         shopName: product.seller?.shopName,
-        shopAddress: product.seller?.shopAddress,
         user: {
           name: product.seller?.user?.name || '',
           username: product.seller?.user?.username || '',
+          address: product.seller?.user?.address,
+          phone: product.seller?.user?.phone,
         },
       },
       category: {
@@ -98,17 +99,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             {/* Discount Badge - Top Left */}
             {product.discount > 0 && (
               <div className="absolute top-3 left-3 z-10">
-                <span className="bg-orange-600 text-white text-sm font-medium px-3 py-1.5 rounded-full shadow-lg">
+                <span className="bg-orange-700 text-white text-sm font-medium px-3 py-1.5 rounded-full shadow-lg">
                   -{product.discount}%
-                </span>
-              </div>
-            )}
-
-            {/* Stock Badge - Top Left (below discount if both exist) */}
-            {product.stock === 0 && (
-              <div className={`absolute ${product.discount > 0 ? 'top-14' : 'top-3'} left-3 z-10`}>
-                <span className="bg-red-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                  Hết hàng
                 </span>
               </div>
             )}
@@ -140,7 +132,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 <div
                   key={index}
                   className={cn(
-                    "aspect-square bg-gray-100 rounded-md border-2 cursor-pointer transition-colors",
+                    "aspect-square bg-gray-500/10 rounded-md border-2 cursor-pointer transition-colors",
                     selectedImageIndex === index
                       ? "border-blue-500"
                       : "border-transparent hover:border-blue-500"
@@ -162,14 +154,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
         {/* Product Info Section */}
         <div className="space-y-6">
-          <ProductInfo
-            product={product}
-            variant="detail"
-            showDescription={true}
-            showCategory={true}
-            showStock={true}
-            showRating={true}
-          />
+          <ProductInfo product={product} />
 
           {/* Action Buttons */}
           <div className="space-y-3">

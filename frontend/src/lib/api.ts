@@ -359,6 +359,18 @@ export const productApi = {
     });
     return handleResponse(response);
   },
+
+  async getProductsBySellerId(sellerId: string): Promise<ProductResponseDto[]> {
+    const response = await fetch(`${API_BASE_URL}/product/seller/${sellerId}`, {
+      headers: await getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  async getPopularProducts(limit: number = 10): Promise<ProductResponseDto[]> {
+    const response = await fetch(`${API_BASE_URL}/product/popular?limit=${limit}`);
+    return handleResponse(response);
+  },
 };
 
 // Order API
@@ -404,7 +416,7 @@ export const orderApi = {
     return handleResponse(response);
   },
 
-  async getSellerOrders(sellerId: string): Promise<OrderResponseDto[]> {
+  async getSellerOrders(sellerId: string): Promise<ApiResponse<OrderResponseDto[]>> {
     const response = await fetch(`${API_BASE_URL}/order/seller/${sellerId}`, {
       headers: await getAuthHeaders(),
     });

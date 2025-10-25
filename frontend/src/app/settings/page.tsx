@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { getUserProfile } from '@/lib/api';
+import { getUserProfile, userApi } from '@/lib/api';
 import { UserProfile } from '@/types/auth';
-import { UserRole } from '@/types/entities';
+import { UserRole, User } from '@/types/entities';
 import { User as UserIcon, Lock } from 'lucide-react';
 import SettingsLayout, { SettingsTab } from '@/components/settings/SettingsLayout';
 import ProfileTab from '@/components/settings/ProfileTab';
@@ -74,6 +74,27 @@ const SettingsPage: React.FC = () => {
 
   const visibleTabs = getVisibleTabs(userProfile?.role);
 
+  const handleUpdateProfile = async (updatedData: Partial<User>) => {
+    if (!userProfile) return;
+
+    try {
+      // Call API to update user profile
+      const response = await userApi.updateProfile(userProfile.id, updatedData);
+
+      console.log('✅ Profile updated successfully:', response);
+
+      // Refresh user profile from server to get latest data
+      const refreshedProfile = await getUserProfile();
+      if (refreshedProfile && refreshedProfile.id) {
+        setUserProfile(refreshedProfile);
+        console.log('✅ Profile refreshed with new data:', refreshedProfile);
+      }
+    } catch (error) {
+      console.error('❌ Failed to update profile:', error);
+      throw error; // Re-throw to let UserInfo handle the error
+    }
+  };
+
   const renderTabContent = () => {
     if (!userProfile) return null;
 
@@ -82,7 +103,7 @@ const SettingsPage: React.FC = () => {
         return (
           <ProfileTab
             user={userProfile}
-            onUpdate={async () => {}}
+            onUpdate={handleUpdateProfile}
           />
         );
       case 'security':

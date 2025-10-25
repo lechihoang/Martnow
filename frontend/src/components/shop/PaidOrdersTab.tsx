@@ -91,7 +91,7 @@ const PaidOrdersTab: React.FC<PaidOrdersTabProps> = ({ userProfile }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400"></div>
         <span className="ml-3 text-gray-600">Đang tải đơn hàng...</span>
       </div>
     );
@@ -103,9 +103,9 @@ const PaidOrdersTab: React.FC<PaidOrdersTabProps> = ({ userProfile }) => {
         <div className="text-red-500 text-6xl mb-4">⚠️</div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">Lỗi</h3>
         <p className="text-gray-600 mb-4">{error}</p>
-        <button 
+        <button
           onClick={fetchPaidOrders}
-          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
         >
           Thử lại
         </button>
@@ -132,36 +132,45 @@ const PaidOrdersTab: React.FC<PaidOrdersTabProps> = ({ userProfile }) => {
   return (
     <div>
       {/* Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <div className="text-green-600 text-2xl mr-3">💰</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-6 h-full">
+          <div className="flex items-center h-full">
+            <div className="text-green-600 text-3xl mr-4">💰</div>
             <div>
               <p className="text-sm text-green-600 font-medium">Tổng doanh thu</p>
-              <p className="text-2xl font-bold text-green-900">
+              <p className="text-2xl font-bold text-green-700">
                 {totalRevenue.toLocaleString('vi-VN')}đ
+              </p>
+              <p className="text-xs text-green-600 mt-1">
+                Từ {orders.length} đơn đã thanh toán
               </p>
             </div>
           </div>
         </div>
-        
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <div className="text-blue-600 text-2xl mr-3">📦</div>
+
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6 h-full">
+          <div className="flex items-center h-full">
+            <div className="text-blue-600 text-3xl mr-4">📦</div>
             <div>
               <p className="text-sm text-blue-600 font-medium">Tổng đơn hàng</p>
-              <p className="text-2xl font-bold text-blue-900">{orders.length}</p>
+              <p className="text-2xl font-bold text-blue-700">{orders.length}</p>
+              <p className="text-xs text-blue-600 mt-1">
+                Đơn hàng đã hoàn thành
+              </p>
             </div>
           </div>
         </div>
-        
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <div className="text-purple-600 text-2xl mr-3">📊</div>
+
+        <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6 h-full">
+          <div className="flex items-center h-full">
+            <div className="text-purple-600 text-3xl mr-4">🎯</div>
             <div>
-              <p className="text-sm text-purple-600 font-medium">Trung bình/đơn</p>
-              <p className="text-2xl font-bold text-purple-900">
+              <p className="text-sm text-purple-600 font-medium">Giá trị TB/đơn</p>
+              <p className="text-2xl font-bold text-purple-700">
                 {Math.round(totalRevenue / orders.length).toLocaleString('vi-VN')}đ
+              </p>
+              <p className="text-xs text-purple-600 mt-1">
+                Mỗi đơn hàng
               </p>
             </div>
           </div>

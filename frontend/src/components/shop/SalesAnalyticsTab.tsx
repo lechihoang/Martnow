@@ -44,7 +44,7 @@ const SalesAnalyticsTab: React.FC = () => {
 
       // Lấy dữ liệu từ API
       const response = await orderApi.getSellerOrders(user.id);
-      const orders: SellerOrder[] = (response as unknown as SellerOrder[]) || [];
+      const orders: SellerOrder[] = (response.data as unknown as SellerOrder[]) || [];
 
       console.log('📦 Seller orders:', orders);
 
@@ -148,7 +148,7 @@ const SalesAnalyticsTab: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400"></div>
         <span className="ml-3 text-gray-600">Đang tải dữ liệu...</span>
       </div>
     );
@@ -162,7 +162,7 @@ const SalesAnalyticsTab: React.FC = () => {
         <p className="text-gray-600 mb-4">{error}</p>
         <button
           onClick={fetchSalesData}
-          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
         >
           Thử lại
         </button>
@@ -188,7 +188,7 @@ const SalesAnalyticsTab: React.FC = () => {
               onClick={() => setTimeRange(option.key)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 timeRange === option.key
-                  ? 'bg-white text-green-600 shadow-sm'
+                  ? 'bg-white text-emerald-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -200,8 +200,8 @@ const SalesAnalyticsTab: React.FC = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
-          <div className="flex items-center">
+        <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-6 h-full">
+          <div className="flex items-center h-full">
             <div className="text-green-600 text-3xl mr-4">💰</div>
             <div>
               <p className="text-sm text-green-600 font-medium">Tổng doanh thu</p>
@@ -215,8 +215,8 @@ const SalesAnalyticsTab: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
-          <div className="flex items-center">
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6 h-full">
+          <div className="flex items-center h-full">
             <div className="text-blue-600 text-3xl mr-4">📦</div>
             <div>
               <p className="text-sm text-blue-600 font-medium">Tổng đơn hàng</p>
@@ -231,8 +231,8 @@ const SalesAnalyticsTab: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6">
-          <div className="flex items-center">
+        <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6 h-full">
+          <div className="flex items-center h-full">
             <div className="text-purple-600 text-3xl mr-4">🎯</div>
             <div>
               <p className="text-sm text-purple-600 font-medium">Giá trị TB/đơn</p>

@@ -24,8 +24,6 @@ export interface Buyer {
 export interface Seller {
   id: string;
   shopName?: string;
-  shopAddress?: string;
-  shopPhone?: string;
   description?: string;
   user?: User;
 }
@@ -50,10 +48,11 @@ export interface Product {
   seller: {
     id: string;
     shopName?: string;
-    shopAddress?: string;
     user: {
       name: string;
       username: string;
+      address?: string;
+      phone?: string;
     };
   };
   category: {

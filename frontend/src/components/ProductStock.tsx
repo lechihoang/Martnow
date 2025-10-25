@@ -14,14 +14,25 @@ const ProductStock = ({
   className 
 }: ProductStockProps) => {
   const getStockStatus = () => {
-    if (!isAvailable || stock === 0) {
+    // Check if product is disabled by seller
+    if (!isAvailable) {
       return {
-        text: "Đã hết hàng",
+        text: "Ngừng bán",
+        color: "text-gray-600",
+        bgColor: "bg-gray-50"
+      };
+    }
+
+    // Check if out of stock
+    if (stock === 0) {
+      return {
+        text: "Hết hàng",
         color: "text-red-600",
         bgColor: "bg-red-50"
       };
     }
-    
+
+    // Low stock warning
     if (stock <= 5) {
       return {
         text: `Chỉ còn ${stock} sản phẩm`,
@@ -29,7 +40,8 @@ const ProductStock = ({
         bgColor: "bg-orange-50"
       };
     }
-    
+
+    // Medium stock
     if (stock <= 20) {
       return {
         text: `${stock} sản phẩm có sẵn`,
@@ -37,9 +49,10 @@ const ProductStock = ({
         bgColor: "bg-yellow-50"
       };
     }
-    
+
+    // High stock - available
     return {
-      text: `${stock} sản phẩm có sẵn`,
+      text: "Đang bán",
       color: "text-green-600",
       bgColor: "bg-green-50"
     };
