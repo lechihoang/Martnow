@@ -5,9 +5,10 @@ import Image from 'next/image';
 import { ArrowLeft, MapPin, Phone, Mail, Calendar, Store, Package } from 'lucide-react';
 
 import { UserResponseDto, SellerResponseDto, BuyerResponseDto, ProductResponseDto } from '@/types/dtos';
-import { userApi, productApi } from '@/lib/api';
+import { userApi, productApi, getUserProfile } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import ProductCard from '@/components/ProductCard';
+import { UserProfile } from '@/types/auth';
 
 const ProfilePage: React.FC = () => {
   const router = useRouter();
@@ -24,7 +25,7 @@ const ProfilePage: React.FC = () => {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
 
   const fetchUserData = useCallback(async () => {
     try {
@@ -32,7 +33,7 @@ const ProfilePage: React.FC = () => {
       setError(null);
 
       const response = await userApi.getProfileById(userId);
-      const userData = response?.data;
+      const userData = response?.data as unknown as UserResponseDto;
 
       if (!userData || !userData.id) {
         setError('Không tìm thấy thông tin người dùng');
@@ -41,32 +42,37 @@ const ProfilePage: React.FC = () => {
       }
 
       setProfileData({
-        user: userData as unknown as UserResponseDto,
+        user: userData,
         seller: userData.sellerInfo ? {
           id: userData.sellerInfo.id,
           userId: userData.id,
           shopName: userData.sellerInfo.shopName,
           description: userData.sellerInfo.description,
+          totalProducts: 0,
           user: {
             id: userData.id,
             name: userData.name,
             username: userData.username,
             email: userData.email,
-            role: userData.role,
             address: userData.address,
             phone: userData.phone,
           },
+          createdAt: new Date(),
+          updatedAt: new Date(),
         } as SellerResponseDto : undefined,
         buyer: userData.buyerInfo ? {
           id: userData.buyerInfo.id,
           userId: userData.id,
+          totalOrders: 0,
+          totalReviews: 0,
           user: {
             id: userData.id,
             name: userData.name,
             username: userData.username,
             email: userData.email,
-            role: userData.role,
           },
+          createdAt: new Date(),
+          updatedAt: new Date(),
         } as BuyerResponseDto : undefined,
       });
       setLoading(false);
@@ -111,16 +117,10 @@ const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     if (currentUser) {
-      userApi.getProfile()
+      getUserProfile()
         .then(profile => {
-          if (profile?.data) {
-            setCurrentUserProfile({
-              id: profile.data.id,
-              name: profile.data.name,
-              username: profile.data.username,
-              email: profile.data.email,
-              role: profile.data.role,
-            });
+          if (profile) {
+            setCurrentUserProfile(profile);
           }
         })
         .catch(err => console.error('Error fetching current user profile:', err));

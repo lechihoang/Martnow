@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { getUserProfile } from '@/lib/api';
 import { UserProfile } from '@/types/auth';
@@ -14,7 +13,6 @@ import SalesAnalyticsTab from '@/components/shop/SalesAnalyticsTab';
 type TabType = 'orders' | 'products' | 'analytics';
 
 const ShopDashboard: React.FC = () => {
-  const router = useRouter();
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('orders');

@@ -1,4 +1,3 @@
-import { twMerge } from "tailwind-merge";
 import { cn } from "@/lib/utils";
 import PriceFormatter from "./PriceFormatter";
 

@@ -364,7 +364,7 @@ const ProductsTab: React.FC = () => {
 
             {/* Message */}
             <p className="text-gray-600 text-center mb-6">
-              Bạn có chắc chắn muốn xóa sản phẩm <span className="font-semibold text-gray-900">"{confirmDelete.productName}"</span>?
+              Bạn có chắc chắn muốn xóa sản phẩm <span className="font-semibold text-gray-900">&quot;{confirmDelete.productName}&quot;</span>?
               <br />
               <span className="text-red-600 text-sm">Hành động này không thể hoàn tác.</span>
             </p>

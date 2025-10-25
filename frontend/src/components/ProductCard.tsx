@@ -82,9 +82,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
               : '0.0'
             }
           </span>
-          {product.reviewCount && product.reviewCount > 0 && (
+          {product.totalReviews && product.totalReviews > 0 && (
             <span className="text-gray-500 text-xs">
-              ({product.reviewCount})
+              ({product.totalReviews})
             </span>
           )}
         </div>

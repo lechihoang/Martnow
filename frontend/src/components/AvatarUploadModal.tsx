@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
-import { X, Upload, Trash2 } from 'lucide-react';
+import { X, Upload } from 'lucide-react';
 import { uploadApi } from '@/lib/api';
 
 interface AvatarUploadModalProps {

@@ -144,11 +144,7 @@ const ShopContent = () => {
         setCategories(categoriesData.map((cat) => cat.name));
       } catch (error) {
         console.error('Error fetching categories:', error);
-        // Fallback to product categories only on error
-        if (products.length > 0) {
-          const uniqueCategories = new Set(products.map(p => p.category?.name).filter(Boolean));
-          setCategories(Array.from(uniqueCategories));
-        }
+        // Categories will be empty on error - products will still show
       }
     };
 

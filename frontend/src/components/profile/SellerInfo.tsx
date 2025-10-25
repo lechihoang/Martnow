@@ -74,7 +74,7 @@ const SellerInfo: React.FC<SellerInfoProps> = ({ seller, onUpdate, readOnly = fa
           </div>
           <div className="bg-blue-50 border border-blue-200 p-3 rounded-md">
             <p className="text-sm text-blue-800">
-              💡 <strong>Lưu ý:</strong> Địa chỉ và số điện thoại được quản lý trong phần "Thông tin cá nhân".
+              💡 <strong>Lưu ý:</strong> Địa chỉ và số điện thoại được quản lý trong phần &quot;Thông tin cá nhân&quot;.
             </p>
           </div>
           <div className="flex gap-2">

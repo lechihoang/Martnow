@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { productApi, getUserProfile, uploadApi } from '@/lib/api';
-import { ArrowLeft, Upload, X, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { User } from '@/types/entities';
 import toast from 'react-hot-toast';
+import { X } from 'lucide-react';
 
 interface Category {
   id: number;

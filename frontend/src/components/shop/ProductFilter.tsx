@@ -73,7 +73,7 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+        <div className="flex items-center justify-between py-4 px-4 lg:px-0 border-b border-gray-200 flex-shrink-0">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-emerald-600" />
               <h3 className="font-semibold text-gray-900">Bộ lọc</h3>
