@@ -60,19 +60,19 @@ export async function getAuthHeaders(): Promise<HeadersInit> {
     console.error('Supabase client not initialized');
     throw new Error('Supabase client not initialized');
   }
-  
+
   try {
     console.log('🔍 getAuthHeaders: Getting session...');
     const { data: { session }, error } = await supabase.auth.getSession();
-    
+
     if (error) {
       console.error('❌ getAuthHeaders: Error getting session:', error);
       throw new Error('Failed to get session: ' + error.message);
     }
-    
+
     console.log('🔍 getAuthHeaders: Session exists:', !!session);
     console.log('🔍 getAuthHeaders: Access token exists:', !!session?.access_token);
-    
+
     const headers: HeadersInit = {};
 
     if (session?.access_token) {
@@ -87,6 +87,27 @@ export async function getAuthHeaders(): Promise<HeadersInit> {
   } catch (error) {
     console.error('❌ getAuthHeaders: Error:', error);
     throw error;
+  }
+}
+
+// Helper function để get optional authentication headers (không throw error nếu không có session)
+export async function getOptionalAuthHeaders(): Promise<HeadersInit> {
+  if (!supabase) {
+    return {};
+  }
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    const headers: HeadersInit = {};
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    return headers;
+  } catch (error) {
+    console.error('Error getting optional auth headers:', error);
+    return {};
   }
 }
 
@@ -293,7 +314,7 @@ export const userApi = {
 
   async getProfileById(userId: string): Promise<ApiResponse<User>> {
     const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-      headers: await getAuthHeaders(),
+      headers: await getOptionalAuthHeaders(),
     });
     return handleResponse(response);
   },
@@ -362,7 +383,7 @@ export const productApi = {
 
   async getProductsBySellerId(sellerId: string): Promise<ProductResponseDto[]> {
     const response = await fetch(`${API_BASE_URL}/product/seller/${sellerId}`, {
-      headers: await getAuthHeaders(),
+      headers: await getOptionalAuthHeaders(),
     });
     return handleResponse(response);
   },

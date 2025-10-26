@@ -54,6 +54,7 @@ export class AuthService {
         name: signupDto.name || 'User',
         username: signupDto.username || `user_${Date.now()}`,
         role: UserRole.BUYER, // Default role
+        // avatar will be null - frontend will show User icon
       });
 
       await this.userRepository.save(user);

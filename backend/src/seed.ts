@@ -49,7 +49,7 @@ const USERS = [
     email: 'buyer@foodee.com',
     password: '123456',
     role: UserRole.BUYER,
-    avatar: '/images/avatars/buyer-avatar.jpg',
+    avatar: null, // Will show User icon in frontend
     address: '123 Nguyễn Văn Cừ, Phường 3, Quận 5, TP.HCM',
     phone: '0912345678',
   },
@@ -59,7 +59,7 @@ const USERS = [
     email: 'cuong@foodee.com',
     password: '123456',
     role: UserRole.BUYER,
-    avatar: '/images/avatars/cuong-avatar.jpg',
+    avatar: null, // Will show User icon in frontend
     address: '456 Trần Hưng Đạo, Phường Bến Nghé, Quận 1, TP.HCM',
     phone: '0987654321',
   },
@@ -69,7 +69,7 @@ const USERS = [
     email: 'mai@foodee.com',
     password: '123456',
     role: UserRole.BUYER,
-    avatar: '/images/avatars/mai-avatar.jpg',
+    avatar: null, // Will show User icon in frontend
     address: '789 Lê Văn Việt, Phường Tăng Nhơn Phú A, TP.Thủ Đức',
     phone: '0918765432',
   },
@@ -81,7 +81,7 @@ const USERS = [
     email: 'minh@foodee.com',
     password: '123456',
     role: UserRole.SELLER,
-    avatar: '/images/avatars/minh-avatar.jpg',
+    avatar: null, // Will show User icon in frontend
     address: '45 Chợ Bến Thành, Quận 1, TP.HCM',
     phone: '0901111111',
     sellerInfo: {
@@ -98,7 +98,7 @@ const USERS = [
     email: 'huong@foodee.com',
     password: '123456',
     role: UserRole.SELLER,
-    avatar: '/images/avatars/huong-avatar.jpg',
+    avatar: null, // Will show User icon in frontend
     address: '123 Chợ Tân Định, Quận 1, TP.HCM',
     phone: '0902222222',
     sellerInfo: {
@@ -115,7 +115,7 @@ const USERS = [
     email: 'duc@foodee.com',
     password: '123456',
     role: UserRole.SELLER,
-    avatar: '/images/avatars/duc-avatar.jpg',
+    avatar: null, // Will show User icon in frontend
     address: '789 Nguyễn Thị Minh Khai, Quận 3, TP.HCM',
     phone: '0903333333',
     sellerInfo: {
@@ -132,7 +132,7 @@ const USERS = [
     email: 'lan@foodee.com',
     password: '123456',
     role: UserRole.SELLER,
-    avatar: '/images/avatars/lan-avatar.jpg',
+    avatar: null, // Will show User icon in frontend
     address: '234 Võ Văn Tần, Quận 3, TP.HCM',
     phone: '0904444444',
     sellerInfo: {
@@ -149,7 +149,7 @@ const USERS = [
     email: 'tung@foodee.com',
     password: '123456',
     role: UserRole.SELLER,
-    avatar: '/images/avatars/tung-avatar.jpg',
+    avatar: null, // Will show User icon in frontend
     address: '567 Pasteur, Quận 1, TP.HCM',
     phone: '0905555555',
     sellerInfo: {
@@ -165,7 +165,7 @@ const USERS = [
     email: 'kim@foodee.com',
     password: '123456',
     role: UserRole.SELLER,
-    avatar: '/images/avatars/kim-avatar.jpg',
+    avatar: null, // Will show User icon in frontend
     address: '890 Cách Mạng Tháng 8, Quận 10, TP.HCM',
     phone: '0906666666',
     sellerInfo: {
@@ -178,78 +178,280 @@ const USERS = [
 ];
 
 const PRODUCTS = [
-  // Lương thực - Trần Văn Minh
+  // Gia vị - Trần Văn Minh
   {
-    name: 'Gạo ST25 túi 5kg',
-    description: 'Gạo ST25 thơm dẻo, được yêu thích nhất Việt Nam',
-    price: 180000,
-    categoryName: 'Lương thực',
-    stock: 100,
+    name: 'Dầu đậu nành Simply (1 lít)',
+    description: 'Dầu đậu nành Simply 100% tinh khiết, không cholesterol, tốt cho sức khỏe tim mạch',
+    price: 42000,
+    categoryName: 'Gia vị',
+    stock: 90,
     sellerUsername: 'seller_minh',
+    imageUrl: '/product/product1.jpg',
+  },
+  {
+    name: 'Đường tinh luyện Biên Hòa Pure (1kg)',
+    description: 'Đường tinh luyện Biên Hòa Pure tinh khiết tự nhiên, hạt mịn tan nhanh',
+    price: 28000,
+    categoryName: 'Lương thực',
+    stock: 80,
+    sellerUsername: 'seller_minh',
+    imageUrl: '/product/product2.png',
+  },
+  {
+    name: 'Chảo chống dính 28cm',
+    description: 'Chảo chống dính cao cấp size 28cm, đáy từ 3 lớp, phù hợp mọi loại bếp',
+    price: 250000,
+    categoryName: 'Đồ gia dụng',
+    stock: 25,
+    sellerUsername: 'seller_lan',
+    imageUrl: '/product/product3.jpeg',
   },
   {
     name: 'Đậu đỏ loại 1 (500g)',
-    description: 'Đậu đỏ hạt to, dùng nấu chè, làm bánh',
+    description: 'Đậu đỏ hạt to đều, màu đỏ tươi, dùng nấu chè, làm bánh, giàu dinh dưỡng',
     price: 45000,
     categoryName: 'Lương thực',
     stock: 80,
     sellerUsername: 'seller_minh',
+    imageUrl: '/product/product4.jpg',
   },
   {
-    name: 'Bột mì đa dụng (1kg)',
-    description: 'Bột mì đa dụng số 8, làm bánh mì, bánh ngọt',
+    name: 'Nước mắm Phú Quốc (500ml)',
+    description: 'Nước mắm Phú Quốc truyền thống độ đạm 40 độ đạm, hương vị đậm đà',
+    price: 75000,
+    categoryName: 'Gia vị',
+    stock: 50,
+    sellerUsername: 'seller_minh',
+    imageUrl: '/product/product5.jpg',
+  },
+  {
+    name: 'Bột mì đa dụng Meizan (1kg)',
+    description: 'Bột mì đa dụng cao cấp Meizan, làm bánh mì, bánh ngọt, bánh pizza',
     price: 35000,
     categoryName: 'Lương thực',
     stock: 60,
     sellerUsername: 'seller_minh',
+    imageUrl: '/product/product6.jpg',
   },
   {
-    name: 'Đường cát trắng (1kg)',
-    description: 'Đường cát trắng tinh luyện cao cấp',
+    name: 'Xà phòng diệt khuẩn Lifebuoy (90g x 4)',
+    description: 'Xà phòng Lifebuoy diệt khuẩn 99.9%, bảo vệ da khỏi vi khuẩn, combo 4 bánh',
+    price: 28000,
+    categoryName: 'Đồ dùng vệ sinh',
+    stock: 60,
+    sellerUsername: 'seller_lan',
+    imageUrl: '/product/product7.jpeg',
+  },
+  {
+    name: 'Tương ớt Chinsu (500g)',
+    description: 'Tương ớt Chinsu cay ngọt đậm đà, hương vị đặc trưng Việt Nam',
+    price: 32000,
+    categoryName: 'Gia vị',
+    stock: 70,
+    sellerUsername: 'seller_minh',
+    imageUrl: '/product/product8.jpg',
+  },
+  {
+    name: 'Dao thái cao cấp Elmich (20cm)',
+    description: 'Dao thái cao cấp Elmich Diamond, lưỡi dao sắc bén, cán cầm êm tay',
+    price: 195000,
+    categoryName: 'Đồ gia dụng',
+    stock: 35,
+    sellerUsername: 'seller_lan',
+    imageUrl: '/product/product9.jpg',
+  },
+  {
+    name: 'Hộp đựng thực phẩm (bộ 5 chiếc)',
+    description: 'Bộ 5 hộp đựng thực phẩm nhựa PP an toàn, kín khí, bảo quản thực phẩm tươi lâu',
+    price: 125000,
+    categoryName: 'Đồ gia dụng',
+    stock: 30,
+    sellerUsername: 'seller_lan',
+    imageUrl: '/product/product10.jpeg',
+  },
+  {
+    name: 'Bình đựng nước 2.5L',
+    description: 'Bình đựng nước nhựa trong suốt 2.5L, có vòi rót tiện lợi',
+    price: 85000,
+    categoryName: 'Đồ gia dụng',
+    stock: 40,
+    sellerUsername: 'seller_lan',
+    imageUrl: '/product/product11.jpeg',
+  },
+  {
+    name: 'Giấy vệ sinh Paseo (6 cuộn)',
+    description: 'Giấy vệ sinh Paseo Elegant 3 lớp siêu mềm, thấm hút tốt',
+    price: 45000,
+    categoryName: 'Đồ dùng vệ sinh',
+    stock: 50,
+    sellerUsername: 'seller_lan',
+    imageUrl: '/product/product12.jpeg',
+  },
+  {
+    name: 'Bột giặt Omo (6kg)',
+    description: 'Bột giặt Omo hệ bọt thông minh, khử mùi và diệt khuẩn vượt trội',
+    price: 185000,
+    categoryName: 'Đồ dùng vệ sinh',
+    stock: 30,
+    sellerUsername: 'seller_lan',
+    imageUrl: '/product/product13.jpg',
+  },
+  {
+    name: 'Gạo ST25 túi 5kg',
+    description: 'Gạo ST25 đặc sản Sóc Trăng thơm dẻo tự nhiên, gạo ngon nhất thế giới 2019',
+    price: 180000,
+    categoryName: 'Lương thực',
+    stock: 100,
+    sellerUsername: 'seller_minh',
+    imageUrl: '/product/product14.jpg',
+  },
+  {
+    name: 'Sữa đặc có đường Ông Thọ (380g)',
+    description: 'Sữa đặc Ông Thọ có đường Vinamilk, vị ngọt thơm béo, pha cà phê tuyệt vời',
     price: 25000,
     categoryName: 'Lương thực',
-    stock: 80,
-    sellerUsername: 'seller_minh',
-  },
-
-  // Thực phẩm chế biến - Lê Thị Hương
-  {
-    name: 'Thịt bò đông lạnh (1kg)',
-    description: 'Thịt bò đông lạnh nhập khẩu, thích hợp nướng BBQ',
-    price: 280000,
-    categoryName: 'Thực phẩm chế biến',
-    stock: 20,
-    sellerUsername: 'seller_huong',
-  },
-  {
-    name: 'Cá hồi phi lê đông lạnh',
-    description: 'Cá hồi phi lê đông lạnh Na Uy, giàu omega-3',
-    price: 350000,
-    categoryName: 'Thực phẩm chế biến',
-    stock: 15,
-    sellerUsername: 'seller_huong',
-  },
-  {
-    name: 'Xúc xích Đức (500g)',
-    description: 'Xúc xích Đức nguyên chất, không chất bảo quản',
-    price: 120000,
-    categoryName: 'Thực phẩm chế biến',
-    stock: 40,
-    sellerUsername: 'seller_huong',
-  },
-  {
-    name: 'Pate gan heo (200g)',
-    description: 'Pate gan heo thơm ngon, ăn kèm bánh mì',
-    price: 45000,
-    categoryName: 'Thực phẩm chế biến',
     stock: 50,
-    sellerUsername: 'seller_huong',
+    sellerUsername: 'seller_kim',
+    imageUrl: '/product/product15.jpg',
   },
-
-  // Đồ uống - Trần Thanh Tùng
+  {
+    name: 'Sữa chua và Yogurt Vinamilk (combo 4 hộp)',
+    description: 'Combo sữa chua và yogurt Vinamilk lên men tự nhiên, tốt cho tiêu hóa',
+    price: 32000,
+    categoryName: 'Lương thực',
+    stock: 60,
+    sellerUsername: 'seller_kim',
+    imageUrl: '/product/product16.jpeg',
+  },
+  {
+    name: 'Trứng gà ta tươi (10 quả)',
+    description: 'Trứng gà ta nuôi thả vườn tự nhiên 100%, giàu dinh dưỡng, an toàn',
+    price: 45000,
+    categoryName: 'Lương thực',
+    stock: 100,
+    sellerUsername: 'seller_kim',
+    imageUrl: '/product/product17.jpg',
+  },
+  {
+    name: 'Sữa tươi Vinamilk 100% (1 lít)',
+    description: 'Sữa tươi Vinamilk 100% không đường, bổ sung canxi và vitamin D',
+    price: 32000,
+    categoryName: 'Lương thực',
+    stock: 80,
+    sellerUsername: 'seller_kim',
+    imageUrl: '/product/product18.jpeg',
+  },
+  {
+    name: 'Hạt nêm Knorr thịt thăn (400g)',
+    description: 'Hạt nêm Knorr từ thịt thăn, xương ống và tủy, tăng vị ngon tự nhiên',
+    price: 42000,
+    categoryName: 'Gia vị',
+    stock: 70,
+    sellerUsername: 'seller_minh',
+    imageUrl: '/product/product19.jpg',
+  },
+  {
+    name: 'Nước rửa chén Sunlight (800ml)',
+    description: 'Nước rửa chén Sunlight Extra khử mùi tanh với trà xanh Matcha Nhật Bản',
+    price: 35000,
+    categoryName: 'Đồ dùng vệ sinh',
+    stock: 70,
+    sellerUsername: 'seller_lan',
+    imageUrl: '/product/product20.png',
+  },
+  {
+    name: 'Cơm hộp Bento Nhật Bản',
+    description: 'Cơm hộp Bento kiểu Nhật với thịt cuộn rau củ, trứng và rau sạch, đông lạnh tiện lợi',
+    price: 55000,
+    categoryName: 'Thực phẩm chế biến',
+    stock: 30,
+    sellerUsername: 'seller_duc',
+    imageUrl: '/product/product21.jpeg',
+  },
+  {
+    name: 'Cháo tươi SG Food (240g)',
+    description: 'Cháo tươi SG Food sườn non nấu đậu, ăn liền tiện lợi, chỉ cần hâm nóng',
+    price: 18000,
+    categoryName: 'Thực phẩm chế biến',
+    stock: 60,
+    sellerUsername: 'seller_duc',
+    imageUrl: '/product/product22.png',
+  },
+  {
+    name: 'Mì ly Hảo Hảo (thùng 24 ly)',
+    description: 'Mì ly Hảo Hảo vị tôm chua cay Handy, thùng 24 ly tiện lợi',
+    price: 135000,
+    categoryName: 'Thực phẩm chế biến',
+    stock: 45,
+    sellerUsername: 'seller_duc',
+    imageUrl: '/product/product23.jpg',
+  },
+  {
+    name: 'Muối i-ốt Bạc Liêu (500g)',
+    description: 'Muối i-ốt Bạc Liêu tinh khiết, bổ sung i-ốt tự nhiên, phòng bệnh bướu cổ',
+    price: 8000,
+    categoryName: 'Gia vị',
+    stock: 100,
+    sellerUsername: 'seller_minh',
+    imageUrl: '/product/product24.jpg',
+  },
+  {
+    name: "Snack Lay's vị tảo biển Nori (56g)",
+    description: "Snack khoai tây Lay's vị tảo biển Nori độc đáo, giòn tan thơm ngon",
+    price: 18000,
+    categoryName: 'Bánh kẹo',
+    stock: 80,
+    sellerUsername: 'seller_duc',
+    imageUrl: '/product/product25.jpg',
+  },
+  {
+    name: 'Chocolate KitKat (45g)',
+    description: 'Chocolate KitKat giòn tan với lớp wafer nhiều lớp phủ socola sữa',
+    price: 15000,
+    categoryName: 'Bánh kẹo',
+    stock: 50,
+    sellerUsername: 'seller_duc',
+    imageUrl: '/product/product26.jpeg',
+  },
+  {
+    name: 'Kẹo dẻo Haribo Goldbären (200g)',
+    description: 'Kẹo dẻo Haribo Goldbären hình gấu vàng nhập khẩu Đức, nhiều hương vị trái cây',
+    price: 85000,
+    categoryName: 'Bánh kẹo',
+    stock: 40,
+    sellerUsername: 'seller_duc',
+    imageUrl: '/product/product27.jpeg',
+  },
+  {
+    name: 'Bánh quy Cosy Marie (240g)',
+    description: 'Bánh quy sữa Cosy Marie giòn tan thơm bơ, hộp 10 gói tiện lợi',
+    price: 48000,
+    categoryName: 'Bánh kẹo',
+    stock: 60,
+    sellerUsername: 'seller_duc',
+    imageUrl: '/product/product28.jpg',
+  },
+  {
+    name: 'Rượu vang đỏ Ochoa Gran Reserva',
+    description: 'Rượu vang đỏ Tây Ban Nha Ochoa 10 Gran Reserva cao cấp, độ cồn 13.5%',
+    price: 450000,
+    categoryName: 'Đồ uống',
+    stock: 15,
+    sellerUsername: 'seller_tung',
+    imageUrl: '/product/product29.png',
+  },
+  {
+    name: 'Nước suối Lavie (1 lít)',
+    description: 'Nước suối Lavie 1 lít tinh khiết, nguồn nước thiên nhiên sạch',
+    price: 6000,
+    categoryName: 'Đồ uống',
+    stock: 150,
+    sellerUsername: 'seller_tung',
+    imageUrl: '/product/product30.jpg',
+  },
   {
     name: 'Bia Heineken thùng 24 lon',
-    description: 'Bia Heineken nhập khẩu chính hãng',
+    description: 'Bia Heineken nhập khẩu chính hãng 330ml, thùng 24 lon',
     price: 620000,
     categoryName: 'Đồ uống',
     stock: 25,
@@ -264,224 +466,12 @@ const PRODUCTS = [
     sellerUsername: 'seller_tung',
   },
   {
-    name: 'Nước suối Lavie (24 chai)',
-    description: 'Nước suối Lavie 500ml, thùng 24 chai',
-    price: 85000,
+    name: 'Trà xanh không độ C2 (500ml)',
+    description: 'Trà xanh không độ C2 hương chanh sả, không đường, không calo',
+    price: 8000,
     categoryName: 'Đồ uống',
-    stock: 80,
+    stock: 120,
     sellerUsername: 'seller_tung',
-  },
-  {
-    name: 'Rượu vang đỏ Chile',
-    description: 'Rượu vang đỏ nhập khẩu từ Chile, độ cồn 13%',
-    price: 320000,
-    categoryName: 'Đồ uống',
-    stock: 15,
-    sellerUsername: 'seller_tung',
-  },
-
-  // Bánh kẹo - Phạm Văn Đức
-  {
-    name: 'Bánh quy Cosy hộp 378g',
-    description: 'Bánh quy Cosy nhiều hương vị thơm ngon',
-    price: 55000,
-    categoryName: 'Bánh kẹo',
-    stock: 60,
-    sellerUsername: 'seller_duc',
-  },
-  {
-    name: 'Kẹo dẻo Haribo (200g)',
-    description: 'Kẹo dẻo Haribo nhập khẩu Đức nhiều hình thú',
-    price: 85000,
-    categoryName: 'Bánh kẹo',
-    stock: 40,
-    sellerUsername: 'seller_duc',
-  },
-  {
-    name: 'Chocolate Kitkat (8 thanh)',
-    description: 'Chocolate KitKat giòn tan, hộp 8 thanh',
-    price: 95000,
-    categoryName: 'Bánh kẹo',
-    stock: 35,
-    sellerUsername: 'seller_duc',
-  },
-  {
-    name: "Snack khoai tây Lay's (60g)",
-    description: "Snack khoai tây Lay's vị BBQ thơm ngon",
-    price: 22000,
-    categoryName: 'Bánh kẹo',
-    stock: 80,
-    sellerUsername: 'seller_duc',
-  },
-
-  // Gia vị - Trần Văn Minh
-  {
-    name: 'Nước mắm Phú Quốc (500ml)',
-    description: 'Nước mắm Phú Quốc truyền thống độ đạm 35',
-    price: 75000,
-    categoryName: 'Gia vị',
-    stock: 50,
-    sellerUsername: 'seller_minh',
-  },
-  {
-    name: 'Tương ớt Chinsu (500g)',
-    description: 'Tương ớt Chinsu cay ngọt đậm đà',
-    price: 32000,
-    categoryName: 'Gia vị',
-    stock: 70,
-    sellerUsername: 'seller_minh',
-  },
-  {
-    name: 'Dầu ăn Simply (1 lít)',
-    description: 'Dầu ăn Simply từ đậu nành không cholesterol',
-    price: 42000,
-    categoryName: 'Gia vị',
-    stock: 90,
-    sellerUsername: 'seller_minh',
-  },
-  {
-    name: 'Muối i-ốt Bình Minh (1kg)',
-    description: 'Muối i-ốt tinh khiết, bổ sung khoáng chất',
-    price: 15000,
-    categoryName: 'Gia vị',
-    stock: 100,
-    sellerUsername: 'seller_minh',
-  },
-
-  // Thực phẩm chế biến - Phạm Văn Đức
-  {
-    name: 'Mì tôm Hảo Hảo (thùng 30 gói)',
-    description: 'Mì tôm Hảo Hảo vị tôm chua cay thùng 30 gói',
-    price: 135000,
-    categoryName: 'Thực phẩm chế biến',
-    stock: 45,
-    sellerUsername: 'seller_duc',
-  },
-  {
-    name: 'Cháo tươi SG Food (240g)',
-    description: 'Cháo tươi SG Food vị thịt bằm, ăn liền tiện lợi',
-    price: 18000,
-    categoryName: 'Thực phẩm chế biến',
-    stock: 60,
-    sellerUsername: 'seller_duc',
-  },
-  {
-    name: 'Cơm hộp Yoshinoya',
-    description: 'Cơm hộp Yoshinoya bò teriyaki đông lạnh',
-    price: 55000,
-    categoryName: 'Thực phẩm chế biến',
-    stock: 30,
-    sellerUsername: 'seller_duc',
-  },
-  {
-    name: 'Súp bột Knorr (5 gói)',
-    description: 'Súp bột Knorr vị gà và nấm, hộp 5 gói',
-    price: 45000,
-    categoryName: 'Thực phẩm chế biến',
-    stock: 40,
-    sellerUsername: 'seller_duc',
-  },
-
-  // Lương thực - Võ Thị Kim
-  {
-    name: 'Sữa tươi Vinamilk (1 lít)',
-    description: 'Sữa tươi Vinamilk 100% không đường',
-    price: 32000,
-    categoryName: 'Lương thực',
-    stock: 80,
-    sellerUsername: 'seller_kim',
-  },
-  {
-    name: 'Trứng gà ta (10 quả)',
-    description: 'Trứng gà ta nuôi thả vườn, tự nhiên 100%',
-    price: 45000,
-    categoryName: 'Lương thực',
-    stock: 100,
-    sellerUsername: 'seller_kim',
-  },
-  {
-    name: 'Yaourt Vinamilk (hộp 4 cốc)',
-    description: 'Yaourt Vinamilk có đường vị dâu',
-    price: 28000,
-    categoryName: 'Lương thực',
-    stock: 60,
-    sellerUsername: 'seller_kim',
-  },
-  {
-    name: 'Sữa đặc có đường (380g)',
-    description: 'Sữa đặc Ông Thọ có đường thơm ngon',
-    price: 25000,
-    categoryName: 'Lương thực',
-    stock: 50,
-    sellerUsername: 'seller_kim',
-  },
-
-  // Đồ dùng vệ sinh - Nguyễn Thị Lan
-  {
-    name: 'Bột giặt Omo (6kg)',
-    description: 'Bột giặt Omo khử mùi và diệt khuẩn',
-    price: 185000,
-    categoryName: 'Đồ dùng vệ sinh',
-    stock: 30,
-    sellerUsername: 'seller_lan',
-  },
-  {
-    name: 'Nước rửa chén Sunlight (800ml)',
-    description: 'Nước rửa chén Sunlight chanh sạch khuẩn',
-    price: 35000,
-    categoryName: 'Đồ dùng vệ sinh',
-    stock: 70,
-    sellerUsername: 'seller_lan',
-  },
-  {
-    name: 'Giấy vệ sinh Paseo (12 cuộn)',
-    description: 'Giấy vệ sinh Paseo 3 lớp siêu thấm',
-    price: 85000,
-    categoryName: 'Đồ dùng vệ sinh',
-    stock: 50,
-    sellerUsername: 'seller_lan',
-  },
-  {
-    name: 'Xà phòng Lifebuoy (90g x 4)',
-    description: 'Xà phòng diệt khuẩn Lifebuoy bảo vệ da',
-    price: 28000,
-    categoryName: 'Đồ dùng vệ sinh',
-    stock: 60,
-    sellerUsername: 'seller_lan',
-  },
-
-  // Đồ gia dụng - Nguyễn Thị Lan
-  {
-    name: 'Chảo chống dính 28cm',
-    description: 'Chảo chống dính cao cấp, đáy từ 3 lớp',
-    price: 250000,
-    categoryName: 'Đồ gia dụng',
-    stock: 25,
-    sellerUsername: 'seller_lan',
-  },
-  {
-    name: 'Bình đựng nước 2.5L',
-    description: 'Bình đựng nước nhựa trong, có vòi rót',
-    price: 85000,
-    categoryName: 'Đồ gia dụng',
-    stock: 40,
-    sellerUsername: 'seller_lan',
-  },
-  {
-    name: 'Hộp đựng thực phẩm (5 chiếc)',
-    description: 'Hộp đựng thực phẩm nhựa PP, kín khí',
-    price: 125000,
-    categoryName: 'Đồ gia dụng',
-    stock: 30,
-    sellerUsername: 'seller_lan',
-  },
-  {
-    name: 'Dao thái đa năng',
-    description: 'Dao thái inox 420 siêu sắc, cán gỗ',
-    price: 65000,
-    categoryName: 'Đồ gia dụng',
-    stock: 35,
-    sellerUsername: 'seller_lan',
   },
 ];
 
@@ -502,14 +492,6 @@ async function seed() {
     'DATABASE_URL:',
     process.env.DATABASE_URL ? '✅ Set' : '❌ Not set',
   );
-
-  // Initialize Supabase client
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-  console.log('🔐 Supabase client initialized');
 
   const dataSource = new DataSource({
     type: 'postgres',
@@ -543,6 +525,56 @@ async function seed() {
     const sellerRepo = dataSource.getRepository(Seller);
     const categoryRepo = dataSource.getRepository(Category);
     const productRepo = dataSource.getRepository(Product);
+    const reviewRepo = dataSource.getRepository(Review);
+    const orderItemRepo = dataSource.getRepository(OrderItem);
+    const orderRepo = dataSource.getRepository(Order);
+    const favoriteRepo = dataSource.getRepository(Favorite);
+    const sellerStatsRepo = dataSource.getRepository(SellerStats);
+
+    // Clear existing data using TRUNCATE CASCADE
+    console.log('🗑️  Clearing existing data...');
+    await dataSource.query('TRUNCATE TABLE "review" CASCADE');
+    console.log('   ✅ Cleared reviews');
+    await dataSource.query('TRUNCATE TABLE "order_item" CASCADE');
+    console.log('   ✅ Cleared order items');
+    await dataSource.query('TRUNCATE TABLE "order" CASCADE');
+    console.log('   ✅ Cleared orders');
+    await dataSource.query('TRUNCATE TABLE "favorite" CASCADE');
+    console.log('   ✅ Cleared favorites');
+    await dataSource.query('TRUNCATE TABLE "product" CASCADE');
+    console.log('   ✅ Cleared products');
+    await dataSource.query('TRUNCATE TABLE "category" CASCADE');
+    console.log('   ✅ Cleared categories');
+    await dataSource.query('TRUNCATE TABLE "seller_stats" CASCADE');
+    console.log('   ✅ Cleared seller stats');
+    await dataSource.query('TRUNCATE TABLE "seller" CASCADE');
+    console.log('   ✅ Cleared sellers');
+    await dataSource.query('TRUNCATE TABLE "buyer" CASCADE');
+    console.log('   ✅ Cleared buyers');
+    await dataSource.query('TRUNCATE TABLE "user" CASCADE');
+    console.log('   ✅ Cleared users from database');
+
+    // Delete users from Supabase Auth
+    console.log('   🔐 Clearing Supabase Auth users...');
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+
+    // List all users and delete them
+    const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+    if (!listError && users) {
+      for (const user of users) {
+        await supabase.auth.admin.deleteUser(user.id);
+      }
+      console.log(`   ✅ Deleted ${users.length} users from Supabase Auth`);
+    }
+
+    console.log('✅ All existing data cleared');
+
+    // Initialize Supabase client for seeding
+    console.log('🔐 Supabase client initialized for seeding');
 
     // Seed categories
     console.log('📂 Seeding categories...');
@@ -593,9 +625,10 @@ async function seed() {
         const user = userRepo.create({
           id: authData.user.id, // Dùng Supabase Auth ID
           ...userFields,
+          avatar: userFields.avatar === null ? undefined : userFields.avatar,
         });
 
-        const savedUser = await userRepo.save(user);
+        const savedUser: User = await userRepo.save(user);
         savedUsers.push(savedUser);
 
         console.log(
@@ -645,6 +678,7 @@ async function seed() {
         stock: productData.stock,
         categoryId: category.id,
         sellerId: seller.id,
+        imageUrl: (productData as any).imageUrl || null,
       });
 
       await productRepo.save(product);

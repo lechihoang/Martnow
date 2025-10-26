@@ -39,9 +39,6 @@ export function UserAvatar({ userProfile }: UserAvatarProps) {
   // Hiển thị tên người dùng từ userProfile
   const displayName = userProfile?.name || userProfile?.username || 'User';
 
-  // Xử lý avatar URL
-  const avatarUrl = imageError ? '/default-avatar.jpg' : (userProfile?.avatar || '/default-avatar.jpg');
-
   const handleLogout = async () => {
     try {
       await clearCart();
@@ -57,6 +54,9 @@ export function UserAvatar({ userProfile }: UserAvatarProps) {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
+  // Check if user has avatar
+  const hasAvatar = userProfile?.avatar && !imageError;
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Avatar Button */}
@@ -65,15 +65,21 @@ export function UserAvatar({ userProfile }: UserAvatarProps) {
         className="flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
         aria-label="User menu"
       >
-        <div className="relative h-8 w-8">
-          <Image
-            src={avatarUrl}
-            alt={displayName}
-            fill
-            className="rounded-full object-cover"
-            onError={() => setImageError(true)}
-          />
-        </div>
+        {hasAvatar ? (
+          <div className="relative h-8 w-8">
+            <Image
+              src={userProfile.avatar!}
+              alt={displayName}
+              fill
+              className="rounded-full object-cover"
+              onError={() => setImageError(true)}
+            />
+          </div>
+        ) : (
+          <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+            <User className="w-5 h-5 text-white" />
+          </div>
+        )}
       </button>
 
       {/* Dropdown Menu */}

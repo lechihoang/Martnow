@@ -132,10 +132,10 @@ const ProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-white p-6">
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-center items-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-400"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-600"></div>
           </div>
         </div>
       </div>
@@ -144,7 +144,7 @@ const ProfilePage: React.FC = () => {
 
   if (error || !profileData) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-white p-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-8">
             <div className="text-red-500 text-6xl mb-4">❌</div>
@@ -156,7 +156,7 @@ const ProfilePage: React.FC = () => {
             </p>
             <button
               onClick={() => router.back()}
-              className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors"
+              className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition-colors"
             >
               ← Quay lại
             </button>
@@ -167,7 +167,7 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 py-4">

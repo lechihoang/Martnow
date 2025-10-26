@@ -9,24 +9,21 @@ const HeaderSlider = () => {
       id: 1,
       title: "Khám Phá Thế Giới Ẩm Thực - Đặt Món Ngay Hôm Nay!",
       offer: "Ưu đãi có hạn giảm 30%",
-      buttonText1: "Đặt ngay",
-      buttonText2: "Khám phá thêm",
-      imgSrc: "/header1.jpg",
+      buttonText: "Đặt ngay",
+      imgSrc: "/header1.png",
     },
     {
       id: 2,
       title: "Giao Hàng Nhanh Chóng - Thức Ăn Tươi Ngon Đến Tận Nơi!",
       offer: "Nhanh tay, chỉ còn ít suất!",
-      buttonText1: "Mua ngay",
-      buttonText2: "Xem ưu đãi",
+      buttonText: "Mua ngay",
       imgSrc: "/header2.jpg",
     },
     {
       id: 3,
       title: "Chất Lượng Hàng Đầu - Thực Phẩm An Toàn Cho Gia Đình!",
       offer: "Ưu đãi đặc biệt giảm 40%",
-      buttonText1: "Đặt hàng",
-      buttonText2: "Tìm hiểu thêm",
+      buttonText: "Đặt hàng",
       imgSrc: "/header3.jpg",
     },
   ];
@@ -45,7 +42,7 @@ const HeaderSlider = () => {
   };
 
   return (
-    <div className="overflow-hidden relative w-full">
+    <div className="overflow-hidden relative w-full mt-6">
       <div
         className="flex transition-transform duration-700 ease-in-out"
         style={{
@@ -55,49 +52,49 @@ const HeaderSlider = () => {
         {sliderData.map((slide) => (
           <div
             key={slide.id}
-            className="flex flex-col-reverse md:flex-row items-center justify-between bg-[#E6E9F2] py-16 md:py-20 md:px-14 px-5 mt-6 rounded-xl min-w-full"
+            className="relative min-w-full h-[400px] md:h-[500px] rounded-xl overflow-hidden"
           >
-            <div className="md:pl-8 mt-10 md:mt-0">
-              <p className="md:text-base text-amber-600 pb-1">{slide.offer}</p>
-              <h1 className="max-w-lg md:text-[40px] md:leading-[48px] text-2xl font-semibold">
-                {slide.title}
-              </h1>
-              <div className="flex items-center mt-4 md:mt-6">
-                <button className="md:px-10 px-7 md:py-2.5 py-2 bg-emerald-600 rounded-full text-white font-medium hover:bg-emerald-700 transition-colors">
-                  {slide.buttonText1}
-                </button>
-                <button className="group flex items-center gap-2 px-6 py-2.5 font-medium hover:text-emerald-600 transition-colors">
-                  {slide.buttonText2}
-                  <span className="group-hover:translate-x-1 transition text-xl">
-                    →
+            {/* Background Image */}
+            <Image
+              src={slide.imgSrc}
+              alt={slide.title}
+              fill
+              className="object-cover"
+              priority={slide.id === 1}
+            />
+            
+            {/* Content */}
+            <div className="relative h-full flex items-center px-6 md:px-12 lg:px-20">
+              <div className="max-w-xl lg:max-w-2xl space-y-4 md:space-y-6">
+                <div className="inline-block">
+                  <span className="px-4 py-1.5 bg-amber-500/90 backdrop-blur-sm text-white text-xs md:text-sm font-bold rounded-full shadow-lg">
+                    {slide.offer}
                   </span>
+                </div>
+                <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
+                  {slide.title}
+                </h1>
+                <button className="px-10 py-3.5 bg-emerald-600 rounded-full text-white text-base md:text-lg font-bold hover:bg-emerald-700 transition-all hover:scale-105 shadow-2xl">
+                  {slide.buttonText}
                 </button>
-              </div>
-            </div>
-            <div className="flex items-center flex-1 justify-center">
-              <div className="relative md:w-96 w-64 md:h-96 h-64 rounded-2xl overflow-hidden">
-                <Image
-                  src={slide.imgSrc}
-                  alt={slide.title}
-                  fill
-                  className="object-cover"
-                  priority={slide.id === 1}
-                />
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="flex items-center justify-center gap-2 mt-8">
+      {/* Dots Navigation */}
+      <div className="flex items-center justify-center gap-2 mt-6">
         {sliderData.map((_, index) => (
-          <div
+          <button
             key={index}
             onClick={() => handleSlideChange(index)}
-            className={`h-2 w-2 rounded-full cursor-pointer transition-colors ${
-              currentSlide === index ? "bg-emerald-600" : "bg-gray-500/30"
-            }`}
-          ></div>
+            className={`h-2.5 rounded-full cursor-pointer transition-all ${currentSlide === index
+              ? "bg-emerald-600 w-8"
+              : "bg-gray-400 w-2.5 hover:bg-gray-500"
+              }`}
+            aria-label={`Go to slide ${index + 1}`}
+          ></button>
         ))}
       </div>
     </div>

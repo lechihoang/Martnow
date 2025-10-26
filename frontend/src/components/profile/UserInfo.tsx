@@ -74,15 +74,21 @@ const UserInfo: React.FC<UserInfoProps> = ({ user, onUpdate, readOnly = false })
       {/* Avatar Section */}
       <div className="flex flex-col items-center pb-8 border-b border-gray-200">
         <div className="relative">
-          <Image
-            key={user.avatar || 'default'}
-            src={user.avatar || '/default-avatar.jpg'}
-            alt={user.name}
-            width={120}
-            height={120}
-            className="w-30 h-30 rounded-full object-cover border-4 border-gray-100 shadow-lg"
-            unoptimized
-          />
+          {user.avatar ? (
+            <Image
+              key={user.avatar}
+              src={user.avatar}
+              alt={user.name}
+              width={120}
+              height={120}
+              className="w-30 h-30 rounded-full object-cover border-4 border-gray-100 shadow-lg"
+              unoptimized
+            />
+          ) : (
+            <div className="w-30 h-30 rounded-full bg-gray-300 flex items-center justify-center border-4 border-gray-100 shadow-lg">
+              <UserIcon className="w-16 h-16 text-white" />
+            </div>
+          )}
         </div>
         <h3 className="text-xl font-semibold text-gray-900 mt-4">{user.name}</h3>
         <p className="text-gray-500">@{user.username}</p>
@@ -93,7 +99,7 @@ const UserInfo: React.FC<UserInfoProps> = ({ user, onUpdate, readOnly = false })
             className="mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors flex items-center gap-2"
           >
             <Upload className="w-4 h-4" />
-            Đổi ảnh đại diện
+            {user.avatar ? 'Đổi ảnh đại diện' : 'Tải ảnh đại diện lên'}
           </button>
         )}
       </div>

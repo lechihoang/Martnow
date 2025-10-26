@@ -22,7 +22,7 @@ const FeaturedProducts: React.FC = () => {
       setLoading(true);
       try {
         const [productsData, profileData] = await Promise.all([
-          productApi.getPopularProducts(8), // Lấy 8 sản phẩm nổi bật
+          productApi.getPopularProducts(10), // Lấy 8 sản phẩm nổi bật
           user && user.aud === 'authenticated' ? getUserProfile() : Promise.resolve(null)
         ]);
 

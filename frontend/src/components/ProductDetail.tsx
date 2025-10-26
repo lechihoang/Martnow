@@ -1,6 +1,6 @@
 import React from 'react';
+import Image from 'next/image';
 import { cn } from "@/lib/utils";
-import ProductImage from "./ProductImage";
 import ProductInfo from "./ProductInfo";
 import AddToCartButton from "./AddToCartButton";
 import ProductReviewSection from "./ProductReviewSection";
@@ -11,6 +11,7 @@ import type { ProductResponseDto } from "../types/dtos";
 import { UserProfile } from '@/types/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 interface ProductDetailProps {
   product: Product;
@@ -65,35 +66,27 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
   const productDto = convertToProductDto(product);
 
-  // Create array of images - expandable for multiple images in future
-  const getProductImages = (product: Product): string[] => {
-    // TODO: When backend supports multiple images, update this logic
-    // For now, just use main image or default
-    if (product.imageUrl) {
-      return [product.imageUrl];
-    }
-    return ['/default.jpg']; // Always show at least one image
-  };
-
-  const productImages = getProductImages(product);
-  const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
-
   return (
     <div className={cn(
       "bg-white rounded-lg shadow-sm border border-gray-200",
       className
     )}>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-6 p-6">
         {/* Image Section */}
-        <div className="space-y-4">
-          <div className="relative">
-            <ProductImage
-              src={productImages[selectedImageIndex]}
+        <div className="w-full">
+          <div className="relative w-full aspect-square bg-gray-50 rounded-lg overflow-hidden">
+            <Image
+              src={product.imageUrl || '/default.jpg'}
               alt={product.name}
-              isAvailable={product.isAvailable}
-              size="large"
-              priority={true}
-              className="rounded-lg"
+              width={500}
+              height={500}
+              priority
+              className={cn(
+                "w-full h-full object-contain transition-transform duration-500",
+                product.isAvailable
+                  ? "group-hover:scale-105"
+                  : "opacity-50 grayscale"
+              )}
             />
 
             {/* Discount Badge - Top Left */}
@@ -119,62 +112,48 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
               </div>
             )}
           </div>
-
-          {/* Thumbnail Gallery - Dynamic based on available images */}
-          {productImages.length > 1 && (
-            <div className={cn(
-              "grid gap-2",
-              productImages.length === 2 && "grid-cols-2",
-              productImages.length === 3 && "grid-cols-3",
-              productImages.length >= 4 && "grid-cols-4"
-            )}>
-              {productImages.map((imageUrl, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "aspect-square bg-gray-500/10 rounded-md border-2 cursor-pointer transition-colors",
-                    selectedImageIndex === index
-                      ? "border-blue-500"
-                      : "border-transparent hover:border-blue-500"
-                  )}
-                  onClick={() => setSelectedImageIndex(index)}
-                >
-                  <ProductImage
-                    src={imageUrl}
-                    alt={`${product.name} view ${index + 1}`}
-                    isAvailable={product.isAvailable}
-                    size="small"
-                    className="rounded-md"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Product Info Section */}
-        <div className="space-y-6">
+        <div className="flex flex-col space-y-6">
           <ProductInfo product={product} />
 
           {/* Action Buttons */}
-          <div className="space-y-3">
-            {/* Add to Cart Button - Only for buyers */}
-            {userProfile?.role === 'BUYER' && (
+          <div className="space-y-3 mt-auto">
+            {/* Show button for everyone, but with different states */}
+            {!product.isAvailable ? (
+              <Button
+                disabled
+                className="w-full h-12 text-lg font-semibold bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
+              >
+                Ngừng bán
+              </Button>
+            ) : product.stock === 0 ? (
+              <Button
+                disabled
+                className="w-full h-12 text-lg font-semibold bg-red-500 hover:bg-red-500 cursor-not-allowed"
+              >
+                Hết hàng
+              </Button>
+            ) : userProfile?.role === 'BUYER' ? (
               <AddToCartButton
                 product={product}
                 className="w-full h-12 text-lg font-semibold"
                 user={user}
                 userProfile={userProfile}
               />
-            )}
-
-            {/* Login Button for guests */}
-            {!user && (
+            ) : (
               <Button
-                onClick={() => router.push('/auth/login')}
-                className="w-full h-12 text-lg font-semibold btn-primary"
+                onClick={() => {
+                  if (!user) {
+                    router.push('/auth/login');
+                  } else {
+                    toast.error('Chỉ người mua mới có thể thêm sản phẩm vào giỏ hàng');
+                  }
+                }}
+                className="w-full h-12 text-lg font-semibold bg-emerald-600 hover:bg-emerald-700"
               >
-                Đăng nhập để mua hàng
+                Mua ngay
               </Button>
             )}
           </div>

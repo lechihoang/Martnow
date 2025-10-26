@@ -9,6 +9,7 @@ import {
   Delete,
   UseGuards,
   Request,
+  SetMetadata,
 } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -17,6 +18,9 @@ import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { RoleGuard } from '../auth/role.guard';
 import { Roles } from '../auth/role.decorator';
 import { UserRole } from '../lib/supabase';
+
+// Decorator to mark routes as public (skip authentication)
+export const Public = () => SetMetadata('isPublic', true);
 
 @Controller('product') // Đổi từ 'products' thành 'product' để match với app.module.ts
 export class ProductController {
@@ -101,9 +105,8 @@ export class ProductController {
     return this.productService.findOne(id);
   }
 
+  @Public()
   @Get('seller/:sellerId')
-  @UseGuards(SupabaseAuthGuard, RoleGuard)
-  @Roles(UserRole.BUYER, UserRole.SELLER)
   async getProductsBySeller(@Param('sellerId') sellerId: string) {
     return this.productService.findProductsBySeller(sellerId);
   }

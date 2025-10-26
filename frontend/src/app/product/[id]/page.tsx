@@ -24,7 +24,7 @@ export default function ProductPage() {
         if (!productId) {
           throw new Error('ID sản phẩm không hợp lệ');
         }
-        
+
         const data = await productApi.getProduct(Number(productId));
         setProduct(data as unknown as Product);
       } catch (err) {
@@ -79,7 +79,7 @@ export default function ProductPage() {
                 ))}
               </div>
             </div>
-            
+
             {/* Content skeleton */}
             <div className="space-y-6">
               <div className="h-4 bg-gray-200 rounded w-1/4"></div>
@@ -100,7 +100,7 @@ export default function ProductPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Lỗi</h1>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
           >

@@ -27,7 +27,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div className="group relative card-quickcart-product w-full max-w-full">
       {/* Image Container */}
-      <div className="relative overflow-hidden bg-white rounded-lg">
+      <div className="relative overflow-hidden bg-white rounded-lg aspect-square">
         {/* Discount Badge - Top Left */}
         {product.discount > 0 && (
           <div className="absolute top-2 left-2 z-10">
@@ -51,14 +51,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
         )}
 
         {/* Product Image */}
-        <Link href={`/product/${product.id}`}>
+        <Link href={`/product/${product.id}`} className="block w-full h-full">
           <Image
             src={product.imageUrl || '/default.jpg'}
             alt={product.name}
             width={400}
             height={400}
             priority
-            className={`w-full h-32 sm:h-36 md:h-40 lg:h-44 xl:h-48 object-contain transition-transform duration-300 p-4
+            className={`w-full h-full object-contain transition-transform duration-300
               ${product.isAvailable ? "group-hover:scale-105" : "opacity-50"}`}
           />
         </Link>

@@ -5,7 +5,6 @@ import type { ProductResponseDto } from "../types/dtos";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import { ShoppingBag } from "lucide-react";
-import { useState} from "react";
 import useStore from "@/stores/store";
 import { User } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
@@ -28,12 +27,13 @@ const AddToCartButton = ({
   userProfile
 }: Props) => {
   const { addToCart } = useStore();
-  const [isAdding, setIsAdding] = useState(false);
-  
-  const isOutOfStock = product?.stock === 0 || !product?.isAvailable;
+
+  const isNotAvailable = !product?.isAvailable;
+  const isOutOfStock = product?.stock === 0;
+  const cannotAddToCart = isNotAvailable || isOutOfStock;
 
   const handleAddToCart = async () => {
-    if (isAdding || isOutOfStock) return;
+    if (cannotAddToCart) return;
 
     // Check if user is logged in
     if (!user) {
@@ -59,8 +59,6 @@ const AddToCartButton = ({
       return;
     }
 
-    setIsAdding(true);
-    
     try {
       // Convert to ProductResponseDto format if needed
       const productDto: ProductResponseDto = {
@@ -119,25 +117,30 @@ const AddToCartButton = ({
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast.error('✗ Có lỗi xảy ra khi thêm vào giỏ hàng!');
-    } finally {
-      setIsAdding(false);
     }
   };
 
   // Always show the button, but validate role when clicked
 
+  // Determine button text
+  const getButtonText = () => {
+    if (isNotAvailable) return "Ngưng bán";
+    if (isOutOfStock) return "Hết hàng";
+    return "Mua ngay";
+  };
+
   return (
     <Button
       onClick={handleAddToCart}
-      disabled={isOutOfStock || isAdding}
+      disabled={cannotAddToCart}
       className={cn(
         "w-full btn-primary text-sm py-2 px-3 flex items-center justify-center gap-1 rounded-full",
-        isOutOfStock && "bg-gray-400 hover:bg-gray-400 cursor-not-allowed",
+        cannotAddToCart && "bg-gray-400 hover:bg-gray-400 cursor-not-allowed",
         className
       )}
     >
       <ShoppingBag className="w-4 h-4" />
-      {isAdding ? "Đang thêm..." : isOutOfStock ? "Hết hàng" : "Mua ngay"}
+      {getButtonText()}
     </Button>
   );
 };

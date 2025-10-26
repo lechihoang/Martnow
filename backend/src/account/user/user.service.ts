@@ -51,6 +51,7 @@ export class UserService {
       newUser.name = createUserDto.name;
       newUser.username = createUserDto.username;
       newUser.role = createUserDto.role;
+      // avatar will be null - frontend will show User icon
 
       const savedUser = await manager.save(User, newUser);
 

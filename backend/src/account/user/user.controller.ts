@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  SetMetadata,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto, UserResponseDto } from './dto/user.dto';
@@ -14,6 +15,9 @@ import { SupabaseAuthGuard } from '../../auth/supabase-auth.guard';
 import { RoleGuard } from '../../auth/role.guard';
 import { Roles } from '../../auth/role.decorator';
 import { UserRole } from '../../lib/supabase';
+
+// Decorator to mark routes as public (skip authentication)
+export const Public = () => SetMetadata('isPublic', true);
 
 @Controller('users')
 @UseGuards(SupabaseAuthGuard)
@@ -34,6 +38,7 @@ export class UserController {
     return this.userService.create(createUserDto);
   }
 
+  @Public()
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const user = await this.userService.findByIdWithRelations(id);

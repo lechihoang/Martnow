@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   Inject,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { supabase } from '../lib/supabase';
 import { DataSource } from 'typeorm';
 import { Request } from 'express';
@@ -20,9 +21,23 @@ interface RequestWithUser extends Request {
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
-  constructor(@Inject(DataSource) private dataSource: DataSource) {}
+  constructor(
+    @Inject(DataSource) private dataSource: DataSource,
+    private reflector: Reflector,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // Check if route is marked as public
+    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      console.log('✅ Public route - skipping authentication');
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest<RequestWithUser>();
     const token = this.extractTokenFromHeader(request);
 
