@@ -9,6 +9,7 @@ import { Package, Calendar, CreditCard, Eye } from 'lucide-react';
 import { User } from '@/types/entities';
 import { OrderResponseDto } from '@/types/dtos';
 import Image from 'next/image';
+import { LoadingSpinner } from '@/components/ui';
 
 export default function OrderPage() {
   const [orders, setOrders] = useState<OrderResponseDto[]>([]);
@@ -94,16 +95,8 @@ export default function OrderPage() {
   // Show loading state while fetching user data (same as other pages)
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Đang tải...
-          </h2>
-          <p className="text-gray-600">
-            Đang tải đơn hàng của bạn
-          </p>
-        </div>
+      <div className="min-h-screen bg-white">
+        <LoadingSpinner size="xl" message="Đang tải đơn hàng của bạn..." />
       </div>
     );
   }

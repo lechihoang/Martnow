@@ -8,6 +8,7 @@ import { OrderResponseDto } from '@/types/dtos';
 import { useAuth } from '@/hooks/useAuth';
 import { sellerApi } from '@/lib/api';
 import {ShoppingBag, Users, Package, DollarSign} from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui';
 
 const AnalyticsPage: React.FC = () => {
   const params = useParams();
@@ -124,9 +125,7 @@ const AnalyticsPage: React.FC = () => {
   if (loading) {
     return (
       <ProfileLayout>
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
-        </div>
+        <LoadingSpinner size="xl" message="Đang tải phân tích..." className="min-h-[400px]" />
       </ProfileLayout>
     );
   }

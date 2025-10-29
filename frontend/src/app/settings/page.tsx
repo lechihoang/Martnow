@@ -9,6 +9,7 @@ import { User as UserIcon, Lock } from 'lucide-react';
 import SettingsLayout, { SettingsTab } from '@/components/settings/SettingsLayout';
 import ProfileTab from '@/components/settings/ProfileTab';
 import SecurityTab from '@/components/settings/SecurityTab';
+import { LoadingSpinner } from '@/components/ui';
 
 const SETTINGS_TABS: SettingsTab[] = [
   {
@@ -115,11 +116,9 @@ const SettingsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-white p-6">
         <div className="max-w-6xl mx-auto">
-          <div className="flex justify-center items-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
-          </div>
+          <LoadingSpinner size="xl" message="Đang tải cài đặt..." />
         </div>
       </div>
     );

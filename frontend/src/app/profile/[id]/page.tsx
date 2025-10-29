@@ -9,6 +9,7 @@ import { userApi, productApi, getUserProfile } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import ProductCard from '@/components/ProductCard';
 import { UserProfile } from '@/types/auth';
+import { LoadingSpinner } from '@/components/ui';
 
 const ProfilePage: React.FC = () => {
   const router = useRouter();
@@ -134,9 +135,7 @@ const ProfilePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-white p-6">
         <div className="max-w-6xl mx-auto">
-          <div className="flex justify-center items-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-600"></div>
-          </div>
+          <LoadingSpinner size="xl" message="Đang tải thông tin người dùng..." />
         </div>
       </div>
     );
@@ -290,9 +289,8 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {loadingProducts ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-3"></div>
-                <p className="text-gray-500">Đang tải sản phẩm...</p>
+              <div className="py-12">
+                <LoadingSpinner size="lg" message="Đang tải sản phẩm..." className="min-h-[300px]" />
               </div>
             ) : products.length === 0 ? (
               <div className="text-center py-12 text-gray-500">

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getUserProfile } from '@/lib/api';
 import { UserProfile } from '@/types/auth';
+import { LoadingSpinner } from '@/components/ui';
 
 // Tab components
 import PaidOrdersTab from '@/components/shop/PaidOrdersTab';
@@ -44,16 +45,8 @@ const ShopDashboard: React.FC = () => {
   // Show loading state while fetching user data (same as cart/favorites)
   if (profileLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-400"></div>
-            <h2 className="text-lg font-semibold text-gray-900">Đang tải quản lý cửa hàng...</h2>
-            <p className="text-sm text-gray-600 text-center">
-              Vui lòng chờ trong giây lát
-            </p>
-          </div>
-        </div>
+      <div className="min-h-screen bg-white">
+        <LoadingSpinner size="xl" message="Đang tải quản lý cửa hàng..." />
       </div>
     );
   }

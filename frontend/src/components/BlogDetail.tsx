@@ -8,6 +8,7 @@ import CommentSection from './CommentSection';
 import VoteButtons from './VoteButtons';
 import { BlogResponseDto } from '../types/dtos';
 import { UserProfile } from '@/types/auth';
+import { LoadingSpinner } from './ui';
 
 interface BlogDetailProps {
   blogId: number;
@@ -50,8 +51,8 @@ const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile }) => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="py-12 bg-white">
+        <LoadingSpinner size="lg" message="Đang tải bài viết..." />
       </div>
     );
   }

@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import useStore from '@/stores/store';
 import { useAuth } from '@/hooks/useAuth';
 import ProductGrid from '@/components/ProductGrid';
-import { PageState } from '@/components/ui';
+import { PageState, LoadingSpinner } from '@/components/ui';
 import { Filter } from 'lucide-react';
 import { productApi, getUserProfile } from '@/lib/api';
 import type { ProductResponseDto } from '@/types/dtos';
@@ -275,10 +275,8 @@ const ShopContent = () => {
 const ShopPage = () => {
   return (
     <Suspense fallback={
-      <div className="min-h-screen py-8">
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
-        </div>
+      <div className="min-h-screen py-8 bg-white">
+        <LoadingSpinner size="lg" message="Đang tải cửa hàng..." />
       </div>
     }>
       <ShopContent />

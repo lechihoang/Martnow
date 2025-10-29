@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProductGrid from '@/components/ProductGrid';
-import { PageState } from '@/components/ui';
+import { PageState, LoadingSpinner } from '@/components/ui';
 import { productApi } from '@/lib/api';
 import type { ProductResponseDto } from '@/types/dtos';
 import { useAuth } from '@/hooks/useAuth';
@@ -114,10 +114,8 @@ const SearchContent = () => {
 const SearchPage = () => {
   return (
     <Suspense fallback={
-      <div className="py-8">
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        </div>
+      <div className="py-8 bg-white">
+        <LoadingSpinner size="lg" message="Đang tìm kiếm..." />
       </div>
     }>
       <SearchContent />

@@ -7,6 +7,7 @@ import { getUserProfile } from '@/lib/api';
 import { sellerApi } from '@/lib/api';
 import { User, OrderStatus } from '@/types/entities';
 import { OrderResponseDto } from '@/types/dtos';
+import { LoadingSpinner } from '@/components/ui';
 
 const SalesHistoryPage: React.FC = () => {
   const params = useParams();
@@ -78,9 +79,7 @@ const SalesHistoryPage: React.FC = () => {
   if (loading) {
     return (
       <ProfileLayout>
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
-        </div>
+        <LoadingSpinner size="xl" message="Đang tải lịch sử bán hàng..." className="min-h-[400px]" />
       </ProfileLayout>
     );
   }

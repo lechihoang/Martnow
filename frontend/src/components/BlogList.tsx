@@ -7,6 +7,7 @@ import { Calendar, User, Plus, Edit, Trash2 } from 'lucide-react';
 import { blogApi } from '../lib/api';
 import { BlogResponseDto } from '../types/dtos';
 import { UserProfile } from '@/types/auth';
+import { LoadingSpinner } from './ui';
 
 interface BlogListProps {
   userProfile: UserProfile | null;
@@ -59,8 +60,8 @@ const BlogList: React.FC<BlogListProps> = ({ userProfile }) => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="py-12 bg-white">
+        <LoadingSpinner size="lg" message="Đang tải danh sách blog..." />
       </div>
     );
   }

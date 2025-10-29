@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import PriceView from '@/components/PriceView';
 import toast from 'react-hot-toast';
 import { User, Product } from '@/types/entities';
+import { LoadingSpinner } from '@/components/ui';
 
 const FavoritesPage: React.FC = () => {
   const { user } = useAuth();
@@ -66,16 +67,8 @@ const FavoritesPage: React.FC = () => {
   if (loading) {
     return (
       <Container>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Đang tải...
-            </h2>
-            <p className="text-gray-600">
-              Đang tải danh sách yêu thích của bạn
-            </p>
-          </div>
+        <div className="min-h-screen bg-white">
+          <LoadingSpinner size="xl" message="Đang tải danh sách yêu thích của bạn..." />
         </div>
       </Container>
     );

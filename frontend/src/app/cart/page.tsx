@@ -11,6 +11,7 @@ import { ShoppingBag, ArrowLeft, Trash2 } from 'lucide-react';
 import PriceFormatter from '@/components/PriceFormatter';
 import { toast } from 'react-hot-toast';
 import { User } from '@/types/entities';
+import { LoadingSpinner } from '@/components/ui';
 
 export default function CartPage() {
   const { user } = useAuth();
@@ -55,16 +56,8 @@ export default function CartPage() {
   // Show loading state while fetching user data (same as favorites)
   if (profileLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Đang tải...
-          </h2>
-          <p className="text-gray-600">
-            Đang tải giỏ hàng của bạn
-          </p>
-        </div>
+      <div className="min-h-screen bg-white">
+        <LoadingSpinner size="xl" message="Đang tải giỏ hàng của bạn..." />
       </div>
     );
   }
