@@ -32,14 +32,14 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   showMessage = true
 }) => {
   const spinnerElement = (
-    <div className="relative">
-      {/* Outer ring with gradient */}
+    <div className="relative inline-block mx-auto">
+      {/* Outer ring */}
       <div
         className={`${sizeClasses[size]} rounded-full border-4 border-gray-200 absolute top-0 left-0`}
       />
-      {/* Animated gradient ring */}
+      {/* Animated ring */}
       <div
-        className={`${sizeClasses[size]} rounded-full border-4 border-transparent border-t-emerald-500 border-r-orange-500 animate-spin`}
+        className={`${sizeClasses[size]} rounded-full border-4 border-transparent border-t-emerald-500 animate-spin`}
       />
     </div>
   );
@@ -47,7 +47,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   if (variant === 'inline') {
     return (
       <div className={`inline-flex items-center gap-2 ${className}`}>
-        <div className="relative">
+        <div className="relative inline-block">
           <div className={`${sizeClasses[size]} rounded-full border-2 border-gray-200 absolute top-0 left-0`} />
           <div className={`${sizeClasses[size]} rounded-full border-2 border-transparent border-t-emerald-500 animate-spin`} />
         </div>
@@ -58,11 +58,13 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
   if (variant === 'fullscreen') {
     return (
-      <div className={`fixed inset-0 bg-white z-50 flex justify-center items-center ${className}`}>
-        <div className="text-center">
-          {spinnerElement}
+      <div className={`fixed inset-0 bg-white z-50 flex flex-col justify-center items-center ${className}`}>
+        <div className="text-center flex flex-col items-center">
+          <div className="mb-4">
+            {spinnerElement}
+          </div>
           {showMessage && (
-            <p className={`${textSizeClasses[size]} text-gray-600 mt-4 font-medium`}>
+            <p className={`${textSizeClasses[size]} text-gray-600 font-medium`}>
               {message}
             </p>
           )}
@@ -73,11 +75,13 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
   // Default variant
   return (
-    <div className={`flex justify-center items-center min-h-[200px] bg-white ${className}`}>
-      <div className="text-center">
-        {spinnerElement}
+    <div className={`flex flex-col justify-center items-center min-h-[200px] bg-white ${className}`}>
+      <div className="text-center flex flex-col items-center">
+        <div className="mb-4">
+          {spinnerElement}
+        </div>
         {showMessage && (
-          <p className={`${textSizeClasses[size]} text-gray-600 mt-4 font-medium`}>
+          <p className={`${textSizeClasses[size]} text-gray-600 font-medium`}>
             {message}
           </p>
         )}
