@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { orderApi, getUserProfile } from '@/lib/api';
 import useStore from '@/stores/store';
 import { useRouter } from 'next/navigation';
@@ -14,7 +14,7 @@ import { User } from '@/types/entities';
 import { LoadingSpinner } from '@/components/ui';
 
 export default function CartPage() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -56,7 +56,7 @@ export default function CartPage() {
   // Show loading state while fetching user data (same as favorites)
   if (profileLoading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <LoadingSpinner size="xl" message="Đang tải giỏ hàng của bạn..." />
       </div>
     );
@@ -152,10 +152,9 @@ export default function CartPage() {
   const sellerCount = uniqueSellers.size;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
+    <div className="py-8">
+      {/* Header */}
+      <div className="mb-8">
           <button
             onClick={() => router.push('/shop')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
@@ -171,7 +170,7 @@ export default function CartPage() {
                 Giỏ hàng của bạn
               </h1>
               <p className="text-gray-600 mt-1">
-                Xin chào, {userProfile.name || userProfile.username}! Bạn có {itemCount} sản phẩm trong giỏ
+                Xin chào, {userProfile.name}! Bạn có {itemCount} sản phẩm trong giỏ
               </p>
             </div>
 
@@ -266,15 +265,10 @@ export default function CartPage() {
                 )}
               </button>
 
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-xs text-blue-800 text-center">
-                  🔒 Thanh toán an toàn qua VNPay
-                </p>
-              </div>
+
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 }

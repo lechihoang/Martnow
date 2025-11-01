@@ -2,27 +2,38 @@
 
 import React, { useState, useEffect } from 'react';
 import BlogList from '../../components/BlogList';
-import { useAuth } from '../../hooks/useAuth';
-import { User, UserRole } from '../../types/entities';
+import { useAuthContext } from '../../contexts/AuthContext';
+import { User } from '../../types/entities';
+import { getUserProfile } from '@/lib/api';
 
 export default function BlogsPage() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [userProfile, setUserProfile] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      setUserProfile({
-        id: user.id,
-        name: user.email || 'User',
-        username: user.email?.split('@')[0] || 'user',
-        email: user.email || '',
-        avatar: user.user_metadata?.avatar_url,
-        role: UserRole.BUYER
-      });
+    // Only fetch if user id changes, not on every user object update
+    const userId = user?.id;
+
+    setLoading(true);
+    if (userId) {
+      getUserProfile()
+        .then(profile => {
+          setUserProfile(profile);
+        })
+        .catch(() => {
+          setUserProfile(null);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setUserProfile(null);
+      setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id, not the entire user object
 
   return (
-    <BlogList userProfile={userProfile} />
+    <BlogList userProfile={userProfile} profileLoading={loading} />
   );
 }

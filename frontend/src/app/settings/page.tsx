@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { getUserProfile, userApi } from '@/lib/api';
 import { UserProfile } from '@/types/auth';
 import { UserRole, User } from '@/types/entities';
@@ -31,7 +31,7 @@ const getVisibleTabs = (userRole?: UserRole): SettingsTab[] => {
 const SettingsPage: React.FC = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('profile');
-  const { user: authUser } = useAuth();
+  const { user: authUser } = useAuthContext();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

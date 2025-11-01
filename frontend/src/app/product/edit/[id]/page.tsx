@@ -2,17 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { productApi, getUserProfile, uploadApi } from '@/lib/api';
 import Image from 'next/image';
 import { User } from '@/types/entities';
 import toast from 'react-hot-toast';
 import { X } from 'lucide-react';
-
-interface Category {
-  id: number;
-  name: string;
-}
+import { CATEGORIES, CATEGORY_DESCRIPTIONS } from '@/constants/categories';
 
 interface ProductFormData {
   name: string;
@@ -20,7 +16,7 @@ interface ProductFormData {
   price: number;
   stock: number;
   discount: number;
-  categoryId: number;
+  category: string;
   imageUrl: string;
   isAvailable: boolean;
 }
@@ -28,13 +24,12 @@ interface ProductFormData {
 export default function ProductEditPage() {
   const router = useRouter();
   const params = useParams();
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
 
   const productId = parseInt(params.id as string);
 
@@ -44,7 +39,7 @@ export default function ProductEditPage() {
     price: 0,
     stock: 0,
     discount: 0,
-    categoryId: 0,
+    category: '',
     imageUrl: '',
     isAvailable: true
   });
@@ -70,10 +65,6 @@ export default function ProductEditPage() {
           return;
         }
 
-        // Load categories
-        const categoriesData = await productApi.getCategories();
-        setCategories(categoriesData);
-
         // Load product data for editing
         if (productId && !isNaN(productId)) {
           const product = await productApi.getProduct(productId);
@@ -83,7 +74,7 @@ export default function ProductEditPage() {
             price: product.price || 0,
             stock: product.stock || 0,
             discount: product.discount || 0,
-            categoryId: product.category?.id || 0,
+            category: product.category || '',
             imageUrl: product.imageUrl || '',
             isAvailable: product.isAvailable !== undefined ? product.isAvailable : true
           });
@@ -105,7 +96,7 @@ export default function ProductEditPage() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'categoryId' || name === 'price' || name === 'stock' || name === 'discount'
+      [name]: name === 'price' || name === 'stock' || name === 'discount'
         ? Number(value)
         : value
     }));
@@ -173,7 +164,7 @@ export default function ProductEditPage() {
       return;
     }
 
-    if (formData.categoryId === 0) {
+    if (!formData.category || formData.category === '') {
       toast.error('Vui lòng chọn danh mục');
       return;
     }
@@ -273,21 +264,21 @@ export default function ProductEditPage() {
 
               {/* Danh mục */}
               <div>
-                <label htmlFor="categoryId" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2">
                   Danh mục sản phẩm <span className="text-red-500">*</span>
                 </label>
                 <select
-                  id="categoryId"
-                  name="categoryId"
-                  value={formData.categoryId}
+                  id="category"
+                  name="category"
+                  value={formData.category}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-white"
                   required
                 >
-                  <option value={0}>-- Chọn danh mục --</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
+                  <option value="">-- Chọn danh mục --</option>
+                  {CATEGORIES.map((category) => (
+                    <option key={category} value={category}>
+                      {category} {CATEGORY_DESCRIPTIONS[category] && `- ${CATEGORY_DESCRIPTIONS[category]}`}
                     </option>
                   ))}
                 </select>

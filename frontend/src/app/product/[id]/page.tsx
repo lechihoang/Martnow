@@ -5,12 +5,12 @@ import { useParams } from 'next/navigation';
 import ProductDetail from '@/components/ProductDetail';
 import type { Product } from '@/types/entities';
 import { productApi, userApi } from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { UserProfile } from '@/types/auth';
 
 export default function ProductPage() {
   const params = useParams();
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [product, setProduct] = useState<Product | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,6 @@ export default function ProductPage() {
           const newProfile = {
             id: profile.id,
             name: profile.name,
-            username: profile.username,
             email: profile.email,
             avatar: profile.avatar,
             role: profile.role
@@ -138,8 +137,8 @@ export default function ProductPage() {
           {product.category && (
             <>
               <li>
-                <a href={`/category/${product.category.id}`} className="hover:text-blue-600">
-                  {product.category.name}
+                <a href={`/category/${product.category}`} className="hover:text-blue-600">
+                  {product.category}
                 </a>
               </li>
               <li>›</li>

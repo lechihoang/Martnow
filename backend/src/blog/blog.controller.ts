@@ -26,7 +26,7 @@ export class BlogController {
   // Blog endpoints
   @Get()
   async getAllBlogs(
-    @Request() req?: ExpressRequest & { user?: { id: number } },
+    @Request() req?: ExpressRequest & { user?: { id: string } },
   ) {
     const userId = req?.user?.id;
     return this.blogService.findAllBlogs(userId);
@@ -35,7 +35,7 @@ export class BlogController {
   @Get(':id')
   async getBlogById(
     @Param('id') id: string,
-    @Request() req?: ExpressRequest & { user?: { id: number } },
+    @Request() req?: ExpressRequest & { user?: { id: string } },
   ) {
     const userId = req?.user?.id;
     return this.blogService.findBlogById(+id, userId);
@@ -46,7 +46,7 @@ export class BlogController {
   @Roles(UserRole.BUYER, UserRole.SELLER)
   async createBlog(
     @Body() createBlogDto: CreateBlogDto,
-    @Request() req: ExpressRequest & { user: { id: number } },
+    @Request() req: ExpressRequest & { user: { id: string } },
   ) {
     return this.blogService.createBlog(createBlogDto, req.user.id);
   }
@@ -57,7 +57,7 @@ export class BlogController {
   async updateBlog(
     @Param('id') id: string,
     @Body() updateBlogDto: UpdateBlogDto,
-    @Request() req: ExpressRequest & { user: { id: number } },
+    @Request() req: ExpressRequest & { user: { id: string } },
   ) {
     return this.blogService.updateBlog(+id, updateBlogDto, req.user.id);
   }
@@ -67,7 +67,7 @@ export class BlogController {
   @Roles(UserRole.BUYER, UserRole.SELLER)
   async deleteBlog(
     @Param('id') id: string,
-    @Request() req: ExpressRequest & { user: { id: number } },
+    @Request() req: ExpressRequest & { user: { id: string } },
   ) {
     return this.blogService.deleteBlog(+id, req.user.id);
   }
@@ -84,7 +84,7 @@ export class BlogController {
   async createComment(
     @Param('id') blogId: string,
     @Body() createCommentDto: CreateCommentDto,
-    @Request() req: ExpressRequest & { user: { id: number } },
+    @Request() req: ExpressRequest & { user: { id: string } },
   ) {
     return this.blogService.createComment(
       +blogId,
@@ -99,7 +99,7 @@ export class BlogController {
   async updateComment(
     @Param('commentId') commentId: string,
     @Body() updateCommentDto: UpdateCommentDto,
-    @Request() req: ExpressRequest & { user: { id: number } },
+    @Request() req: ExpressRequest & { user: { id: string } },
   ) {
     return this.blogService.updateComment(
       +commentId,
@@ -113,7 +113,7 @@ export class BlogController {
   @Roles(UserRole.BUYER, UserRole.SELLER)
   async deleteComment(
     @Param('commentId') commentId: string,
-    @Request() req: ExpressRequest & { user: { id: number } },
+    @Request() req: ExpressRequest & { user: { id: string } },
   ) {
     return this.blogService.deleteComment(+commentId, req.user.id);
   }
@@ -125,7 +125,7 @@ export class BlogController {
   async voteBlog(
     @Param('id') blogId: string,
     @Body() voteBlogDto: VoteBlogDto,
-    @Request() req: ExpressRequest & { user: { id: number } },
+    @Request() req: ExpressRequest & { user: { id: string } },
   ) {
     return this.blogService.voteBlog(+blogId, voteBlogDto, req.user.id);
   }
@@ -135,7 +135,7 @@ export class BlogController {
   @Roles(UserRole.BUYER, UserRole.SELLER)
   async unvoteBlog(
     @Param('id') blogId: string,
-    @Request() req: ExpressRequest & { user: { id: number } },
+    @Request() req: ExpressRequest & { user: { id: string } },
   ) {
     return this.blogService.unvoteBlog(+blogId, req.user.id);
   }
@@ -143,7 +143,7 @@ export class BlogController {
   @Get(':id/vote-stats')
   async getVoteStats(
     @Param('id') blogId: string,
-    @Request() req?: ExpressRequest & { user?: { id: number } },
+    @Request() req?: ExpressRequest & { user?: { id: string } },
   ) {
     const userId = req?.user?.id;
     return this.blogService.getVoteStats(+blogId, userId);

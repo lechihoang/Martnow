@@ -12,7 +12,6 @@ interface CreateUserData {
   id: string;
   email: string;
   name: string;
-  username: string;
   role: UserRole;
 }
 
@@ -49,34 +48,35 @@ export class UserService {
       newUser.id = createUserDto.id;
       newUser.email = createUserDto.email;
       newUser.name = createUserDto.name;
-      newUser.username = createUserDto.username;
       newUser.role = createUserDto.role;
       // avatar will be null - frontend will show User icon
 
-      const savedUser = await manager.save(User, newUser);
-
-      // Create buyer or seller based on role
+      // Create buyer or seller based on role and use cascade
       if (newUser.role === UserRole.BUYER) {
-        const buyer = manager.create(Buyer, { id: savedUser.id });
-        await manager.save(Buyer, buyer);
+        const buyer = new Buyer();
+        buyer.id = newUser.id;
+        newUser.buyer = buyer; // Cascade will save this
       } else if (newUser.role === UserRole.SELLER) {
-        const seller = manager.create(Seller, { id: savedUser.id });
-        const savedSeller = await manager.save(Seller, seller);
+        const seller = new Seller();
+        seller.id = newUser.id;
 
-        // Create SellerStats
-        const sellerStats = manager.create(SellerStats, {
-          id: savedSeller.id,
-          totalOrders: 0,
-          totalRevenue: 0,
-          totalProducts: 0,
-          pendingOrders: 0,
-          completedOrders: 0,
-          averageRating: 0,
-          totalReviews: 0,
-        });
-        await manager.save(SellerStats, sellerStats);
+        // Create SellerStats with cascade
+        const sellerStats = new SellerStats();
+        sellerStats.id = seller.id;
+        sellerStats.totalOrders = 0;
+        sellerStats.totalRevenue = 0;
+        sellerStats.totalProducts = 0;
+        sellerStats.pendingOrders = 0;
+        sellerStats.completedOrders = 0;
+        sellerStats.averageRating = 0;
+        sellerStats.totalReviews = 0;
+
+        seller.stats = sellerStats; // Cascade will save this
+        newUser.seller = seller; // Cascade will save this
       }
 
+      // Single save - cascade will handle buyer/seller/stats
+      const savedUser = await manager.save(User, newUser);
       return savedUser;
     });
   }
@@ -104,68 +104,28 @@ export class UserService {
     id: string,
     updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
-    return await this.dataSource.transaction(async (manager) => {
-      const user = await manager.findOne(User, { where: { id } });
-      if (!user) {
-        throw new Error('User not found');
-      }
+    // Simple update - no transaction needed
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new Error('User not found');
+    }
 
-      const oldRole = user.role;
-      const newRole = updateUserDto.role;
+    // Cập nhật các field được cung cấp (username, email, role không thể thay đổi)
+    if (updateUserDto.name) user.name = updateUserDto.name;
+    if (updateUserDto.avatar !== undefined) user.avatar = updateUserDto.avatar;
+    if (updateUserDto.address !== undefined)
+      user.address = updateUserDto.address;
+    if (updateUserDto.phone !== undefined) user.phone = updateUserDto.phone;
 
-      // Cập nhật các field được cung cấp
-      if (updateUserDto.name) user.name = updateUserDto.name;
-      if (updateUserDto.username) user.username = updateUserDto.username;
-      if (updateUserDto.email) user.email = updateUserDto.email;
-      if (updateUserDto.role) user.role = updateUserDto.role;
-      if (updateUserDto.avatar !== undefined)
-        user.avatar = updateUserDto.avatar;
-      if (updateUserDto.address !== undefined)
-        user.address = updateUserDto.address;
-      if (updateUserDto.phone !== undefined) user.phone = updateUserDto.phone;
+    // Save and return with relations
+    await this.userRepository.save(user);
 
-      // Handle role change
-      if (newRole && oldRole !== newRole) {
-        // Delete old role entity
-        if (oldRole === UserRole.BUYER) {
-          await manager.delete(Buyer, { id: user.id });
-        } else if (oldRole === UserRole.SELLER) {
-          await manager.delete(SellerStats, { id: user.id });
-          await manager.delete(Seller, { id: user.id });
-        }
+    const userWithRelations = await this.findByIdWithRelations(id);
+    if (!userWithRelations) {
+      throw new Error('Failed to retrieve user after update');
+    }
 
-        // Create new role entity
-        if (newRole === UserRole.BUYER) {
-          const buyer = manager.create(Buyer, { id: user.id });
-          await manager.save(Buyer, buyer);
-        } else if (newRole === UserRole.SELLER) {
-          const seller = manager.create(Seller, { id: user.id });
-          const savedSeller = await manager.save(Seller, seller);
-
-          // Create SellerStats
-          const sellerStats = manager.create(SellerStats, {
-            id: savedSeller.id,
-            totalOrders: 0,
-            totalRevenue: 0,
-            totalProducts: 0,
-            pendingOrders: 0,
-            completedOrders: 0,
-            averageRating: 0,
-            totalReviews: 0,
-          });
-          await manager.save(SellerStats, sellerStats);
-        }
-      }
-
-      const updatedUser = await manager.save(User, user);
-      const userWithRelations = await this.findByIdWithRelations(
-        updatedUser.id,
-      );
-      if (!userWithRelations) {
-        throw new Error('Failed to retrieve user after update');
-      }
-      return new UserResponseDto(userWithRelations);
-    });
+    return new UserResponseDto(userWithRelations);
   }
 
   async remove(id: string): Promise<{ message: string }> {

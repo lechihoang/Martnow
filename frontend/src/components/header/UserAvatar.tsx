@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Settings, LogOut, ShoppingCart } from 'lucide-react';
 import { UserProfile } from '@/types/auth';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import useStore from '@/stores/store';
 
 interface UserAvatarProps {
@@ -17,7 +17,7 @@ export function UserAvatar({ userProfile }: UserAvatarProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { signout } = useAuth();
+  const { signout } = useAuthContext();
   const { clearCart } = useStore();
 
   // Close dropdown when clicking outside
@@ -37,7 +37,7 @@ export function UserAvatar({ userProfile }: UserAvatarProps) {
   }
 
   // Hiển thị tên người dùng từ userProfile
-  const displayName = userProfile?.name || userProfile?.username || 'User';
+  const displayName = userProfile?.name || 'User';
 
   const handleLogout = async () => {
     try {

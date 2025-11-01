@@ -64,7 +64,7 @@ const AddToCartButton = ({
       const productDto: ProductResponseDto = {
         id: product.id,
         sellerId: product.sellerId,
-        categoryId: product.categoryId,
+        category: product.category || 'Uncategorized',
         name: product.name,
         description: product.description,
         price: product.price,
@@ -80,25 +80,17 @@ const AddToCartButton = ({
           shopName: product.seller.shopName || 'Unknown Shop',
           user: product.seller.user ? {
             name: product.seller.user.name,
-            username: product.seller.user.username,
             address: product.seller.user.address,
             phone: product.seller.user.phone
           } : {
             name: 'Unknown Seller',
-            username: 'unknown'
           }
         } : {
           id: product.sellerId,
           shopName: 'Unknown Shop',
           user: {
             name: 'Unknown Seller',
-            username: 'unknown'
           }
-        },
-        category: product.category || {
-          id: product.categoryId,
-          name: 'Unknown Category',
-          description: ''
         }
       };
 

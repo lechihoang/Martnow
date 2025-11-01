@@ -12,9 +12,6 @@ export class User {
   name: string;
 
   @Column({ type: 'varchar', unique: true })
-  username: string;
-
-  @Column({ type: 'varchar', unique: true })
   email: string;
 
   @Column({ type: 'enum', enum: UserRole })
@@ -31,9 +28,15 @@ export class User {
 
   // Relationship to buyer or seller entity (based on role)
   // A user can only be either a buyer OR a seller, not both
-  @OneToOne(() => Buyer, (buyer) => buyer.user, { nullable: true })
+  @OneToOne(() => Buyer, (buyer) => buyer.user, {
+    nullable: true,
+    cascade: true,
+  })
   buyer: Buyer;
 
-  @OneToOne(() => Seller, (seller) => seller.user, { nullable: true })
+  @OneToOne(() => Seller, (seller) => seller.user, {
+    nullable: true,
+    cascade: true,
+  })
   seller: Seller;
 }

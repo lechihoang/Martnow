@@ -1,27 +1,22 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import type { Product } from '../types/entities';
 import { productApi, uploadApi } from '../lib/api';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-
-interface Category {
-  id: number;
-  name: string;
-  description?: string;
-}
+import { useAuthContext } from '@/contexts/AuthContext';
+import { CATEGORIES, CATEGORY_DESCRIPTIONS } from '@/constants/categories';
 
 const AddProductForm = () => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [form, setForm] = useState<
-    Partial<Product> & { categoryId?: number }
+    Partial<Product> & { category?: string }
   >({
     name: '',
     description: '',
-    categoryId: undefined,
+    category: '',
     price: 0,
     stock: 0,
     discount: 0,
@@ -29,25 +24,6 @@ const AddProductForm = () => {
   const [loading, setLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-
-  // Load categories khi component mount
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const categoriesData = await productApi.getCategories();
-        setCategories(categoriesData);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        toast.error('Không thể tải danh sách danh mục');
-      } finally {
-        setLoadingCategories(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -126,7 +102,7 @@ const AddProductForm = () => {
       return;
     }
 
-    if (!form.categoryId) {
+    if (!form.category || form.category === '') {
       toast.error('Vui lòng chọn danh mục sản phẩm');
       return;
     }
@@ -159,7 +135,7 @@ const AddProductForm = () => {
       const productData = {
         name: form.name || '',
         description: form.description || '',
-        categoryId: form.categoryId || 0,
+        category: form.category || '',
         price: form.price || 0,
         stock: form.stock || 0,
         discount: form.discount || 0,
@@ -177,7 +153,7 @@ const AddProductForm = () => {
       setForm({
         name: '',
         description: '',
-        categoryId: undefined,
+        category: '',
         price: 0,
         stock: 0,
         discount: 0,
@@ -239,30 +215,24 @@ const AddProductForm = () => {
 
               {/* Dropdown chọn danh mục */}
               <div>
-                <label htmlFor="categoryId" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2">
                   Danh mục sản phẩm <span className="text-red-500">*</span>
                 </label>
-                {loadingCategories ? (
-                  <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
-                    Đang tải danh mục...
-                  </div>
-                ) : (
-                  <select
-                    id="categoryId"
-                    name="categoryId"
-                    value={form.categoryId || ''}
-                    onChange={(e) => setForm({ ...form, categoryId: Number(e.target.value) || undefined })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-white"
-                    required
-                  >
-                    <option value="">-- Chọn danh mục --</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <select
+                  id="category"
+                  name="category"
+                  value={form.category || ''}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-white"
+                  required
+                >
+                  <option value="">-- Chọn danh mục --</option>
+                  {CATEGORIES.map((category) => (
+                    <option key={category} value={category}>
+                      {category} {CATEGORY_DESCRIPTIONS[category] && `- ${CATEGORY_DESCRIPTIONS[category]}`}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Số lượng trong kho */}

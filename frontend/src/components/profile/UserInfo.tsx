@@ -16,7 +16,6 @@ const UserInfo: React.FC<UserInfoProps> = ({ user, onUpdate, readOnly = false })
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: user.name,
-    username: user.username,
     email: user.email,
     phone: user.phone || '',
     address: user.address || '',
@@ -91,7 +90,6 @@ const UserInfo: React.FC<UserInfoProps> = ({ user, onUpdate, readOnly = false })
           )}
         </div>
         <h3 className="text-xl font-semibold text-gray-900 mt-4">{user.name}</h3>
-        <p className="text-gray-500">@{user.username}</p>
         {!readOnly && (
           <button
             type="button"
@@ -132,13 +130,7 @@ const UserInfo: React.FC<UserInfoProps> = ({ user, onUpdate, readOnly = false })
               <span className="ml-auto text-xs text-gray-500">(Không thể thay đổi)</span>
             </div>
           </label>
-          <input
-            id="username"
-            type="text"
-            value={formData.username}
-            disabled
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-          />
+          
         </div>
 
         <div>

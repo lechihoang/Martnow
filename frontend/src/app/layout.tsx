@@ -24,6 +24,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Container from "@/components/Container";
 
+// Auth provider
+import { AuthProvider } from "@/contexts/AuthContext";
+
 
 // Metadata configuration
 export const metadata: Metadata = {
@@ -48,49 +51,51 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased text-gray-700`}>
-        {/* Toast notifications */}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#1F2937',
-              color: '#F9FAFB',
-              borderRadius: '12px',
-              padding: '16px',
-              fontSize: '14px',
-              fontWeight: '500',
-            },
-            success: {
+        <AuthProvider>
+          {/* Toast notifications */}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
               style: {
-                background: '#10B981',
-                color: '#FFFFFF',
+                background: '#1F2937',
+                color: '#F9FAFB',
+                borderRadius: '12px',
+                padding: '16px',
+                fontSize: '14px',
+                fontWeight: '500',
               },
-            },
-            error: {
-              style: {
-                background: '#DC2626',
-                color: '#FFFFFF',
+              success: {
+                style: {
+                  background: '#10B981',
+                  color: '#FFFFFF',
+                },
               },
-            },
-          }}
-        />
+              error: {
+                style: {
+                  background: '#DC2626',
+                  color: '#FFFFFF',
+                },
+              },
+            }}
+          />
 
-        {/* Main layout structure */}
-        <div className="flex flex-col min-h-screen">
-          {/* Site header */}
-          <Header />
+          {/* Main layout structure */}
+          <div className="flex flex-col min-h-screen">
+            {/* Site header */}
+            <Header />
 
-          {/* Main content area */}
-          <main className="flex-1">
-            <Container>
-              {children}
-            </Container>
-          </main>
+            {/* Main content area */}
+            <main className="flex-1">
+              <Container>
+                {children}
+              </Container>
+            </main>
 
-          {/* Site footer */}
-          <Footer />
-        </div>
+            {/* Site footer */}
+            <Footer />
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );

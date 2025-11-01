@@ -3,8 +3,6 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  CreateDateColumn,
-  UpdateDateColumn,
   JoinColumn,
   Unique,
 } from 'typeorm';
@@ -28,19 +26,13 @@ export class BlogVote {
   })
   voteType: VoteType;
 
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
-
   // Relationships
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column()
-  userId: number;
+  @Column({ type: 'varchar' })
+  userId: string;
 
   @ManyToOne(() => Blog, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'blogId' })

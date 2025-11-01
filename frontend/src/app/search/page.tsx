@@ -4,29 +4,22 @@ import { useEffect, useState, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProductGrid from '@/components/ProductGrid';
 import { PageState, LoadingSpinner } from '@/components/ui';
-import { productApi } from '@/lib/api';
+import { productApi, getUserProfile } from '@/lib/api';
 import type { ProductResponseDto } from '@/types/dtos';
-import { useAuth } from '@/hooks/useAuth';
-import { User, UserRole } from '@/types/entities';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { User } from '@/types/entities';
 
 const SearchContent = () => {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [userProfile, setUserProfile] = useState<User | null>(null);
-  
+
   // Fetch user profile when user changes
   useEffect(() => {
     if (user) {
-      // TODO: Implement getUserProfile function or remove this logic
-      // For now, we'll set a basic profile from user data
-      setUserProfile({
-        id: user.id,
-        name: user.email || 'User',
-        username: user.email?.split('@')[0] || 'user',
-        email: user.email || '',
-        avatar: user.user_metadata?.avatar_url,
-        role: UserRole.BUYER // Default role
+      getUserProfile().then(profile => {
+        setUserProfile(profile);
       });
     } else {
       setUserProfile(null);

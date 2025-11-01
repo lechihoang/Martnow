@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { blogApi } from '../lib/api';
 import { UserProfile } from '@/types/auth';
+import toast from 'react-hot-toast';
 
 interface VoteButtonsProps {
   blogId: number;
@@ -31,7 +32,7 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
 
   const handleVote = async (voteType: 'up' | 'down') => {
     if (!userProfile) {
-      alert('Bạn cần đăng nhập để vote');
+      toast.error('Bạn cần đăng nhập để vote');
       return;
     }
 
@@ -39,7 +40,7 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
 
     try {
       setLoading(true);
-      
+
       let result;
       if (localUserVote === voteType) {
         // Remove vote if clicking the same vote type
@@ -52,11 +53,11 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({
       setLocalUpvotes(result.upvoteCount);
       setLocalDownvotes(result.downvoteCount);
       setLocalUserVote(result.userVote);
-      
+
       onVoteChange?.(result);
     } catch (err) {
       console.error('Error voting:', err);
-      alert('Không thể vote. Vui lòng thử lại.');
+      toast.error('Không thể vote. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }

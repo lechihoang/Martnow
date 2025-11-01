@@ -1,4 +1,5 @@
-import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsEnum } from 'class-validator';
+import { UserRole } from '../../lib/supabase';
 
 export class SignupDto {
   @IsEmail()
@@ -12,9 +13,9 @@ export class SignupDto {
   @IsOptional()
   name?: string;
 
-  @IsString()
+  @IsEnum(UserRole)
   @IsOptional()
-  username?: string;
+  role?: UserRole;
 }
 
 export class SigninDto {

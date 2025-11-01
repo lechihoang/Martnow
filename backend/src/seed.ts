@@ -5,7 +5,6 @@ import { User } from './account/user/entities/user.entity';
 import { Buyer } from './account/buyer/entities/buyer.entity';
 import { Seller } from './account/seller/entities/seller.entity';
 import { Product } from './product/entities/product.entity';
-import { Category } from './product/entities/category.entity';
 import { Review } from './review/entities/review.entity';
 import { Order } from './order/entities/order.entity';
 import { OrderItem } from './order/entities/order-item.entity';
@@ -16,36 +15,10 @@ import { SellerStats } from './seller-stats/entities/seller-stats.entity';
 // Load environment variables
 config({ path: resolve(__dirname, '../.env') });
 
-const CATEGORIES = [
-  {
-    name: 'Đồ uống',
-    description: 'Nước ngọt, bia, rượu, nước suối, trà, cà phê',
-  },
-  { name: 'Bánh kẹo', description: 'Bánh quy, kẹo, chocolate, snack các loại' },
-  { name: 'Gia vị', description: 'Nước mắm, tương ớt, dầu ăn, giấm, gia vị' },
-  {
-    name: 'Lương thực',
-    description: 'Gạo, đậu, ngũ cốc, bột mì, thực phẩm khô',
-  },
-  {
-    name: 'Thực phẩm chế biến',
-    description: 'Mì tôm, cháo gói, thức ăn đóng hộp, đông lạnh',
-  },
-  {
-    name: 'Đồ dùng vệ sinh',
-    description: 'Bột giặt, nước rửa chén, giấy vệ sinh, xà phòng',
-  },
-  {
-    name: 'Đồ gia dụng',
-    description: 'Dụng cụ nhà bếp, đồ dùng sinh hoạt, thiết bị gia đình',
-  },
-];
-
 const USERS = [
   // Buyers
   {
     name: 'Nguyễn Văn An',
-    username: 'buyer_an',
     email: 'buyer@foodee.com',
     password: '123456',
     role: UserRole.BUYER,
@@ -55,7 +28,6 @@ const USERS = [
   },
   {
     name: 'Lê Văn Cường',
-    username: 'buyer_cuong',
     email: 'cuong@foodee.com',
     password: '123456',
     role: UserRole.BUYER,
@@ -65,7 +37,6 @@ const USERS = [
   },
   {
     name: 'Nguyễn Thị Mai',
-    username: 'buyer_mai',
     email: 'mai@foodee.com',
     password: '123456',
     role: UserRole.BUYER,
@@ -77,7 +48,6 @@ const USERS = [
   // Diverse Sellers
   {
     name: 'Trần Văn Minh',
-    username: 'seller_minh',
     email: 'minh@foodee.com',
     password: '123456',
     role: UserRole.SELLER,
@@ -94,7 +64,6 @@ const USERS = [
   },
   {
     name: 'Lê Thị Hương',
-    username: 'seller_huong',
     email: 'huong@foodee.com',
     password: '123456',
     role: UserRole.SELLER,
@@ -111,7 +80,6 @@ const USERS = [
   },
   {
     name: 'Phạm Văn Đức',
-    username: 'seller_duc',
     email: 'duc@foodee.com',
     password: '123456',
     role: UserRole.SELLER,
@@ -128,7 +96,6 @@ const USERS = [
   },
   {
     name: 'Nguyễn Thị Lan',
-    username: 'seller_lan',
     email: 'lan@foodee.com',
     password: '123456',
     role: UserRole.SELLER,
@@ -145,7 +112,6 @@ const USERS = [
   },
   {
     name: 'Trần Thanh Tùng',
-    username: 'seller_tung',
     email: 'tung@foodee.com',
     password: '123456',
     role: UserRole.SELLER,
@@ -161,7 +127,6 @@ const USERS = [
   },
   {
     name: 'Võ Thị Kim',
-    username: 'seller_kim',
     email: 'kim@foodee.com',
     password: '123456',
     role: UserRole.SELLER,
@@ -185,7 +150,7 @@ const PRODUCTS = [
     price: 42000,
     categoryName: 'Gia vị',
     stock: 90,
-    sellerUsername: 'seller_minh',
+    sellerEmail: 'minh@foodee.com',
     imageUrl: '/product/product1.jpg',
   },
   {
@@ -194,7 +159,7 @@ const PRODUCTS = [
     price: 28000,
     categoryName: 'Lương thực',
     stock: 80,
-    sellerUsername: 'seller_minh',
+    sellerEmail: 'minh@foodee.com',
     imageUrl: '/product/product2.png',
   },
   {
@@ -203,7 +168,7 @@ const PRODUCTS = [
     price: 250000,
     categoryName: 'Đồ gia dụng',
     stock: 25,
-    sellerUsername: 'seller_lan',
+    sellerEmail: 'lan@foodee.com',
     imageUrl: '/product/product3.jpeg',
   },
   {
@@ -212,7 +177,7 @@ const PRODUCTS = [
     price: 45000,
     categoryName: 'Lương thực',
     stock: 80,
-    sellerUsername: 'seller_minh',
+    sellerEmail: 'minh@foodee.com',
     imageUrl: '/product/product4.jpg',
   },
   {
@@ -221,7 +186,7 @@ const PRODUCTS = [
     price: 75000,
     categoryName: 'Gia vị',
     stock: 50,
-    sellerUsername: 'seller_minh',
+    sellerEmail: 'minh@foodee.com',
     imageUrl: '/product/product5.jpg',
   },
   {
@@ -230,7 +195,7 @@ const PRODUCTS = [
     price: 35000,
     categoryName: 'Lương thực',
     stock: 60,
-    sellerUsername: 'seller_minh',
+    sellerEmail: 'minh@foodee.com',
     imageUrl: '/product/product6.jpg',
   },
   {
@@ -239,7 +204,7 @@ const PRODUCTS = [
     price: 28000,
     categoryName: 'Đồ dùng vệ sinh',
     stock: 60,
-    sellerUsername: 'seller_lan',
+    sellerEmail: 'lan@foodee.com',
     imageUrl: '/product/product7.jpeg',
   },
   {
@@ -248,7 +213,7 @@ const PRODUCTS = [
     price: 32000,
     categoryName: 'Gia vị',
     stock: 70,
-    sellerUsername: 'seller_minh',
+    sellerEmail: 'minh@foodee.com',
     imageUrl: '/product/product8.jpg',
   },
   {
@@ -257,7 +222,7 @@ const PRODUCTS = [
     price: 195000,
     categoryName: 'Đồ gia dụng',
     stock: 35,
-    sellerUsername: 'seller_lan',
+    sellerEmail: 'lan@foodee.com',
     imageUrl: '/product/product9.jpg',
   },
   {
@@ -266,7 +231,7 @@ const PRODUCTS = [
     price: 125000,
     categoryName: 'Đồ gia dụng',
     stock: 30,
-    sellerUsername: 'seller_lan',
+    sellerEmail: 'lan@foodee.com',
     imageUrl: '/product/product10.jpeg',
   },
   {
@@ -275,7 +240,7 @@ const PRODUCTS = [
     price: 85000,
     categoryName: 'Đồ gia dụng',
     stock: 40,
-    sellerUsername: 'seller_lan',
+    sellerEmail: 'lan@foodee.com',
     imageUrl: '/product/product11.jpeg',
   },
   {
@@ -284,7 +249,7 @@ const PRODUCTS = [
     price: 45000,
     categoryName: 'Đồ dùng vệ sinh',
     stock: 50,
-    sellerUsername: 'seller_lan',
+    sellerEmail: 'lan@foodee.com',
     imageUrl: '/product/product12.jpeg',
   },
   {
@@ -293,7 +258,7 @@ const PRODUCTS = [
     price: 185000,
     categoryName: 'Đồ dùng vệ sinh',
     stock: 30,
-    sellerUsername: 'seller_lan',
+    sellerEmail: 'lan@foodee.com',
     imageUrl: '/product/product13.jpg',
   },
   {
@@ -302,7 +267,7 @@ const PRODUCTS = [
     price: 180000,
     categoryName: 'Lương thực',
     stock: 100,
-    sellerUsername: 'seller_minh',
+    sellerEmail: 'minh@foodee.com',
     imageUrl: '/product/product14.jpg',
   },
   {
@@ -311,7 +276,7 @@ const PRODUCTS = [
     price: 25000,
     categoryName: 'Lương thực',
     stock: 50,
-    sellerUsername: 'seller_kim',
+    sellerEmail: 'kim@foodee.com',
     imageUrl: '/product/product15.jpg',
   },
   {
@@ -320,7 +285,7 @@ const PRODUCTS = [
     price: 32000,
     categoryName: 'Lương thực',
     stock: 60,
-    sellerUsername: 'seller_kim',
+    sellerEmail: 'kim@foodee.com',
     imageUrl: '/product/product16.jpeg',
   },
   {
@@ -329,7 +294,7 @@ const PRODUCTS = [
     price: 45000,
     categoryName: 'Lương thực',
     stock: 100,
-    sellerUsername: 'seller_kim',
+    sellerEmail: 'kim@foodee.com',
     imageUrl: '/product/product17.jpg',
   },
   {
@@ -338,7 +303,7 @@ const PRODUCTS = [
     price: 32000,
     categoryName: 'Lương thực',
     stock: 80,
-    sellerUsername: 'seller_kim',
+    sellerEmail: 'kim@foodee.com',
     imageUrl: '/product/product18.jpeg',
   },
   {
@@ -347,7 +312,7 @@ const PRODUCTS = [
     price: 42000,
     categoryName: 'Gia vị',
     stock: 70,
-    sellerUsername: 'seller_minh',
+    sellerEmail: 'minh@foodee.com',
     imageUrl: '/product/product19.jpg',
   },
   {
@@ -356,7 +321,7 @@ const PRODUCTS = [
     price: 35000,
     categoryName: 'Đồ dùng vệ sinh',
     stock: 70,
-    sellerUsername: 'seller_lan',
+    sellerEmail: 'lan@foodee.com',
     imageUrl: '/product/product20.png',
   },
   {
@@ -365,7 +330,7 @@ const PRODUCTS = [
     price: 55000,
     categoryName: 'Thực phẩm chế biến',
     stock: 30,
-    sellerUsername: 'seller_duc',
+    sellerEmail: 'duc@foodee.com',
     imageUrl: '/product/product21.jpeg',
   },
   {
@@ -374,7 +339,7 @@ const PRODUCTS = [
     price: 18000,
     categoryName: 'Thực phẩm chế biến',
     stock: 60,
-    sellerUsername: 'seller_duc',
+    sellerEmail: 'duc@foodee.com',
     imageUrl: '/product/product22.png',
   },
   {
@@ -383,7 +348,7 @@ const PRODUCTS = [
     price: 135000,
     categoryName: 'Thực phẩm chế biến',
     stock: 45,
-    sellerUsername: 'seller_duc',
+    sellerEmail: 'duc@foodee.com',
     imageUrl: '/product/product23.jpg',
   },
   {
@@ -392,7 +357,7 @@ const PRODUCTS = [
     price: 8000,
     categoryName: 'Gia vị',
     stock: 100,
-    sellerUsername: 'seller_minh',
+    sellerEmail: 'minh@foodee.com',
     imageUrl: '/product/product24.jpg',
   },
   {
@@ -401,7 +366,7 @@ const PRODUCTS = [
     price: 18000,
     categoryName: 'Bánh kẹo',
     stock: 80,
-    sellerUsername: 'seller_duc',
+    sellerEmail: 'duc@foodee.com',
     imageUrl: '/product/product25.jpg',
   },
   {
@@ -410,7 +375,7 @@ const PRODUCTS = [
     price: 15000,
     categoryName: 'Bánh kẹo',
     stock: 50,
-    sellerUsername: 'seller_duc',
+    sellerEmail: 'duc@foodee.com',
     imageUrl: '/product/product26.jpeg',
   },
   {
@@ -419,7 +384,7 @@ const PRODUCTS = [
     price: 85000,
     categoryName: 'Bánh kẹo',
     stock: 40,
-    sellerUsername: 'seller_duc',
+    sellerEmail: 'duc@foodee.com',
     imageUrl: '/product/product27.jpeg',
   },
   {
@@ -428,7 +393,7 @@ const PRODUCTS = [
     price: 48000,
     categoryName: 'Bánh kẹo',
     stock: 60,
-    sellerUsername: 'seller_duc',
+    sellerEmail: 'duc@foodee.com',
     imageUrl: '/product/product28.jpg',
   },
   {
@@ -437,7 +402,7 @@ const PRODUCTS = [
     price: 450000,
     categoryName: 'Đồ uống',
     stock: 15,
-    sellerUsername: 'seller_tung',
+    sellerEmail: 'tung@foodee.com',
     imageUrl: '/product/product29.png',
   },
   {
@@ -446,7 +411,7 @@ const PRODUCTS = [
     price: 6000,
     categoryName: 'Đồ uống',
     stock: 150,
-    sellerUsername: 'seller_tung',
+    sellerEmail: 'tung@foodee.com',
     imageUrl: '/product/product30.jpg',
   },
   {
@@ -455,7 +420,7 @@ const PRODUCTS = [
     price: 620000,
     categoryName: 'Đồ uống',
     stock: 25,
-    sellerUsername: 'seller_tung',
+    sellerEmail: 'tung@foodee.com',
   },
   {
     name: 'Nước ngọt Coca Cola (6 lon)',
@@ -463,7 +428,7 @@ const PRODUCTS = [
     price: 45000,
     categoryName: 'Đồ uống',
     stock: 100,
-    sellerUsername: 'seller_tung',
+    sellerEmail: 'tung@foodee.com',
   },
   {
     name: 'Trà xanh không độ C2 (500ml)',
@@ -471,7 +436,7 @@ const PRODUCTS = [
     price: 8000,
     categoryName: 'Đồ uống',
     stock: 120,
-    sellerUsername: 'seller_tung',
+    sellerEmail: 'tung@foodee.com',
   },
 ];
 
@@ -500,7 +465,6 @@ async function seed() {
       User,
       Buyer,
       Seller,
-      Category,
       Product,
       Review,
       Order,
@@ -523,7 +487,6 @@ async function seed() {
     const userRepo = dataSource.getRepository(User);
     const buyerRepo = dataSource.getRepository(Buyer);
     const sellerRepo = dataSource.getRepository(Seller);
-    const categoryRepo = dataSource.getRepository(Category);
     const productRepo = dataSource.getRepository(Product);
     const reviewRepo = dataSource.getRepository(Review);
     const orderItemRepo = dataSource.getRepository(OrderItem);
@@ -543,8 +506,6 @@ async function seed() {
     console.log('   ✅ Cleared favorites');
     await dataSource.query('TRUNCATE TABLE "product" CASCADE');
     console.log('   ✅ Cleared products');
-    await dataSource.query('TRUNCATE TABLE "category" CASCADE');
-    console.log('   ✅ Cleared categories');
     await dataSource.query('TRUNCATE TABLE "seller_stats" CASCADE');
     console.log('   ✅ Cleared seller stats');
     await dataSource.query('TRUNCATE TABLE "seller" CASCADE');
@@ -576,13 +537,6 @@ async function seed() {
     // Initialize Supabase client for seeding
     console.log('🔐 Supabase client initialized for seeding');
 
-    // Seed categories
-    console.log('📂 Seeding categories...');
-    const savedCategories = await categoryRepo.save(
-      CATEGORIES.map((cat) => categoryRepo.create(cat)),
-    );
-    console.log(`✅ Created ${savedCategories.length} categories`);
-
     // Seed users with Supabase Auth
     console.log('👥 Seeding users with Supabase Auth...');
     const savedUsers: User[] = [];
@@ -598,11 +552,6 @@ async function seed() {
             email: userData.email,
             password: password,
             email_confirm: true, // Auto confirm email
-            user_metadata: {
-              name: userData.name,
-              username: userData.username,
-              role: userData.role,
-            },
           });
 
         if (authError) {
@@ -632,14 +581,14 @@ async function seed() {
         savedUsers.push(savedUser);
 
         console.log(
-          `   ✅ Created user profile: ${savedUser.username} (${savedUser.role})`,
+          `   ✅ Created user profile: ${savedUser.name} (${savedUser.role})`,
         );
 
         // 3. Tạo buyer hoặc seller profile
         if (savedUser.role === UserRole.BUYER) {
           const buyer = buyerRepo.create({ id: savedUser.id });
           await buyerRepo.save(buyer);
-          console.log(`   ✅ Created buyer profile for ${savedUser.username}`);
+          console.log(`   ✅ Created buyer profile for ${savedUser.name}`);
         } else if (savedUser.role === UserRole.SELLER && sellerInfo) {
           const seller = sellerRepo.create({
             id: savedUser.id,
@@ -647,7 +596,7 @@ async function seed() {
             description: sellerInfo.description,
           });
           await sellerRepo.save(seller);
-          console.log(`   ✅ Created seller profile for ${savedUser.username}`);
+          console.log(`   ✅ Created seller profile for ${savedUser.name}`);
         }
       } catch (error) {
         console.error(`   ❌ Error creating user ${userData.email}:`, error);
@@ -657,16 +606,13 @@ async function seed() {
     // Seed products
     console.log('🛍️ Seeding products...');
     for (const productData of PRODUCTS) {
-      const category = savedCategories.find(
-        (cat) => cat.name === productData.categoryName,
-      );
       const seller = savedUsers.find(
-        (user) => user.username === productData.sellerUsername,
+        (user) => user.email === (productData as any).sellerEmail,
       );
 
-      if (!category || !seller) {
+      if (!seller) {
         console.warn(
-          `⚠️ Skipping product ${productData.name} - category or seller not found`,
+          `⚠️ Skipping product ${productData.name} - seller not found`,
         );
         continue;
       }
@@ -676,7 +622,7 @@ async function seed() {
         description: productData.description,
         price: productData.price,
         stock: productData.stock,
-        categoryId: category.id,
+        category: productData.categoryName,
         sellerId: seller.id,
         imageUrl: (productData as any).imageUrl || null,
       });

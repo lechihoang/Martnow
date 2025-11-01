@@ -3,9 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import BlogForm from '../../../../components/BlogForm';
 import Container from '../../../../components/Container';
-import { useAuth } from '../../../../hooks/useAuth';
-import { userApi } from '../../../../lib/api';
-import { UserProfile } from '../../../../types/auth';
+import LoadingSpinner from '../../../../components/ui/LoadingSpinner';
 
 interface EditBlogPageProps {
   params: Promise<{
@@ -14,10 +12,7 @@ interface EditBlogPageProps {
 }
 
 export default function EditBlogPage({ params }: EditBlogPageProps) {
-  const { user } = useAuth();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [blogId, setBlogId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const getParams = async () => {
@@ -32,44 +27,19 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
     getParams();
   }, [params]);
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (user) {
-        try {
-          const profile = await userApi.getProfile();
-          if (profile && profile.id) {
-            const newProfile = {
-              id: profile.id,
-              name: profile.name,
-              username: profile.username,
-              email: profile.email,
-              avatar: profile.avatar,
-              role: profile.role
-            };
-            setUserProfile(newProfile);
-          } else {
-            setUserProfile(null);
-          }
-        } catch (error) {
-          console.error('Error fetching user profile:', error);
-          setUserProfile(null);
-        }
-      } else {
-        setUserProfile(null);
-      }
-
-      setLoading(false);
-    };
-
-    fetchUserProfile();
-  }, [user]);
-
-  // Show loading while params or auth are loading
-  if (loading || blogId === null) {
+  // Show loading while params are loading
+  if (blogId === null) {
     return (
       <Container>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
+        <div className="min-h-screen py-8">
+          <div className="max-w-4xl mx-auto px-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="border-b border-gray-200 px-6 py-6">
+                <h1 className="text-2xl font-bold text-gray-900">Chỉnh sửa bài viết</h1>
+              </div>
+              <LoadingSpinner size="lg" message="Đang tải..." />
+            </div>
+          </div>
         </div>
       </Container>
     );
@@ -77,7 +47,7 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
 
   return (
     <Container>
-      <BlogForm blogId={blogId} userProfile={userProfile} loading={loading} />
+      <BlogForm blogId={blogId} />
     </Container>
   );
 }

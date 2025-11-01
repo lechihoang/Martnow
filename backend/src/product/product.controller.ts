@@ -28,25 +28,6 @@ export class ProductController {
 
   // === BASIC CRUD ENDPOINTS ===
 
-  // ========== HEALTH CHECK ENDPOINT ==========
-
-  /**
-   * Health check endpoint để test module
-   */
-  @Get('health')
-  healthCheck() {
-    return {
-      message: 'Product module is healthy',
-      timestamp: new Date().toISOString(),
-      status: 'OK',
-    };
-  }
-
-  @Get('categories')
-  async getCategories() {
-    return this.productService.getCategories();
-  }
-
   @Get()
   async getProducts(
     @Query('categoryName') categoryName?: string,

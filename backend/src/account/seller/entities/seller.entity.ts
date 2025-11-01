@@ -30,6 +30,8 @@ export class Seller {
   products: Product[];
 
   // Statistics của seller
-  @OneToOne(() => SellerStats, (stats) => stats.seller)
+  @OneToOne(() => SellerStats, (stats) => stats.seller, {
+    cascade: true,
+  })
   stats: SellerStats;
 }

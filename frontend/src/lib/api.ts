@@ -8,7 +8,6 @@ import {
   UpdateReviewDto,
   OrderResponseDto,
   ReviewResponseDto,
-  CategoryDto,
   ApiResponse,
   BlogResponseDto,
   CreateBlogDto,
@@ -366,11 +365,6 @@ export const productApi = {
       method: 'DELETE',
       headers: await getAuthHeaders(),
     });
-    return handleResponse(response);
-  },
-
-  async getCategories(): Promise<CategoryDto[]> {
-    const response = await fetch(`${API_BASE_URL}/product/categories`);
     return handleResponse(response);
   },
 

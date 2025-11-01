@@ -10,11 +10,13 @@ export class Favorite {
   @PrimaryColumn({ type: 'int' })
   productId: number;
 
-  @ManyToOne(() => Buyer, (buyer) => buyer.favorites)
+  @ManyToOne(() => Buyer, (buyer) => buyer.favorites, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'buyerId' })
   buyer: Buyer;
 
-  @ManyToOne(() => Product, (product) => product.favorites)
+  @ManyToOne(() => Product, (product) => product.favorites, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'productId' })
   product: Product;
 }

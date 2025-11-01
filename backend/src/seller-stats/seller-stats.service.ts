@@ -29,7 +29,6 @@ export class SellerStatsService {
         .getCount();
 
       // Tính tổng doanh thu
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const revenueResult = await this.orderRepository
         .createQueryBuilder('order')
         .select('SUM(order.totalPrice)', 'totalRevenue')
@@ -39,7 +38,7 @@ export class SellerStatsService {
         .andWhere('order.status = :status', { status: OrderStatus.PAID })
         .getRawOne();
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+      
       const totalRevenue = parseFloat(revenueResult?.totalRevenue ?? '0') || 0;
 
       // Tính tổng số sản phẩm

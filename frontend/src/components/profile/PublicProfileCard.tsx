@@ -70,7 +70,7 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
                 {user.role === UserRole.SELLER ? '🏪 Người bán' : '🛒 Người mua'}
               </span>
             </div>
-            <p className="text-xl text-gray-600 mb-4">@{user.username}</p>
+            <p className="text-xl text-gray-600 mb-4">@{user.name}</p>
             
             {/* User Stats */}
             <div className="flex gap-6 mb-6">

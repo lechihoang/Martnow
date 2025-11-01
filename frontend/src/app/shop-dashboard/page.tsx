@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { getUserProfile } from '@/lib/api';
 import { UserProfile } from '@/types/auth';
 import { LoadingSpinner } from '@/components/ui';
@@ -14,7 +14,7 @@ import SalesAnalyticsTab from '@/components/shop/SalesAnalyticsTab';
 type TabType = 'orders' | 'products' | 'analytics';
 
 const ShopDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('orders');
   const [profileLoading, setProfileLoading] = useState(true);

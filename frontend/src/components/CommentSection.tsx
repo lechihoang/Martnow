@@ -5,10 +5,15 @@ import { MessageCircle, Edit, Trash2, Send } from 'lucide-react';
 import { blogApi } from '../lib/api';
 import { BlogCommentDto } from '../types/dtos';
 import { UserProfile } from '@/types/auth';
+import SimpleCommentEditor from './SimpleCommentEditor';
+import toast from 'react-hot-toast';
+import { ConfirmDialog } from './ui';
+import { useAuthContext } from '../contexts/AuthContext';
 
 interface CommentSectionProps {
   blogId: number;
   userProfile: UserProfile | null;
+  profileLoading?: boolean;
 }
 
 interface CommentItemProps {
@@ -25,28 +30,31 @@ const CommentItem: React.FC<CommentItemProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const isDeleted = comment.deletedAt !== null && comment.deletedAt !== undefined;
 
   const handleEdit = async () => {
     try {
       await blogApi.updateComment(comment.id, { content: editContent });
       setIsEditing(false);
+      toast.success('Đã cập nhật bình luận');
       onUpdate();
     } catch (err) {
       console.error('Error updating comment:', err);
-      alert('Không thể cập nhật bình luận');
+      toast.error('Không thể cập nhật bình luận');
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa bình luận này?')) return;
-
     try {
       await blogApi.deleteComment(comment.id);
+      toast.success('Đã xóa bình luận');
       onUpdate();
     } catch (err) {
       console.error('Error deleting comment:', err);
-      alert('Không thể xóa bình luận');
+      toast.error('Không thể xóa bình luận');
+    } finally {
+      setConfirmDelete(false);
     }
   };
 
@@ -70,13 +78,13 @@ const CommentItem: React.FC<CommentItemProps> = ({
             <div className="flex space-x-1">
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                className="p-1 text-gray-400 hover:text-emerald-600 transition-colors"
                 title="Chỉnh sửa"
               >
                 <Edit size={14} />
               </button>
               <button
-                onClick={handleDelete}
+                onClick={() => setConfirmDelete(true)}
                 className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                 title="Xóa"
               >
@@ -88,16 +96,15 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
         {isEditing && !isDeleted ? (
           <div className="space-y-2">
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              rows={3}
+            <SimpleCommentEditor
+              content={editContent}
+              onChange={(content) => setEditContent(content)}
+              placeholder="Chỉnh sửa bình luận..."
             />
             <div className="flex space-x-2">
               <button
                 onClick={handleEdit}
-                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                className="px-3 py-1 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-700"
               >
                 Lưu
               </button>
@@ -114,17 +121,29 @@ const CommentItem: React.FC<CommentItemProps> = ({
           </div>
         ) : (
           <>
-            <p className={`mb-2 ${isDeleted ? 'text-gray-400 italic' : 'text-gray-700'}`}>
+            <p className={`whitespace-pre-wrap ${isDeleted ? 'text-gray-400 italic' : 'text-gray-700'}`}>
               {comment.content}
             </p>
           </>
         )}
       </div>
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+        title="Xóa bình luận"
+        message="Bạn có chắc chắn muốn xóa bình luận này? Hành động này không thể hoàn tác."
+        confirmText="Xóa"
+        cancelText="Hủy"
+        type="danger"
+      />
     </div>
   );
 };
 
-const CommentSection: React.FC<CommentSectionProps> = ({ blogId, userProfile }) => {
+const CommentSection: React.FC<CommentSectionProps> = ({ blogId, userProfile, profileLoading = false }) => {
   const [comments, setComments] = useState<BlogCommentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -158,10 +177,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogId, userProfile }) 
       });
 
       setNewComment('');
+      toast.success('Đã thêm bình luận');
       fetchComments();
     } catch (err) {
       console.error('Error creating comment:', err);
-      alert('Không thể thêm bình luận');
+      toast.error('Không thể thêm bình luận');
     } finally {
       setSubmitting(false);
     }
@@ -175,44 +195,47 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogId, userProfile }) 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
       {/* Comment Form */}
-      {userProfile ? (
+      {profileLoading ? (
+        <div className="mb-12 animate-pulse">
+          <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
+          <div className="h-10 w-32 bg-gray-200 rounded-lg ml-auto"></div>
+        </div>
+      ) : userProfile ? (
         <form onSubmit={handleSubmitComment} className="mb-12">
-          <div className="flex space-x-4">
-            <textarea
-              id="comment-input"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
+          <div className="space-y-4">
+            <SimpleCommentEditor
+              content={newComment}
+              onChange={(content) => setNewComment(content)}
               placeholder="Chia sẻ suy nghĩ của bạn..."
-              className="flex-1 p-4 border-2 border-gray-200 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-base"
-              rows={4}
-              disabled={submitting}
             />
-            <button
-              type="submit"
-              disabled={!newComment.trim() || submitting}
-              className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-            >
-              {submitting ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-              ) : (
-                <>
-                  <Send size={18} />
-                  <span>Gửi</span>
-                </>
-              )}
-            </button>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={!newComment.trim() || submitting}
+                className="px-8 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+              >
+                {submitting ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                ) : (
+                  <>
+                    <Send size={18} />
+                    <span>Gửi bình luận</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
       ) : (
-        <div className="mb-12 p-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border-2 border-dashed border-blue-200 text-center">
-          <div className="w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-            <span className="text-blue-600 text-2xl">💬</span>
+        <div className="mb-12 p-8 bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl border-2 border-dashed border-emerald-200 text-center">
+          <div className="w-16 h-16 bg-emerald-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+            <span className="text-emerald-600 text-2xl">💬</span>
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Đăng nhập để bình luận</h3>
           <p className="text-gray-600 mb-4">Tham gia thảo luận và chia sẻ ý kiến của bạn với cộng đồng</p>
           <button
             onClick={() => window.location.href = '/auth/login'}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+            className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
           >
             Đăng nhập ngay
           </button>
@@ -233,7 +256,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ blogId, userProfile }) 
             </div>
             <h4 className="text-xl font-semibold text-gray-900 mb-2">Chưa có bình luận nào</h4>
             <p className="text-gray-600 mb-4">Hãy là người đầu tiên bắt đầu cuộc trò chuyện!</p>
-            <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium">
+            <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full text-sm font-medium">
               🚀 Viết bình luận đầu tiên
             </div>
           </div>

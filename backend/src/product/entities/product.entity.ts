@@ -8,14 +8,13 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Seller } from '../../account/seller/entities/seller.entity';
-import { Category } from './category.entity';
 import { Review } from '../../review/entities/review.entity';
 import { OrderItem } from '../../order/entities/order-item.entity';
 import { Favorite } from '../../favorite/entities/favorite.entity';
 
 @Entity()
 @Index(['sellerId']) // Index cho việc lấy products của seller
-@Index(['categoryId']) // Index cho việc lấy products theo category
+@Index(['category']) // Index cho việc lấy products theo category
 @Index(['isAvailable']) // Index cho việc filter sản phẩm available
 @Index(['price']) // Index cho việc sort/filter theo giá
 export class Product {
@@ -29,12 +28,8 @@ export class Product {
   @JoinColumn({ name: 'sellerId' })
   seller: Seller;
 
-  @Column({ type: 'int' })
-  categoryId: number;
-
-  @ManyToOne(() => Category, (category) => category.products)
-  @JoinColumn({ name: 'categoryId' })
-  category: Category;
+  @Column({ type: 'varchar', length: 100 })
+  category: string;
 
   @Column({ type: 'varchar', length: 255 })
   name: string;
@@ -82,12 +77,16 @@ export class Product {
   tags: string; // JSON array stored as string
 
   // Relations
-  @OneToMany(() => Review, (review) => review.product)
+  @OneToMany(() => Review, (review) => review.product, {
+    cascade: ['remove'],
+  })
   reviews: Review[];
 
   @OneToMany(() => OrderItem, (orderItem) => orderItem.product)
   orderItems: OrderItem[];
 
-  @OneToMany(() => Favorite, (favorite) => favorite.product)
+  @OneToMany(() => Favorite, (favorite) => favorite.product, {
+    cascade: ['remove'],
+  })
   favorites: Favorite[];
 }

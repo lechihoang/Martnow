@@ -24,10 +24,14 @@ export class Buyer {
   orders: Order[];
 
   // Tất cả reviews mà buyer này đã tạo
-  @OneToMany(() => Review, (review) => review.buyer)
+  @OneToMany(() => Review, (review) => review.buyer, {
+    cascade: ['remove'],
+  })
   reviews: Review[];
 
   // Tất cả sản phẩm yêu thích của buyer (sync với backend)
-  @OneToMany(() => Favorite, (favorite) => favorite.buyer)
+  @OneToMany(() => Favorite, (favorite) => favorite.buyer, {
+    cascade: ['remove'],
+  })
   favorites: Favorite[];
 }

@@ -8,17 +8,20 @@ import CommentSection from './CommentSection';
 import VoteButtons from './VoteButtons';
 import { BlogResponseDto } from '../types/dtos';
 import { UserProfile } from '@/types/auth';
-import { LoadingSpinner } from './ui';
+import { LoadingSpinner, ConfirmDialog } from './ui';
+import toast from 'react-hot-toast';
 
 interface BlogDetailProps {
   blogId: number;
   userProfile: UserProfile | null;
+  profileLoading?: boolean;
 }
 
-const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile }) => {
+const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile, profileLoading = false }) => {
   const [blog, setBlog] = useState<BlogResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const fetchBlog = useCallback(async () => {
     try {
@@ -38,20 +41,23 @@ const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile }) => {
   }, [fetchBlog]);
 
   const handleDeleteBlog = async () => {
-    if (!blog || !window.confirm('Bạn có chắc chắn muốn xóa bài viết này?')) return;
+    if (!blog) return;
 
     try {
       await blogApi.deleteBlog(blog.id);
+      toast.success('Đã xóa bài viết thành công');
       window.location.href = '/blog';
     } catch (err) {
       console.error('Error deleting blog:', err);
-      alert('Không thể xóa bài viết');
+      toast.error('Không thể xóa bài viết');
+    } finally {
+      setConfirmDelete(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="py-12 bg-white">
+      <div className="py-12">
         <LoadingSpinner size="lg" message="Đang tải bài viết..." />
       </div>
     );
@@ -59,8 +65,10 @@ const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile }) => {
 
   if (error || !blog) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-500">{error || 'Không tìm thấy bài viết'}</p>
+      <div className="py-8">
+        <div className="text-center">
+          <p className="text-red-500">{error || 'Không tìm thấy bài viết'}</p>
+        </div>
       </div>
     );
   }
@@ -69,8 +77,8 @@ const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile }) => {
 
   return (
     <div className="py-8">
-      <article className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="p-6 md:p-8">
+      <article className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="px-6 py-8 md:px-10 md:py-10">
           {/* Header */}
           <div className="mb-6">
             <div className="flex justify-between items-start mb-4">
@@ -83,7 +91,7 @@ const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile }) => {
                   <div className="relative group">
                     <button
                       onClick={() => window.location.href = `/blog/${blog.id}/edit`}
-                      className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
+                      className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                     >
                       <Edit size={20} />
                     </button>
@@ -93,8 +101,8 @@ const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile }) => {
                   </div>
                   <div className="relative group">
                     <button
-                      onClick={handleDeleteBlog}
-                      className="p-2 text-gray-500 hover:text-red-600 transition-colors"
+                      onClick={() => setConfirmDelete(true)}
+                      className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
                       <Trash2 size={20} />
                     </button>
@@ -125,8 +133,8 @@ const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile }) => {
 
           {/* Featured Image - moved here after title and meta */}
           {(blog.featuredImage || blog.imageUrl) && (
-            <div className="max-w-4xl mx-auto mb-8">
-              <div className="relative h-64 md:h-80 rounded-lg overflow-hidden">
+            <div className="mb-8 -mx-6 md:-mx-10">
+              <div className="relative h-64 md:h-96 w-full">
                 <Image
                   src={blog.featuredImage || blog.imageUrl || ''}
                   alt={blog.title}
@@ -138,7 +146,7 @@ const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile }) => {
           )}
 
           {/* Content */}
-          <div className="prose prose-lg max-w-4xl mx-auto mb-8" dangerouslySetInnerHTML={{ __html: blog.content }} />
+          <div className="prose prose-lg max-w-none mb-8" dangerouslySetInnerHTML={{ __html: blog.content }} />
 
           {/* Vote Buttons - moved to end of blog */}
           <div className="pt-6 border-t border-gray-200">
@@ -156,8 +164,20 @@ const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile }) => {
 
       {/* Comments Section */}
       <div className="mt-8">
-        <CommentSection blogId={blog.id} userProfile={userProfile} />
+        <CommentSection blogId={blog.id} userProfile={userProfile} profileLoading={profileLoading} />
       </div>
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDeleteBlog}
+        title="Xóa bài viết"
+        message="Bạn có chắc chắn muốn xóa bài viết này? Hành động này không thể hoàn tác."
+        confirmText="Xóa"
+        cancelText="Hủy"
+        type="danger"
+      />
     </div>
   );
 };

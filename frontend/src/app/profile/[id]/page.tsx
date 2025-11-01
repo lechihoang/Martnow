@@ -6,7 +6,7 @@ import { ArrowLeft, MapPin, Phone, Mail, Calendar, Store, Package } from 'lucide
 
 import { UserResponseDto, SellerResponseDto, BuyerResponseDto, ProductResponseDto } from '@/types/dtos';
 import { userApi, productApi, getUserProfile } from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import ProductCard from '@/components/ProductCard';
 import { UserProfile } from '@/types/auth';
 import { LoadingSpinner } from '@/components/ui';
@@ -15,7 +15,7 @@ const ProfilePage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const userId = params?.id as string;
-  const { user: currentUser } = useAuth();
+  const { user: currentUser } = useAuthContext();
 
   const [profileData, setProfileData] = useState<{
     user: UserResponseDto;
@@ -45,15 +45,13 @@ const ProfilePage: React.FC = () => {
       setProfileData({
         user: userData,
         seller: userData.sellerInfo ? {
-          id: userData.sellerInfo.id,
-          userId: userData.id,
+          id: userData.id, // seller.id is same as user.id
           shopName: userData.sellerInfo.shopName,
           description: userData.sellerInfo.description,
           totalProducts: 0,
           user: {
             id: userData.id,
             name: userData.name,
-            username: userData.username,
             email: userData.email,
             address: userData.address,
             phone: userData.phone,
@@ -62,14 +60,12 @@ const ProfilePage: React.FC = () => {
           updatedAt: new Date(),
         } as SellerResponseDto : undefined,
         buyer: userData.buyerInfo ? {
-          id: userData.buyerInfo.id,
-          userId: userData.id,
+          id: userData.id, // buyer.id is same as user.id
           totalOrders: 0,
           totalReviews: 0,
           user: {
             id: userData.id,
             name: userData.name,
-            username: userData.username,
             email: userData.email,
           },
           createdAt: new Date(),
@@ -203,10 +199,10 @@ const ProfilePage: React.FC = () => {
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                      {profileUser?.name || profileUser?.username || 'Người dùng'}
+                      {profileUser?.name|| 'Người dùng'}
                     </h1>
                     <div className="flex items-center gap-2 text-gray-600 mb-3">
-                      <span>@{profileUser?.username}</span>
+                      <span>@{profileUser?.name}</span>
                       <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
                       <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                         profileUser?.role === 'SELLER'

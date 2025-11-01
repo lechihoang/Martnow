@@ -4,19 +4,23 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Save, X, Upload } from 'lucide-react';
-import { blogApi, uploadApi } from '../lib/api';
+import { blogApi, uploadApi, getUserProfile } from '../lib/api';
 import { CreateBlogDto, UpdateBlogDto } from '../types/dtos';
-import { UserProfile } from '../types/auth';
+import SimpleCommentEditor from './SimpleCommentEditor';
+import { useAuthContext } from '../contexts/AuthContext';
+import { User } from '../types/entities';
+import LoadingSpinner from './ui/LoadingSpinner';
+import toast from 'react-hot-toast';
 
 interface BlogFormProps {
   blogId?: number;
-  userProfile: UserProfile | null;
-  loading: boolean;
 }
 
 type BlogData = CreateBlogDto;
 
-const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userLoading }) => {
+const BlogForm: React.FC<BlogFormProps> = ({ blogId }) => {
+  const { user, loading: authLoading } = useAuthContext();
+  const [userProfile, setUserProfile] = useState<User | null>(null);
   const [formData, setFormData] = useState<BlogData>({
     title: '',
     content: '',
@@ -31,6 +35,36 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userL
 
   const isEdit = Boolean(blogId);
 
+  // Fetch user profile when user is available
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user && user.id && user.email && user.aud === 'authenticated') {
+        console.log('✅ User is authenticated, fetching profile...');
+        try {
+          const profile = await getUserProfile();
+          console.log('📋 Profile fetched:', profile);
+          setUserProfile(profile || null);
+        } catch (error) {
+          console.error('❌ Error fetching user profile:', error);
+          setUserProfile(null);
+        }
+      } else if (!authLoading) {
+        // Auth is done loading and no user - clear profile
+        setUserProfile(null);
+      }
+    };
+
+    fetchProfile();
+  }, [user, authLoading]);
+
+  // Handle redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      console.log('🚨 Redirecting to login - no user after auth loading');
+      router.push('/auth/login');
+    }
+  }, [authLoading, user, router]);
+
   const fetchBlog = useCallback(async () => {
     if (!blogId) return;
 
@@ -40,7 +74,7 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userL
       
       // Check if user is the author
       if (blog.author.id !== userProfile?.id) {
-        alert('Bạn không có quyền chỉnh sửa bài viết này');
+        toast.error('Bạn không có quyền chỉnh sửa bài viết này');
         router.push('/blog');
         return;
       }
@@ -57,7 +91,7 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userL
       }
     } catch (err) {
       console.error('Error fetching blog:', err);
-      alert('Không thể tải bài viết');
+      toast.error('Không thể tải bài viết');
       router.push('/blog');
     } finally {
       setLoading(false);
@@ -65,25 +99,13 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userL
   }, [blogId, userProfile, router]);
 
   useEffect(() => {
-    // Wait for user loading to complete before checking authentication
-    if (userLoading) {
-      return;
-    }
-
-    // Add delay to prevent race condition with userProfile fetch
-    const timeoutId = setTimeout(() => {
-      if (!userProfile) {
-        router.push('/auth/login');
-        return;
-      }
-    }, 2000); // Increase timeout to 2 seconds
-
+    // Fetch blog data if in edit mode and user is available
     if (isEdit && blogId && userProfile) {
       fetchBlog();
     }
+  }, [userProfile, blogId, isEdit, fetchBlog]);
 
-    return () => clearTimeout(timeoutId);
-  }, [userProfile, userLoading, blogId, isEdit, router, fetchBlog]);
+  // Removed redirect useEffect - let component handle it in render
 
   const handleFeaturedImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,7 +141,7 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userL
     e.preventDefault();
     
     if (!formData.title.trim() || !formData.content.trim()) {
-      alert('Vui lòng điền đầy đủ thông tin');
+      toast.error('Vui lòng điền đầy đủ thông tin');
       return;
     }
 
@@ -142,57 +164,95 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userL
 
       if (isEdit && blogId) {
         await blogApi.updateBlog(blogId, submitData as UpdateBlogDto);
-        alert('Cập nhật bài viết thành công!');
+        toast.success('Cập nhật bài viết thành công!');
       } else {
         await blogApi.createBlog(submitData);
-        alert('Tạo bài viết thành công!');
+        toast.success('Tạo bài viết thành công!');
       }
 
       router.push('/blog');
     } catch (error) {
       console.error('Error submitting blog:', error);
-      alert('Có lỗi xảy ra. Vui lòng thử lại.');
+      toast.error('Có lỗi xảy ra. Vui lòng thử lại.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (userLoading || (!userProfile && !userLoading)) {
+  // Show loading while auth is initializing or fetching blog data
+  if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="border-b border-gray-200 px-6 py-6">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {isEdit ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}
+              </h1>
+            </div>
+            <LoadingSpinner size="lg" message={loading ? "Đang tải bài viết..." : "Đang xác thực..."} />
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (loading) {
+  // Show loading if user exists but profile not loaded yet (redirect handled by useEffect)
+  if (user && !userProfile) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="border-b border-gray-200 px-6 py-6">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {isEdit ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}
+              </h1>
+            </div>
+            <LoadingSpinner size="lg" message="Đang tải thông tin..." />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user after auth loading, show loading (redirect is happening)
+  if (!user) {
+    return (
+      <div className="min-h-screen py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="border-b border-gray-200 px-6 py-6">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {isEdit ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}
+              </h1>
+            </div>
+            <LoadingSpinner size="lg" message="Đang chuyển hướng..." />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8 text-white">
+          <div className="border-b border-gray-200 px-6 py-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold">
+                <h1 className="text-2xl font-bold text-gray-900">
                   {isEdit ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}
                 </h1>
-                <p className="text-blue-100 mt-2">
+                <p className="text-gray-600 mt-1 text-sm">
                   {isEdit ? 'Cập nhật nội dung bài viết của bạn' : 'Chia sẻ kiến thức và trải nghiệm với cộng đồng'}
                 </p>
               </div>
               <button
                 onClick={() => router.push('/blog')}
-                className="p-2 text-blue-100 hover:text-white hover:bg-blue-600 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
             </div>
           </div>
@@ -209,7 +269,7 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userL
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                   placeholder="Nhập tiêu đề bài viết..."
                   required
                 />
@@ -243,7 +303,7 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userL
                     </div>
                   )}
                   <div className="flex items-center justify-center w-full">
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition-colors">
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <Upload className="w-8 h-8 mb-4 text-gray-500" />
                         <p className="mb-2 text-sm text-gray-500">
@@ -267,32 +327,26 @@ const BlogForm: React.FC<BlogFormProps> = ({ blogId, userProfile, loading: userL
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nội dung bài viết *
                 </label>
-                <textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows={15}
+                <SimpleCommentEditor
+                  content={formData.content}
+                  onChange={(content) => setFormData(prev => ({ ...prev, content }))}
                   placeholder="Viết nội dung bài viết của bạn..."
-                  required
                 />
-                <p className="text-sm text-gray-500 mt-2">
-                  Hỗ trợ HTML để định dạng văn bản
-                </p>
               </div>
 
               {/* Submit Button */}
-              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => router.push('/blog')}
-                  className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                  className="px-6 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 >
                   {submitting ? (
                     <>

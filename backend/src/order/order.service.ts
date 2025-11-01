@@ -22,8 +22,6 @@ export class OrderService {
     private orderRepository: Repository<Order>,
     @InjectRepository(Buyer)
     private buyerRepository: Repository<Buyer>,
-    @InjectRepository(OrderItem)
-    private orderItemRepository: Repository<OrderItem>,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
     private dataSource: DataSource,
@@ -111,17 +109,14 @@ export class OrderService {
       );
 
       order.totalPrice = totalPrice;
+      order.items = orderItems; // Set items array for cascade save
       const savedOrder = await manager.save(Order, order);
 
       this.logger.log(
         `💾 Order saved to DB with ID ${savedOrder.id} and totalPrice: ${savedOrder.totalPrice}đ`,
       );
 
-      // Save order items
-      for (const item of orderItems) {
-        item.orderId = savedOrder.id;
-      }
-      await manager.save(OrderItem, orderItems);
+      // Note: OrderItems are automatically saved via cascade
 
       // Count unique sellers
       const sellerCount = new Set(
@@ -200,7 +195,7 @@ export class OrderService {
       throw new Error('Cannot cancel paid order');
     }
 
-    await this.orderItemRepository.delete({ orderId });
+    // Note: OrderItems are automatically deleted via cascade
     await this.orderRepository.remove(order);
 
     this.logger.log(`✅ Order ${orderId} cancelled and deleted successfully`);
@@ -349,118 +344,5 @@ export class OrderService {
       createdAt: order.createdAt,
     };
   }
-
-  /**
-   * Generate và gửi báo cáo doanh thu qua email
-   */
-  async generateAndEmailRevenueReport(
-    sellerId: string,
-    sellerEmail: string,
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      this.logger.log(`📊 Generating revenue report for seller ${sellerId}`);
-
-      // Lấy tất cả đơn hàng đã thanh toán của seller trong 30 ngày qua
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      const orders = await this.orderRepository
-        .createQueryBuilder('order')
-        .leftJoinAndSelect('order.items', 'item')
-        .leftJoinAndSelect('item.product', 'product')
-        .leftJoinAndSelect('product.seller', 'seller')
-        .leftJoinAndSelect('seller.user', 'sellerUser')
-        .where('seller.user.id = :sellerId', { sellerId })
-        .andWhere('order.status = :status', { status: OrderStatus.PAID })
-        .andWhere('order.createdAt >= :thirtyDaysAgo', { thirtyDaysAgo })
-        .orderBy('order.createdAt', 'DESC')
-        .getMany();
-
-      // Tính toán thống kê doanh thu
-      const totalOrders = orders.length;
-      const totalRevenue = orders.reduce(
-        (sum, order) => sum + order.totalPrice,
-        0,
-      );
-      const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-
-      // Tạo nội dung báo cáo
-      const reportContent = this.generateReportEmail(
-        orders,
-        totalOrders,
-        totalRevenue,
-        avgOrderValue,
-      );
-
-      // Log thông tin thống kê
-      this.logger.log(`📈 Revenue report stats:`, {
-        sellerId,
-        totalOrders,
-        totalRevenue,
-        avgOrderValue,
-        period: '30 days',
-      });
-
-      // TODO: Implement actual email sending service
-      // For now, we'll just log the report content
-      this.logger.log(`📧 Revenue report generated for ${sellerEmail}:`);
-      this.logger.log(reportContent);
-
-      return {
-        success: true,
-        message: `Báo cáo doanh thu đã được tạo và gửi đến ${sellerEmail}`,
-      };
-    } catch (error) {
-      this.logger.error(
-        `❌ Failed to generate revenue report for seller ${sellerId}:`,
-        error,
-      );
-      throw new Error('Không thể tạo báo cáo doanh thu');
-    }
-  }
-
-  /**
-   * Tạo nội dung email báo cáo doanh thu
-   */
-  private generateReportEmail(
-    orders: Order[],
-    totalOrders: number,
-    totalRevenue: number,
-    avgOrderValue: number,
-  ): string {
-    const reportDate = new Date().toLocaleDateString('vi-VN');
-
-    let content = `
-=====================================
-BÁOCÁO DOANH THU FOODEE - ${reportDate}
-=====================================
-
-TỔNG QUAN (30 NGÀY QUA):
-• Tổng số đơn hàng: ${totalOrders}
-• Tổng doanh thu: ${totalRevenue.toLocaleString('vi-VN')}đ
-• Giá trị trung bình/đơn: ${avgOrderValue.toLocaleString('vi-VN')}đ
-
-CHI TIẾT CÁC ĐƠN HÀNG:
-=====================================
-`;
-
-    orders.forEach((order, index) => {
-      content += `
-${index + 1}. Đơn hàng #${order.id}
-   • Ngày: ${order.createdAt.toLocaleDateString('vi-VN')}
-   • Giá trị: ${order.totalPrice.toLocaleString('vi-VN')}đ
-   • Sản phẩm: ${order.items?.length || 0} món
-   • Ghi chú: ${order.note || 'Không có'}
-`;
-    });
-
-    content += `
-=====================================
-Báo cáo được tạo tự động bởi Foodee
-Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!
-=====================================
-`;
-
-    return content;
-  }
+  
 }

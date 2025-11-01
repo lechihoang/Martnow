@@ -54,11 +54,6 @@ export class UserController {
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     const updatedUser = await this.userService.update(id, updateUserDto);
-
-    // Sync changes to Supabase user metadata
-    // Note: This requires Supabase service role key for backend
-    // Frontend should also update Supabase user metadata directly
-
     return {
       message: 'User updated successfully',
       data: updatedUser,

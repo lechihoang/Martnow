@@ -6,9 +6,6 @@ export class CreateUserDto {
   @IsString()
   name: string;
 
-  @IsString()
-  username: string;
-
   @IsEmail()
   email: string;
 
@@ -35,18 +32,6 @@ export class UpdateUserDto {
 
   @IsString()
   @IsOptional()
-  username?: string;
-
-  @IsEmail()
-  @IsOptional()
-  email?: string;
-
-  @IsEnum(UserRole)
-  @IsOptional()
-  role?: UserRole;
-
-  @IsString()
-  @IsOptional()
   avatar?: string;
 
   @IsString()
@@ -61,17 +46,12 @@ export class UpdateUserDto {
 export class UserResponseDto {
   id: string;
   name: string;
-  username: string;
   email: string;
   role: UserRole;
   avatar?: string;
   address?: string;
   phone?: string;
-  buyerInfo?: {
-    id: string;
-  };
   sellerInfo?: {
-    id: string;
     shopName?: string;
     description?: string;
   };
@@ -83,22 +63,13 @@ export class UserResponseDto {
 
     this.id = user.id;
     this.name = user.name;
-    this.username = user.username;
     this.email = user.email;
     this.role = user.role;
     this.avatar = user.avatar;
     this.address = user.address;
     this.phone = user.phone;
-
-    if (user.buyer) {
-      this.buyerInfo = {
-        id: user.buyer.id,
-      };
-    }
-
     if (user.seller) {
       this.sellerInfo = {
-        id: user.seller.id,
         shopName: user.seller.shopName,
         description: user.seller.description,
       };

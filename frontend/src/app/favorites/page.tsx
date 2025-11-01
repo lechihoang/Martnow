@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import Image from 'next/image';
 import Container from '@/components/Container';
 import useStore from '@/stores/store';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { getUserProfile } from '@/lib/api';
 import { Heart, ShoppingBag, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { User, Product } from '@/types/entities';
 import { LoadingSpinner } from '@/components/ui';
 
 const FavoritesPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [userProfile, setUserProfile] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(true);
   const {

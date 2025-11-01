@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { productApi } from '@/lib/api';
+import { CATEGORIES, CATEGORY_DESCRIPTIONS } from '@/constants/categories';
 import {
   FaCookie,
   FaSprayCan,
@@ -14,13 +14,6 @@ import {
   FaShoePrints,
   FaBoxOpen
 } from 'react-icons/fa';
-
-interface Category {
-  id: number;
-  name: string;
-  description?: string;
-  icon?: string;
-}
 
 // Default category icons mapping with Font Awesome icons
 const categoryIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
@@ -36,61 +29,16 @@ const categoryIcons: { [key: string]: React.ComponentType<{ className?: string }
 };
 
 const CategoryExplorer: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const data = await productApi.getCategories();
-      setCategories(data.slice(0, 8)); // Limit to 8 categories for display
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      // Fallback categories if API fails
-      setCategories([
-        { id: 1, name: 'Thực phẩm', description: 'Thực phẩm tươi sống' },
-        { id: 2, name: 'Đồ uống', description: 'Nước giải khát' },
-        { id: 3, name: 'Gia vị', description: 'Gia vị nấu ăn' },
-        { id: 4, name: 'Bánh kẹo', description: 'Bánh kẹo ngọt' },
-        { id: 5, name: 'Rau củ', description: 'Rau củ tươi' },
-        { id: 6, name: 'Thịt cá', description: 'Thịt cá tươi sống' },
-        { id: 7, name: 'Sữa & trứng', description: 'Sản phẩm từ sữa' },
-        { id: 8, name: 'Hoa quả', description: 'Trái cây tươi' },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use categories from constants
+  const categories = CATEGORIES.map(name => ({
+    name,
+    description: CATEGORY_DESCRIPTIONS[name]
+  }));
 
   const getCategoryIcon = (categoryName: string) => {
     const IconComponent = categoryIcons[categoryName] || categoryIcons['default'];
     return IconComponent;
   };
-
-  if (loading) {
-    return (
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Khám phá danh mục</h2>
-            <p className="text-gray-600">Tìm kiếm sản phẩm theo danh mục yêu thích</p>
-          </div>
-
-          <div className="flex justify-between items-start gap-4 overflow-x-auto py-4 scrollbar-hide">
-            {[...Array(8)].map((_, index) => (
-              <div key={index} className="flex flex-col items-center flex-1 min-w-[80px] max-w-[120px] animate-pulse">
-                <div className="w-16 h-16 bg-gray-200 rounded-full mb-2 flex items-center justify-center"></div>
-                <div className="h-4 bg-gray-200 rounded w-16"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section className="py-12">
@@ -101,11 +49,11 @@ const CategoryExplorer: React.FC = () => {
         </div>
 
         <div className="flex justify-between items-start gap-4 overflow-x-auto py-4 scrollbar-hide">
-          {categories.map((category) => {
+          {categories.map((category, index) => {
             const Icon = getCategoryIcon(category.name);
             return (
               <Link
-                key={category.id}
+                key={index}
                 href={`/shop?category=${encodeURIComponent(category.name)}`}
                 className="group flex flex-col items-center flex-1 min-w-[80px] max-w-[120px]"
               >

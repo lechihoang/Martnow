@@ -1,17 +1,16 @@
 
 "use client";
 import React from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import useStore from '@/stores/store';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { getUserProfile } from '@/lib/api';
 
 // Header Components
 import Container from './Container';
 import Logo from './header/Logo';
 import Navigation from './header/Navigation';
-import SearchButton from './header/SearchButton';
 import SearchBar from './header/SearchBar';
 import CartButton from './header/CartButton';
 import FavoritesDropdown from './FavoritesDropdown';
@@ -22,7 +21,7 @@ import { UserProfile} from '@/types/auth';
 
 const Header = () => {
   const { getCartUniqueItems } = useStore();
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
@@ -71,7 +70,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-quickcart">
       <Container>
         {/* Main Header */}
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 relative">
           {/* Logo */}
           <Logo />
 
@@ -80,8 +79,15 @@ const Header = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* Search */}
-            <SearchButton onClick={() => setIsSearchOpen(!isSearchOpen)} />
+            {/* Search Button */}
+            <button
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              className="p-2 text-gray-600 hover:text-emerald-600 transition-all duration-300"
+              aria-label="Tìm kiếm"
+              title="Tìm kiếm"
+            >
+              <Search className="w-5 h-5" />
+            </button>
 
             {/* User Actions - Only show when logged in */}
             {profileLoading ? (
@@ -116,16 +122,25 @@ const Header = () => {
           </button>
         </div>
 
-        {/* Search Bar - Desktop */}
-        {isSearchOpen && (
-          <div className="hidden md:block py-4 border-t border-gray-200">
-            <SearchBar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onSubmit={handleSearch}
-            />
+        {/* Search Bar - Desktop - Full width below header */}
+        <div
+          className={`hidden md:block overflow-hidden transition-all duration-300 ease-in-out ${
+            isSearchOpen ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="py-4 border-t border-gray-200">
+            <form onSubmit={handleSearch} className="relative">
+              <input
+                type="text"
+                placeholder="Tìm kiếm sản phẩm tạp hóa..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-4 pr-4 py-3 bg-white border-2 border-emerald-500 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-lg text-base"
+                autoFocus
+              />
+            </form>
           </div>
-        )}
+        </div>
 
         {/* Mobile Menu */}
         <MobileMenu

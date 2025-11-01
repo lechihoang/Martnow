@@ -23,14 +23,16 @@ export class Review {
   @Column({ type: 'varchar' })
   buyerId: string; // Reference to Buyer.id
 
-  @ManyToOne(() => Buyer, (buyer) => buyer.reviews)
+  @ManyToOne(() => Buyer, (buyer) => buyer.reviews, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'buyerId' })
   buyer: Buyer;
 
   @Column({ type: 'int' })
   productId: number;
 
-  @ManyToOne(() => Product, (product) => product.reviews)
+  @ManyToOne(() => Product, (product) => product.reviews, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'productId' })
   product: Product;
 

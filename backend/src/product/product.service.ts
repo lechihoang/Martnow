@@ -1,8 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
-import { Category } from './entities/category.entity';
 import { Seller } from '../account/seller/entities/seller.entity';
 import { CreateProductDto, ProductResponseDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -21,21 +20,17 @@ export interface ProductFilterOptions {
 
 @Injectable()
 export class ProductService {
+  private readonly logger = new Logger(ProductService.name);
+
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
-    @InjectRepository(Category)
-    private readonly categoryRepository: Repository<Category>,
     @InjectRepository(Seller)
     private readonly sellerRepository: Repository<Seller>,
     private readonly mediaService: MediaService,
   ) {}
 
   // === BASIC CRUD METHODS ===
-
-  async getCategories(): Promise<Category[]> {
-    return this.categoryRepository.find({ order: { name: 'ASC' } });
-  }
 
   async getSellerIdByUserId(userId: string): Promise<string> {
     const seller = await this.sellerRepository.findOne({
@@ -63,7 +58,7 @@ export class ProductService {
 
     const result = await this.productRepository.findOne({
       where: { id: savedProduct.id },
-      relations: ['category', 'seller', 'seller.user'],
+      relations: ['seller', 'seller.user'],
     });
 
     if (!result) {
@@ -78,7 +73,7 @@ export class ProductService {
   async findOne(id: number): Promise<ProductResponseDto> {
     const product = await this.productRepository.findOne({
       where: { id },
-      relations: ['category', 'seller', 'seller.user'],
+      relations: ['seller', 'seller.user'],
     });
 
     if (!product) {
@@ -112,7 +107,7 @@ export class ProductService {
 
     const updatedProduct = await this.productRepository.findOne({
       where: { id },
-      relations: ['category', 'seller', 'seller.user'],
+      relations: ['seller', 'seller.user'],
     });
 
     return new ProductResponseDto(updatedProduct!);
@@ -140,7 +135,10 @@ export class ProductService {
     // Xóa media files trước khi xóa product
     this.mediaService.deleteAllMediaFiles('product', id.toString());
 
+    // Note: Reviews and Favorites are automatically deleted via cascade
     await this.productRepository.remove(productEntity);
+
+    this.logger.log(`Product ${id} deleted successfully`);
     return { message: 'Product deleted successfully' };
   }
 
@@ -163,7 +161,7 @@ export class ProductService {
       search,
     } = filters;
 
-    console.log('ProductService.findAll called with:', {
+    this.logger.log('Finding products with filters', {
       categoryName,
       minPrice,
       maxPrice,
@@ -176,7 +174,7 @@ export class ProductService {
 
     // Simple approach - get all products first
     const allProducts = await this.productRepository.find({
-      relations: ['category', 'seller', 'seller.user'],
+      relations: ['seller', 'seller.user'],
     });
 
     // Apply filters in memory
@@ -184,7 +182,7 @@ export class ProductService {
 
     if (categoryName) {
       filteredProducts = filteredProducts.filter(
-        (p) => p.category?.name === categoryName,
+        (p) => p.category === categoryName,
       );
     }
 
@@ -235,7 +233,7 @@ export class ProductService {
     const endIndex = startIndex + limit;
     const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
 
-    console.log('Pagination details:', {
+    this.logger.debug('Pagination details', {
       total,
       totalPages,
       page,
@@ -254,12 +252,9 @@ export class ProductService {
       totalPages,
     };
 
-    console.log('Returning result:', {
-      productsCount: result.products.length,
-      total: result.total,
-      page: result.page,
-      totalPages: result.totalPages,
-    });
+    this.logger.log(
+      `Returning ${result.products.length}/${result.total} products (page ${result.page}/${result.totalPages})`,
+    );
 
     return result;
   }
@@ -270,7 +265,6 @@ export class ProductService {
   ): Promise<ProductResponseDto[]> {
     const products = await this.productRepository
       .createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.seller', 'seller')
       .leftJoinAndSelect('seller.user', 'user')
       .where('product.isAvailable = :isAvailable', { isAvailable: true })
@@ -294,7 +288,6 @@ export class ProductService {
   async getPopularProducts(limit: number = 10): Promise<ProductResponseDto[]> {
     const products = await this.productRepository
       .createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.seller', 'seller')
       .leftJoinAndSelect('seller.user', 'user')
       .where('product.isAvailable = :isAvailable', { isAvailable: true })
@@ -310,7 +303,6 @@ export class ProductService {
   async findProductsBySeller(sellerId: string): Promise<ProductResponseDto[]> {
     const products = await this.productRepository
       .createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.seller', 'seller')
       .leftJoinAndSelect('seller.user', 'user')
       .where('product.sellerId = :sellerId', { sellerId })

@@ -46,6 +46,8 @@ export class Order {
   @Column({ type: 'timestamp', nullable: true })
   paidAt: Date; // Thời gian thanh toán thành công
 
-  @OneToMany(() => OrderItem, (item) => item.order)
+  @OneToMany(() => OrderItem, (item) => item.order, {
+    cascade: true,
+  })
   items: OrderItem[];
 }

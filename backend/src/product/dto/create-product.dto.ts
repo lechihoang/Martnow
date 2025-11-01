@@ -21,8 +21,8 @@ export class CreateProductDto {
   @IsPositive()
   price: number;
 
-  @IsNumber()
-  categoryId: number;
+  @IsString()
+  category: string;
 
   @IsBoolean()
   @IsOptional()
@@ -51,7 +51,7 @@ export class CreateProductDto {
 export class ProductResponseDto {
   id: number;
   sellerId: string;
-  categoryId: number;
+  category: string;
   name: string;
   description?: string;
   price: number;
@@ -71,11 +71,6 @@ export class ProductResponseDto {
       phone?: string;
     };
   };
-  category: {
-    id: number;
-    name: string;
-    description?: string;
-  };
 
   // Optional aggregated data
   averageRating?: number;
@@ -85,7 +80,7 @@ export class ProductResponseDto {
   constructor(product: Product) {
     this.id = product.id;
     this.sellerId = product.sellerId;
-    this.categoryId = product.categoryId;
+    this.category = product.category;
     this.name = product.name;
     this.description = product.description;
     this.price = Number(product.price);
@@ -108,12 +103,6 @@ export class ProductResponseDto {
       },
     };
 
-    this.category = {
-      id: product.category?.id || 0,
-      name: product.category?.name || '',
-      description: product.category?.description,
-    };
-
     this.averageRating = Number(product.averageRating) || 0;
     this.totalReviews = product.totalReviews || 0;
     this.totalSold = product.totalSold || 0;
@@ -122,35 +111,7 @@ export class ProductResponseDto {
 
 // ✅ Detailed DTO for single product view (when you need full details)
 export class ProductDetailDto extends ProductResponseDto {
-  seller: {
-    id: string;
-    shopName?: string;
-    user: {
-      name: string;
-      username: string;
-      address?: string;
-      phone?: string;
-    };
-  };
-  category: { id: number; name: string; description?: string };
   constructor(product: Product) {
     super(product);
-
-    this.seller = {
-      id: product.seller?.id || '',
-      shopName: product.seller?.shopName,
-      user: {
-        name: product.seller?.user?.name || '',
-        username: product.seller?.user?.username || '',
-        address: product.seller?.user?.address,
-        phone: product.seller?.user?.phone,
-      },
-    };
-
-    this.category = {
-      id: product.category?.id || 0,
-      name: product.category?.name || '',
-      description: product.category?.description,
-    };
   }
 }

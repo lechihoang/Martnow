@@ -5,6 +5,7 @@ import { supabase, UserRole } from '../lib/supabase';
 import { User } from '../account/user/entities/user.entity';
 import { Buyer } from '../account/buyer/entities/buyer.entity';
 import { Seller } from '../account/seller/entities/seller.entity';
+import { UserService } from '../account/user/user.service';
 
 @Injectable()
 export class AuthService {
@@ -15,13 +16,14 @@ export class AuthService {
     private buyerRepository: Repository<Buyer>,
     @InjectRepository(Seller)
     private sellerRepository: Repository<Seller>,
+    private userService: UserService,
   ) {}
 
   async signup(signupDto: {
     email: string;
     password: string;
     name?: string;
-    username?: string;
+    role?: UserRole;
   }) {
     try {
       // 1. Create user in Supabase Auth
@@ -31,12 +33,6 @@ export class AuthService {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: signupDto.email,
         password: signupDto.password,
-        options: {
-          data: {
-            name: signupDto.name || 'User',
-            username: signupDto.username || `user_${Date.now()}`,
-          },
-        },
       });
 
       if (authError) {
@@ -47,32 +43,20 @@ export class AuthService {
         throw new Error('Failed to create user');
       }
 
-      // 2. Create user profile in database
-      const user = this.userRepository.create({
+      // 2. Create user profile in database using UserService (with transaction)
+      const user = await this.userService.create({
         id: authData.user.id,
         email: signupDto.email,
         name: signupDto.name || 'User',
-        username: signupDto.username || `user_${Date.now()}`,
-        role: UserRole.BUYER, // Default role
-        // avatar will be null - frontend will show User icon
+        role: signupDto.role || UserRole.BUYER, // Default to BUYER if not specified
       });
 
-      await this.userRepository.save(user);
-
-      // 3. Create buyer profile
-      const buyer = this.buyerRepository.create({
-        id: authData.user.id,
-      });
-
-      await this.buyerRepository.save(buyer);
-
-      // 4. Return auth data
+      // 3. Return auth data
       return {
         user: {
-          id: authData.user.id,
-          email: authData.user.email,
+          id: user.id,
+          email: user.email,
           name: user.name,
-          username: user.username,
           role: user.role,
         },
         session: authData.session,
@@ -117,7 +101,6 @@ export class AuthService {
           id: authData.user.id,
           email: authData.user.email,
           name: user.name,
-          username: user.username,
           role: user.role,
         },
         session: authData.session,
@@ -156,7 +139,6 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
-        username: user.username,
         role: user.role,
         avatar: user.avatar,
         address: user.address,
@@ -227,14 +209,8 @@ export class AuthService {
         );
       }
 
-      // 3. Delete related profiles first (due to foreign key constraints)
-      if (user.role === UserRole.BUYER && user.buyer) {
-        await this.buyerRepository.remove(user.buyer);
-      } else if (user.role === UserRole.SELLER && user.seller) {
-        await this.sellerRepository.remove(user.seller);
-      }
-
-      // 4. Delete user profile from database
+      // 3. Delete user profile from database
+      // Note: Buyer/Seller/SellerStats are automatically deleted via cascade
       await this.userRepository.remove(user);
 
       return {

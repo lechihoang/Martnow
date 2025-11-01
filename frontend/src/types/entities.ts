@@ -6,7 +6,6 @@ export enum UserRole {
 export interface User {
   id: string;
   name: string;
-  username: string;
   email: string;
   role: UserRole;
   avatar?: string;
@@ -31,7 +30,7 @@ export interface Seller {
 export interface Product {
   id: number;
   sellerId: string;
-  categoryId: number;
+  category: string;
   name: string;
   description?: string;
   price: number;
@@ -50,22 +49,10 @@ export interface Product {
     shopName?: string;
     user: {
       name: string;
-      username: string;
       address?: string;
       phone?: string;
     };
   };
-  category: {
-    id: number;
-    name: string;
-    description?: string;
-  };
-}
-
-export interface Category {
-  id: number;
-  name: string;
-  description?: string;
 }
 
 export enum OrderStatus {

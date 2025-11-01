@@ -5,13 +5,13 @@ import { productApi, getUserProfile } from '@/lib/api';
 import { ProductResponseDto } from '@/types/dtos';
 import ProductGrid from './ProductGrid';
 import { PageState } from './ui';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import useStore from '@/stores/store';
 import { User } from '@/types/entities';
 import Link from 'next/link';
 
 const FeaturedProducts: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { isFavorite } = useStore();
   const [products, setProducts] = useState<ProductResponseDto[]>([]);
   const [userProfile, setUserProfile] = useState<User | null>(null);

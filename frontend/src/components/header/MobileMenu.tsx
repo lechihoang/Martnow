@@ -129,7 +129,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                   <UserIcon className="w-6 h-6 text-emerald-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{userProfile.name || userProfile.username}</p>
+                  <p className="font-semibold text-gray-900 truncate">{userProfile.name}</p>
                   <p className="text-xs text-gray-600 truncate">{user.email}</p>
                   <span className={`inline-block px-2.5 py-0.5 text-xs font-medium rounded-full mt-1.5 ${
                     userProfile.role === 'SELLER'

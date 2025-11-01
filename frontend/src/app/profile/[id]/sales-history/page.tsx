@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import ProfileLayout from '@/components/profile/ProfileLayout';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { getUserProfile } from '@/lib/api';
 import { sellerApi } from '@/lib/api';
 import { User, OrderStatus } from '@/types/entities';
@@ -13,7 +13,7 @@ const SalesHistoryPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
   const userId = params.id as string;
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [userProfile, setUserProfile] = useState<User | null>(null);
 
   const [orders, setOrders] = useState<OrderResponseDto[]>([]);

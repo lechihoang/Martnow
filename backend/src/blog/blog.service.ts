@@ -26,7 +26,7 @@ export class BlogService {
   // Blog CRUD
   async createBlog(
     createBlogDto: CreateBlogDto,
-    authorId: number,
+    authorId: string,
   ): Promise<Blog> {
     const blog = this.blogRepository.create({
       ...createBlogDto,
@@ -35,7 +35,7 @@ export class BlogService {
     return this.blogRepository.save(blog);
   }
 
-  async findAllBlogs(userId?: number): Promise<Blog[]> {
+  async findAllBlogs(userId?: string): Promise<Blog[]> {
     const blogs = await this.blogRepository.find({
       relations: ['author', 'comments', 'comments.user', 'votes'],
       order: { createdAt: 'DESC' },
@@ -44,7 +44,7 @@ export class BlogService {
     return this.enrichBlogsWithVoteData(blogs, userId);
   }
 
-  async findBlogById(id: number, userId?: number): Promise<Blog> {
+  async findBlogById(id: number, userId?: string): Promise<Blog> {
     const blog = await this.blogRepository.findOne({
       where: { id },
       relations: ['author', 'comments', 'comments.user', 'votes'],
@@ -60,7 +60,7 @@ export class BlogService {
   async updateBlog(
     id: number,
     updateBlogDto: UpdateBlogDto,
-    userId: number,
+    userId: string,
   ): Promise<Blog> {
     const blog = await this.findBlogById(id);
 
@@ -72,21 +72,22 @@ export class BlogService {
     return this.findBlogById(id);
   }
 
-  async deleteBlog(id: number, userId: number): Promise<void> {
+  async deleteBlog(id: number, userId: string): Promise<void> {
     const blog = await this.findBlogById(id);
 
     if (blog.authorId !== userId) {
       throw new ForbiddenException('You can only delete your own blogs');
     }
 
-    await this.blogRepository.delete(id);
+    // Use remove() instead of delete() to trigger cascade
+    await this.blogRepository.remove(blog);
   }
 
   // Comment CRUD
   async createComment(
     blogId: number,
     createCommentDto: CreateCommentDto,
-    userId: number,
+    userId: string,
   ): Promise<BlogComment> {
     await this.findBlogById(blogId);
 
@@ -102,7 +103,7 @@ export class BlogService {
   async updateComment(
     id: number,
     updateCommentDto: UpdateCommentDto,
-    userId: number,
+    userId: string,
   ): Promise<BlogComment> {
     const comment = await this.commentRepository.findOne({
       where: { id },
@@ -130,7 +131,7 @@ export class BlogService {
     return updatedComment;
   }
 
-  async deleteComment(id: number, userId: number): Promise<void> {
+  async deleteComment(id: number, userId: string): Promise<void> {
     const comment = await this.commentRepository.findOne({
       where: { id },
       relations: ['user'],
@@ -144,8 +145,8 @@ export class BlogService {
       throw new ForbiddenException('You can only delete your own comments');
     }
 
-    // Simple hard delete for flat comment structure
-    await this.commentRepository.delete(id);
+    // Use remove() for consistency (though no cascade needed for comments)
+    await this.commentRepository.remove(comment);
   }
 
   async findCommentsByBlogId(blogId: number): Promise<BlogComment[]> {
@@ -160,7 +161,7 @@ export class BlogService {
   async voteBlog(
     blogId: number,
     voteBlogDto: VoteBlogDto,
-    userId: number,
+    userId: string,
   ): Promise<VoteResponseDto> {
     await this.findBlogById(blogId);
 
@@ -192,14 +193,14 @@ export class BlogService {
     return this.getVoteStats(blogId, userId);
   }
 
-  async unvoteBlog(blogId: number, userId: number): Promise<VoteResponseDto> {
+  async unvoteBlog(blogId: number, userId: string): Promise<VoteResponseDto> {
     await this.voteRepository.delete({ blogId, userId });
     return this.getVoteStats(blogId, userId);
   }
 
   async getVoteStats(
     blogId: number,
-    userId?: number,
+    userId?: string,
   ): Promise<VoteResponseDto> {
     const votes = await this.voteRepository.find({ where: { blogId } });
 
@@ -218,7 +219,7 @@ export class BlogService {
   }
 
   // Helper methods
-  private enrichBlogWithVoteData(blog: Blog, userId?: number): Blog {
+  private enrichBlogWithVoteData(blog: Blog, userId?: string): Blog {
     const upvoteCount = blog.votes
       ? blog.votes.filter((v) => v.voteType === VoteType.UP).length
       : 0;
@@ -242,7 +243,7 @@ export class BlogService {
     return blog;
   }
 
-  private enrichBlogsWithVoteData(blogs: Blog[], userId?: number): Blog[] {
+  private enrichBlogsWithVoteData(blogs: Blog[], userId?: string): Blog[] {
     return blogs.map((blog) => this.enrichBlogWithVoteData(blog, userId));
   }
 }

@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import BlogDetail from '../../../components/BlogDetail';
-import Container from '../../../components/Container';
-import { useAuth } from '../../../hooks/useAuth';
-import { User, UserRole } from '../../../types/entities';
+import { useAuthContext } from '../../../contexts/AuthContext';
+import { UserProfile } from '@/types/auth';
+import { getUserProfile } from '@/lib/api';
 
 interface BlogDetailPageProps {
   params: Promise<{
@@ -13,8 +13,9 @@ interface BlogDetailPageProps {
 }
 
 export default function BlogDetailPage({ params }: BlogDetailPageProps) {
-  const { user } = useAuth();
-  const [userProfile, setUserProfile] = useState<User | null>(null);
+  const { user, loading: authLoading } = useAuthContext();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [blogId, setBlogId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -29,31 +30,37 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
   }, [params]);
 
   useEffect(() => {
-    if (user) {
-      setUserProfile({
-        id: user.id,
-        name: user.email || 'User',
-        username: user.email?.split('@')[0] || 'user',
-        email: user.email || '',
-        avatar: user.user_metadata?.avatar_url,
-        role: UserRole.BUYER
-      });
-    }
-  }, [user]);
+    const fetchProfile = async () => {
+      const userId = user?.id;
+
+      if (userId) {
+        setProfileLoading(true);
+        try {
+          const profile = await getUserProfile();
+          setUserProfile(profile);
+        } catch (error) {
+          setUserProfile(null);
+        } finally {
+          setProfileLoading(false);
+        }
+      } else {
+        setUserProfile(null);
+        setProfileLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user?.id]);
 
   if (!blogId) {
     return (
-      <Container>
+      <div className="py-8">
         <div className="text-center py-12">
           <p className="text-red-500">ID blog không hợp lệ</p>
         </div>
-      </Container>
+      </div>
     );
   }
 
-  return (
-    <Container>
-      <BlogDetail blogId={blogId} userProfile={userProfile} />
-    </Container>
-  );
+  return <BlogDetail blogId={blogId} userProfile={userProfile} profileLoading={authLoading || profileLoading} />;
 }

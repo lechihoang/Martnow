@@ -42,13 +42,6 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
     onPriceRangeChange(localPriceRange);
   };
 
-  // Calculate percentage for range slider background
-  const getSliderBackground = () => {
-    const minPercent = (localPriceRange[0] / maxPrice) * 100;
-    const maxPercent = (localPriceRange[1] / maxPrice) * 100;
-    return `linear-gradient(to right, #e5e7eb ${minPercent}%, #10b981 ${minPercent}%, #10b981 ${maxPercent}%, #e5e7eb ${maxPercent}%)`;
-  };
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -68,7 +61,7 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
 
       {/* Filter Sidebar */}
       <div className={`
-        fixed lg:relative left-0 top-16 lg:top-0 bottom-0 z-30 w-64 bg-white shadow-xl lg:shadow-none
+        fixed lg:relative left-0 top-16 lg:top-0 bottom-0 z-50 w-64 bg-white shadow-xl lg:shadow-none
         transform transition-transform duration-300 ease-in-out flex flex-col
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
@@ -96,7 +89,7 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
 
         {/* Filter Content - Scrollable */}
         <div className="flex-1 overflow-y-auto scrollbar-thin">
-          <div className="p-4 space-y-6">
+          <div className="px-4 py-4 lg:px-0 space-y-6">
             {/* Category Filter */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -104,26 +97,26 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
                 <h4 className="font-medium text-gray-900">Danh mục</h4>
               </div>
               <div className="space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-start gap-3 cursor-pointer py-1">
                   <input
                     type="radio"
                     name="category"
                     value="all"
                     checked={selectedCategory === 'all'}
                     onChange={(e) => onCategoryChange(e.target.value)}
-                    className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                    className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-600 border-gray-300 focus:ring-emerald-500"
                   />
                   <span className="text-sm text-gray-700">Tất cả danh mục</span>
                 </label>
                 {categories.map((category) => (
-                  <label key={category} className="flex items-center gap-2 cursor-pointer">
+                  <label key={category} className="flex items-start gap-3 cursor-pointer py-1">
                     <input
                       type="radio"
                       name="category"
                       value={category}
                       checked={selectedCategory === category}
                       onChange={(e) => onCategoryChange(e.target.value)}
-                      className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                      className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-600 border-gray-300 focus:ring-emerald-500"
                     />
                     <span className="text-sm text-gray-700">{category}</span>
                   </label>
@@ -144,25 +137,59 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
                   <span>{formatPrice(0)}</span>
                   <span>{formatPrice(maxPrice)}</span>
                 </div>
-                
-                <div className="range-slider" style={{ background: getSliderBackground() }}>
-                  <input
-                    type="range"
-                    min="0"
-                    max={maxPrice}
-                    value={localPriceRange[0]}
-                    onChange={(e) => handlePriceChange('min', parseInt(e.target.value))}
-                    onMouseUp={handlePriceRangeCommit}
-                    onTouchEnd={handlePriceRangeCommit}
+
+                {/* Range Slider */}
+                <div className="relative h-2 bg-gray-200 rounded-full">
+                  <div
+                    className="absolute h-full bg-emerald-500 rounded-full"
+                    style={{
+                      left: `${(localPriceRange[0] / maxPrice) * 100}%`,
+                      right: `${100 - (localPriceRange[1] / maxPrice) * 100}%`
+                    }}
                   />
                   <input
                     type="range"
                     min="0"
                     max={maxPrice}
-                    value={localPriceRange[1]}
-                    onChange={(e) => handlePriceChange('max', parseInt(e.target.value))}
+                    step="10000"
+                    value={localPriceRange[0]}
+                    onChange={(e) => {
+                      const newMin = parseInt(e.target.value);
+                      if (newMin < localPriceRange[1]) {
+                        handlePriceChange('min', newMin);
+                      }
+                    }}
                     onMouseUp={handlePriceRangeCommit}
                     onTouchEnd={handlePriceRangeCommit}
+                    className="absolute w-full h-2 appearance-none bg-transparent pointer-events-auto cursor-pointer
+                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                      [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-600
+                      [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md
+                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+                      [&::-moz-range-thumb]:bg-emerald-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                    style={{ zIndex: localPriceRange[0] > maxPrice - 100000 ? 5 : 3 }}
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max={maxPrice}
+                    step="10000"
+                    value={localPriceRange[1]}
+                    onChange={(e) => {
+                      const newMax = parseInt(e.target.value);
+                      if (newMax > localPriceRange[0]) {
+                        handlePriceChange('max', newMax);
+                      }
+                    }}
+                    onMouseUp={handlePriceRangeCommit}
+                    onTouchEnd={handlePriceRangeCommit}
+                    className="absolute w-full h-2 appearance-none bg-transparent pointer-events-auto cursor-pointer
+                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                      [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-600
+                      [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md
+                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+                      [&::-moz-range-thumb]:bg-emerald-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                    style={{ zIndex: 4 }}
                   />
                 </div>
 
@@ -175,7 +202,12 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
                       min="0"
                       max={maxPrice}
                       value={localPriceRange[0]}
-                      onChange={(e) => handlePriceChange('min', parseInt(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const newMin = parseInt(e.target.value) || 0;
+                        if (newMin < localPriceRange[1]) {
+                          handlePriceChange('min', newMin);
+                        }
+                      }}
                       onBlur={handlePriceRangeCommit}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />
@@ -187,7 +219,12 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
                       min="0"
                       max={maxPrice}
                       value={localPriceRange[1]}
-                      onChange={(e) => handlePriceChange('max', parseInt(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const newMax = parseInt(e.target.value) || 0;
+                        if (newMax > localPriceRange[0]) {
+                          handlePriceChange('max', newMax);
+                        }
+                      }}
                       onBlur={handlePriceRangeCommit}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />

@@ -9,7 +9,7 @@ import { Button } from "./ui/button";
 import type { Product } from "../types/entities";
 import type { ProductResponseDto } from "../types/dtos";
 import { UserProfile } from '@/types/auth';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
@@ -24,7 +24,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   className,
   userProfile
 }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const router = useRouter();
 
   // Convert Product to ProductResponseDto format for FavoriteButton
@@ -32,7 +32,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     return {
       id: product.id,
       sellerId: product.sellerId,
-      categoryId: product.categoryId,
+      category: product.category,
       name: product.name,
       description: product.description,
       price: product.price,
@@ -48,15 +48,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
         shopName: product.seller?.shopName,
         user: {
           name: product.seller?.user?.name || '',
-          username: product.seller?.user?.username || '',
           address: product.seller?.user?.address,
           phone: product.seller?.user?.phone,
         },
-      },
-      category: {
-        id: product.categoryId,
-        name: product.category?.name || '',
-        description: product.category?.description,
       },
       averageRating: product.averageRating,
       totalReviews: product.totalReviews,

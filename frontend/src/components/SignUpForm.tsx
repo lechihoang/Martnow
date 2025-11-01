@@ -10,13 +10,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { User, Mail, Lock, Eye, EyeOff, Store, ShoppingBag } from "lucide-react";
 
 const registerSchema = z
   .object({
     name: z.string().min(2, { message: "Tên phải có ít nhất 2 ký tự" }),
-    username: z.string().min(3, { message: "Tên đăng nhập phải có ít nhất 3 ký tự" }),
     email: z.string().email({ message: "Email không hợp lệ" }),
     password: z.string().min(6, { message: "Mật khẩu phải có ít nhất 6 ký tự" }),
     confirmPassword: z.string().min(6, { message: "Vui lòng xác nhận mật khẩu" }),
@@ -32,12 +31,11 @@ export default function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
-  const { signup } = useAuth();
+  const { signup } = useAuthContext();
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: "",
-      username: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -51,10 +49,10 @@ export default function RegisterForm() {
     void confirmPassword; // Suppress unused variable warning
     try {
       const result = await signup(
-        submitData.email, 
-        submitData.password, 
-        submitData.name, 
-        submitData.username
+        submitData.email,
+        submitData.password,
+        submitData.name,
+        submitData.role
       );
       if (result && !result.error) {
         toast.success("Đăng ký thành công!");
@@ -108,23 +106,6 @@ export default function RegisterForm() {
                   )}
                 />
                 
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-700 font-medium">Tên đăng nhập</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Nhập tên đăng nhập"
-                          className="border-gray-300 focus-visible:border-gray-400 focus-visible:ring-0"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               <FormField

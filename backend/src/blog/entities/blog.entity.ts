@@ -36,22 +36,20 @@ export class Blog {
   updatedAt: Date;
 
   // Relationships
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User, { eager: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'authorId' })
   author: User;
 
-  @Column()
-  authorId: number;
+  @Column({ type: 'varchar', nullable: true })
+  authorId: string;
 
   @OneToMany(() => BlogComment, (comment) => comment.blog, {
     cascade: true,
-    onDelete: 'CASCADE',
   })
   comments: BlogComment[];
 
   @OneToMany(() => BlogVote, (vote) => vote.blog, {
     cascade: true,
-    onDelete: 'CASCADE',
   })
   votes: BlogVote[];
 

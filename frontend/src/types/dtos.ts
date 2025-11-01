@@ -16,7 +16,6 @@ export enum OrderStatus {
 // ===============================
 export interface CreateUserDto {
   name: string;
-  username: string;
   email: string;
   password: string;
   role: UserRole;
@@ -30,7 +29,6 @@ export interface LoginDto {
 
 export interface UpdateUserDto {
   name?: string;
-  username?: string;
   email?: string;
   password?: string;
   role?: UserRole;
@@ -42,7 +40,6 @@ export interface UpdateUserDto {
 export interface UserResponseDto {
   id: string;
   name: string;
-  username: string;
   email: string;
   role: UserRole;
   avatar?: string;
@@ -51,19 +48,19 @@ export interface UserResponseDto {
   createdAt: Date;
   updatedAt: Date;
   buyer?: {
-    id: string;
+    // id removed - same as user.id
   };
   seller?: {
-    id: string;
+    // id removed - same as user.id
     shopName?: string;
     description?: string;
   };
   // Backend returns these fields
   buyerInfo?: {
-    id: string;
+    // id removed - same as user.id
   };
   sellerInfo?: {
-    id: string;
+    // id removed - same as user.id
     shopName?: string;
     description?: string;
   };
@@ -73,7 +70,7 @@ export interface UserResponseDto {
 // PRODUCT DTOs
 // ===============================
 export interface CreateProductDto {
-  categoryId: number;
+  category: string;
   name: string;
   description?: string;
   price: number;
@@ -84,7 +81,7 @@ export interface CreateProductDto {
 }
 
 export interface UpdateProductDto {
-  categoryId?: number;
+  category?: string;
   name?: string;
   description?: string;
   price?: number;
@@ -97,7 +94,7 @@ export interface UpdateProductDto {
 export interface ProductResponseDto {
   id: number;
   sellerId: string;
-  categoryId: number;
+  category: string;
   name: string;
   description?: string;
   price: number;
@@ -113,15 +110,9 @@ export interface ProductResponseDto {
     shopName?: string;
     user: {
       name: string;
-      username: string;
       address?: string;
       phone?: string;
     };
-  };
-  category: {
-    id: number;
-    name: string;
-    description?: string;
   };
   averageRating?: number;
   totalReviews?: number;
@@ -152,7 +143,7 @@ export interface OrderResponseDto {
   createdAt: Date;
   updatedAt: Date;
   buyer: {
-    id: string;
+    // id removed - same as buyer.user.id
     user: {
       id: string;
       name: string;
@@ -177,7 +168,7 @@ export interface OrderResponseDto {
       name: string;
       imageUrl?: string;
       seller: {
-        id: string;
+        id: string; // Seller ID (same as seller.user.id)
         shopName?: string;
       };
     };
@@ -241,14 +232,12 @@ export interface UpdateSellerDto {
 }
 
 export interface SellerResponseDto {
-  id: string;
-  userId: string;
+  id: string; // Same as user.id
   shopName?: string;
   description?: string;
   user: {
     id: string;
     name: string;
-    username: string;
     email: string;
     avatar?: string;
     address?: string;
@@ -273,12 +262,10 @@ export interface CreateBuyerDto {
 }
 
 export interface BuyerResponseDto {
-  id: string;
-  userId: string;
+  id: string; // Same as user.id
   user: {
     id: string;
     name: string;
-    username: string;
     email: string;
     avatar?: string;
   };
@@ -297,12 +284,6 @@ export interface UploadResponseDto {
   mimeType: string;
   size: number;
   url: string;
-}
-
-export interface CategoryDto {
-  id: number;
-  name: string;
-  description?: string;
 }
 
 export interface AddressDto {
@@ -355,18 +336,6 @@ export interface BuyerOrdersDto {
       quantity: number;
       price: number;
     }[];
-  }[];
-}
-
-export interface SellerOrdersDto {
-  sellerId: number;
-  orders: {
-    id: number;
-    buyerName: string;
-    totalPrice: number;
-    status: OrderStatus;
-    createdAt: Date;
-    itemCount: number;
   }[];
 }
 

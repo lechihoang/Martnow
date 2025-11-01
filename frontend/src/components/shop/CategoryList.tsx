@@ -1,11 +1,10 @@
-import { Category } from "@/types/entities";
 import React from "react";
 import Title from "../Title";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
 
 interface Props {
-  categories: Category[];
+  categories: string[];
   selectedCategory?: string | null;
   setSelectedCategory: React.Dispatch<React.SetStateAction<string | null>>;
 }
@@ -22,21 +21,21 @@ const CategoryList = ({
         {categories?.map((category) => (
           <div
             onClick={() => {
-              setSelectedCategory(category.id.toString());
+              setSelectedCategory(category);
             }}
-            key={category?.id}
+            key={category}
             className="flex items-center space-x-2 hover:cursor-pointer"
           >
             <RadioGroupItem
-              value={category.id.toString()}
-              id={category.id.toString()}
+              value={category}
+              id={category}
               className="rounded-sm"
             />
             <Label
-              htmlFor={category.id.toString()}
-              className={`${selectedCategory === category.id.toString() ? "font-semibold text-shop_dark_green" : "font-normal"}`}
+              htmlFor={category}
+              className={`${selectedCategory === category ? "font-semibold text-shop_dark_green" : "font-normal"}`}
             >
-              {category.name}
+              {category}
             </Label>
           </div>
         ))}

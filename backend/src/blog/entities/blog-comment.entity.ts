@@ -4,7 +4,6 @@ import {
   Column,
   ManyToOne,
   CreateDateColumn,
-  UpdateDateColumn,
   DeleteDateColumn,
   JoinColumn,
 } from 'typeorm';
@@ -22,19 +21,16 @@ export class BlogComment {
   @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
-
   @DeleteDateColumn()
   deletedAt: Date;
 
   // Relationships
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User, { eager: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column()
-  userId: number;
+  @Column({ type: 'varchar' })
+  userId: string;
 
   @ManyToOne(() => Blog, (blog) => blog.comments, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'blogId' })

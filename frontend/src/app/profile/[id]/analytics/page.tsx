@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import ProfileLayout from '@/components/profile/ProfileLayout';
 import { Stats, OrderStatus, User } from '../../../../types/entities';
 import { OrderResponseDto } from '@/types/dtos';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { sellerApi } from '@/lib/api';
 import {ShoppingBag, Users, Package, DollarSign} from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui';
@@ -14,7 +14,7 @@ const AnalyticsPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
   const userId = params.id as string;
-  const { user: currentUser } = useAuth();
+  const { user: currentUser } = useAuthContext();
   const [userProfile, setUserProfile] = useState<User | null>(null);
   
   // Fetch user profile when currentUser changes

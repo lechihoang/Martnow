@@ -123,61 +123,6 @@ export class PaymentService {
   }
 
   /**
-   * Tạo URL thanh toán đầy đủ (original)
-   */
-  private async createFullPaymentUrl(
-    orderId: number,
-  ): Promise<PaymentResponseDto> {
-    // Lấy thông tin order
-    const order = await this.orderRepository.findOne({
-      where: { id: orderId },
-      relations: ['buyer', 'buyer.user', 'items', 'items.product'],
-    });
-
-    if (!order) {
-      throw new Error('Order not found');
-    }
-
-    // Tính tổng tiền - library nestjs-vnpay tự động xử lý
-    const amount = Math.round(order.totalPrice);
-
-    console.log('Payment Debug:', {
-      orderId,
-      originalAmount: order.totalPrice,
-      convertedAmount: amount,
-      description: `${order.totalPrice} VND -> ${amount} (nhân 100)`,
-    });
-
-    // Tạo transaction reference (unique)
-    const txnRef = `ORDER_${orderId}_${Date.now()}`;
-
-    // Build payment URL
-    const paymentUrl = this.vnpayService.buildPaymentUrl({
-      vnp_Amount: amount,
-      vnp_CreateDate: parseInt(this.formatDate(new Date())),
-      vnp_CurrCode: VnpCurrCode.VND,
-      vnp_IpAddr: '127.0.0.1',
-      vnp_Locale: VnpLocale.VN,
-      vnp_OrderInfo: order.note || `Thanh toán đơn hàng #${order.id}`,
-      vnp_OrderType: ProductCode.Other,
-      vnp_ReturnUrl: this.configService.get('VNPAY_RETURN_URL') || '',
-      vnp_TxnRef: txnRef,
-    });
-
-    // Cập nhật order với transaction reference
-    await this.orderRepository.update(orderId, {
-      paymentReference: txnRef,
-    });
-
-    return {
-      paymentUrl,
-      txnRef,
-      amount,
-      orderId,
-    };
-  }
-
-  /**
    * Xác thực callback từ VNPay
    */
   async verifyPayment(query: ReturnQueryFromVNPay) {

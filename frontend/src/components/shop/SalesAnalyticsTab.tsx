@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { orderApi } from '@/lib/api';
 
 interface SalesData {
@@ -27,7 +27,7 @@ interface SellerOrder {
 }
 
 const SalesAnalyticsTab: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [salesData, setSalesData] = useState<SalesData[]>([]);
   const [timeRange, setTimeRange] = useState<'hour' | 'day' | 'month'>('day');
   const [loading, setLoading] = useState(true);

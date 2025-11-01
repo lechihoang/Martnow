@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import PriceFormatter from '@/components/PriceFormatter';
 import { orderApi, getUserProfile } from '@/lib/api';
 import { Package, Calendar, CreditCard, Eye } from 'lucide-react';
@@ -16,7 +16,7 @@ export default function OrderPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<User | null>(null);
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const router = useRouter();
 
   const fetchOrders = React.useCallback(async () => {

@@ -27,7 +27,4 @@ export class CommentResponseDto {
     id: number;
     name: string;
   };
-  // Removed parentId and replies since we no longer support reply functionality
-  // parentId?: number;
-  // replies: CommentResponseDto[];
 }
