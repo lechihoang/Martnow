@@ -47,20 +47,12 @@ export interface UserResponseDto {
   phone?: string;
   createdAt: Date;
   updatedAt: Date;
-  buyer?: {
-    // id removed - same as user.id
-  };
   seller?: {
     // id removed - same as user.id
     shopName?: string;
     description?: string;
   };
-  // Backend returns these fields
-  buyerInfo?: {
-    // id removed - same as user.id
-  };
   sellerInfo?: {
-    // id removed - same as user.id
     shopName?: string;
     description?: string;
   };

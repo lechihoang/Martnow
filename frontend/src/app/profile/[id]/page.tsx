@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, MapPin, Phone, Mail, Calendar, Store, Package } from 'lucide-react';
 
-import { UserResponseDto, SellerResponseDto, BuyerResponseDto, ProductResponseDto } from '@/types/dtos';
+import { UserResponseDto, SellerResponseDto, ProductResponseDto } from '@/types/dtos';
 import { userApi, productApi, getUserProfile } from '@/lib/api';
 import { useAuthContext } from '@/contexts/AuthContext';
 import ProductCard from '@/components/ProductCard';
@@ -20,7 +20,6 @@ const ProfilePage: React.FC = () => {
   const [profileData, setProfileData] = useState<{
     user: UserResponseDto;
     seller?: SellerResponseDto;
-    buyer?: BuyerResponseDto;
   } | null>(null);
   const [products, setProducts] = useState<ProductResponseDto[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -59,18 +58,6 @@ const ProfilePage: React.FC = () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         } as SellerResponseDto : undefined,
-        buyer: userData.buyerInfo ? {
-          id: userData.id, // buyer.id is same as user.id
-          totalOrders: 0,
-          totalReviews: 0,
-          user: {
-            id: userData.id,
-            name: userData.name,
-            email: userData.email,
-          },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        } as BuyerResponseDto : undefined,
       });
       setLoading(false);
     } catch (error) {

@@ -182,7 +182,7 @@ const ShopContent = () => {
                     name="category-mobile"
                     value="all"
                     checked={selectedCategory === 'all'}
-                    onChange={(e) => onCategoryChange(e.target.value)}
+                    onChange={(e) => handleCategoryChange(e.target.value)}
                     className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-600 border-gray-300 focus:ring-emerald-500"
                   />
                   <span className="text-sm text-gray-700">Tất cả danh mục</span>
@@ -194,7 +194,7 @@ const ShopContent = () => {
                       name="category-mobile"
                       value={category}
                       checked={selectedCategory === category}
-                      onChange={(e) => onCategoryChange(e.target.value)}
+                      onChange={(e) => handleCategoryChange(e.target.value)}
                       className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-600 border-gray-300 focus:ring-emerald-500"
                     />
                     <span className="text-sm text-gray-700">{category}</span>

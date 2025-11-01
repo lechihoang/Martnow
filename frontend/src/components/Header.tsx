@@ -11,7 +11,6 @@ import { getUserProfile } from '@/lib/api';
 import Container from './Container';
 import Logo from './header/Logo';
 import Navigation from './header/Navigation';
-import SearchBar from './header/SearchBar';
 import CartButton from './header/CartButton';
 import FavoritesDropdown from './FavoritesDropdown';
 import { UserAvatar } from './header/UserAvatar';

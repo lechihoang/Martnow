@@ -8,7 +8,6 @@ import { UserProfile } from '@/types/auth';
 import SimpleCommentEditor from './SimpleCommentEditor';
 import toast from 'react-hot-toast';
 import { ConfirmDialog } from './ui';
-import { useAuthContext } from '../contexts/AuthContext';
 
 interface CommentSectionProps {
   blogId: number;

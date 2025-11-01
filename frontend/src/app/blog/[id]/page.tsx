@@ -38,7 +38,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
         try {
           const profile = await getUserProfile();
           setUserProfile(profile);
-        } catch (error) {
+        } catch {
           setUserProfile(null);
         } finally {
           setProfileLoading(false);
