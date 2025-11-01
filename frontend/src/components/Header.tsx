@@ -66,15 +66,17 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-quickcart">
+    <header className="sticky top-0 z-[100] bg-white border-b border-gray-200 shadow-quickcart">
       <Container>
         {/* Main Header */}
         <div className="flex items-center justify-between h-16 relative">
           {/* Logo */}
           <Logo />
 
-          {/* Desktop Navigation */}
-          <Navigation />
+          {/* Desktop Navigation - Absolutely centered */}
+          <div className="absolute left-1/2 transform -translate-x-1/2">
+            <Navigation />
+          </div>
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
