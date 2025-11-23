@@ -23,6 +23,7 @@ interface AuthContextType {
   signin: (email: string, password: string) => Promise<{ error: string | null }>;
   signup: (email: string, password: string, name: string, role: string) => Promise<{ error: string | null }>;
   signout: () => Promise<void>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -169,6 +170,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    try {
+      setError(null);
+      const supabase = getSupabaseClient();
+
+      console.log('🔐 Initiating Google OAuth...');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        console.error('❌ Google OAuth error:', error);
+        setError(error.message);
+        return { error: error.message };
+      }
+
+      // Note: The redirect happens automatically, no need to manually redirect
+      return { error: null };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Google sign in failed';
+      console.error('❌ Error during Google sign in:', errorMessage);
+      setError(errorMessage);
+      return { error: errorMessage };
+    }
+  }, []);
+
   const value = {
     user,
     session,
@@ -177,6 +211,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signin,
     signup,
     signout,
+    signInWithGoogle,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -5,10 +5,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MediaController } from './media.controller';
 import { MediaService } from './media.service';
 import { User } from '../account/user/entities/user.entity';
+import { Product } from '../product/entities/product.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Product]),
     ConfigModule,
     CloudinaryModule.forRootAsync({
       imports: [ConfigModule],

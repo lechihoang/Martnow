@@ -99,7 +99,7 @@ const AddToCartButton = ({
       if (result.success) {
         // Show success message
         if (showSuccessMessage) {
-          toast.success('✓ Đã thêm vào giỏ hàng!');
+          toast.success('Đã thêm vào giỏ hàng!');
         }
       } else {
         // Show error message from validation
@@ -108,7 +108,7 @@ const AddToCartButton = ({
 
     } catch (error) {
       console.error('Error adding to cart:', error);
-      toast.error('✗ Có lỗi xảy ra khi thêm vào giỏ hàng!');
+      toast.error('Có lỗi xảy ra khi thêm vào giỏ hàng!');
     }
   };
 

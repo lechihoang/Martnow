@@ -206,4 +206,41 @@ export class AuthController {
       );
     }
   }
+
+  @Post('oauth-callback')
+  @UseGuards(SupabaseAuthGuard)
+  async handleOAuthCallback(
+    @Body() oauthDto: { userId: string; email: string; name?: string; avatar?: string },
+    @Request() req: RequestWithUser,
+  ) {
+    try {
+      // Verify that the authenticated user matches the OAuth user
+      if (req.user.id !== oauthDto.userId) {
+        throw new HttpException(
+          {
+            success: false,
+            message: 'User ID mismatch',
+          },
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      const result = await this.authService.handleOAuthCallback(oauthDto);
+      return {
+        success: true,
+        data: result,
+        message: result.isNewUser
+          ? 'User profile created successfully'
+          : 'User profile updated successfully',
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          success: false,
+          message: (error as Error).message || 'OAuth callback failed',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
 }

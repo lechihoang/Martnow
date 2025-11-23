@@ -61,13 +61,13 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       await addToFavorites(product);
 
       if (wasAlreadyFavorite) {
-        toast.success('💔 Đã xóa khỏi yêu thích');
+        toast.success('Đã xóa khỏi yêu thích');
       } else {
-        toast.success('❤️ Đã thêm vào yêu thích!');
+        toast.success('Đã thêm vào yêu thích!');
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      toast.error('✗ Có lỗi xảy ra khi cập nhật yêu thích!');
+      toast.error('Có lỗi xảy ra khi cập nhật yêu thích!');
     } finally {
       setIsLoading(false);
     }

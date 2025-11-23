@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { supabase } from '../lib/supabase';
 import { DataSource } from 'typeorm';
 import { Request } from 'express';
+import { IS_PUBLIC_KEY } from './public.decorator';
 
 interface RequestWithUser extends Request {
   user?: {
@@ -28,7 +29,7 @@ export class SupabaseAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if route is marked as public
-    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);

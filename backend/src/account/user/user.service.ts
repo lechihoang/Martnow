@@ -13,6 +13,7 @@ interface CreateUserData {
   email: string;
   name: string;
   role: UserRole;
+  avatar?: string;
 }
 
 @Injectable()
@@ -49,7 +50,9 @@ export class UserService {
       newUser.email = createUserDto.email;
       newUser.name = createUserDto.name;
       newUser.role = createUserDto.role;
-      // avatar will be null - frontend will show User icon
+      if (createUserDto.avatar) {
+        newUser.avatar = createUserDto.avatar;
+      }
 
       // Create buyer or seller based on role and use cascade
       if (newUser.role === UserRole.BUYER) {

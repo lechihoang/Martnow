@@ -346,4 +346,82 @@ export class AuthService {
       throw new Error(`Change password failed: ${(error as Error).message}`);
     }
   }
+
+  async handleOAuthCallback(oauthDto: {
+    userId: string;
+    email: string;
+    name?: string;
+    avatar?: string;
+  }) {
+    try {
+      console.log('🔐 Processing OAuth callback for user:', oauthDto.userId);
+
+      // 1. Check if user already exists in database
+      let user = await this.userRepository.findOne({
+        where: { id: oauthDto.userId },
+      });
+
+      if (user) {
+        console.log('✅ User already exists, updating profile if needed');
+
+        // Update avatar and name if provided and different
+        let needsUpdate = false;
+        if (oauthDto.avatar && user.avatar !== oauthDto.avatar) {
+          user.avatar = oauthDto.avatar;
+          needsUpdate = true;
+        }
+        if (oauthDto.name && user.name !== oauthDto.name) {
+          user.name = oauthDto.name;
+          needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+          await this.userRepository.save(user);
+          console.log('✅ User profile updated');
+        }
+
+        return {
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            avatar: user.avatar,
+          },
+          isNewUser: false,
+        };
+      }
+
+      // 2. Create new user profile in database using UserService
+      console.log('🆕 Creating new user profile from OAuth');
+      user = await this.userService.create({
+        id: oauthDto.userId,
+        email: oauthDto.email,
+        name: oauthDto.name || 'User',
+        role: UserRole.BUYER, // Default to BUYER for OAuth users
+        avatar: oauthDto.avatar,
+      });
+
+      console.log('✅ New user profile created');
+
+      return {
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          avatar: user.avatar,
+        },
+        isNewUser: true,
+      };
+    } catch (error) {
+      console.error('❌ OAuth callback error:', error);
+      throw new Error(
+        `OAuth callback failed: ${(error as Error).message}`,
+      );
+    }
+  }
+
 }

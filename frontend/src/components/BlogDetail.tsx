@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import DOMPurify from 'dompurify';
 import { Calendar, User, MessageCircle, Edit, Trash2 } from 'lucide-react';
 import { blogApi } from '../lib/api';
 import CommentSection from './CommentSection';
@@ -146,7 +147,16 @@ const BlogDetail: React.FC<BlogDetailProps> = ({ blogId, userProfile, profileLoa
           )}
 
           {/* Content */}
-          <div className="prose prose-lg max-w-none mb-8" dangerouslySetInnerHTML={{ __html: blog.content }} />
+          <div
+            className="prose prose-lg max-w-none mb-8"
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(blog.content, {
+                ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'code', 'pre', 'span', 'div'],
+                ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'],
+                ALLOW_DATA_ATTR: false,
+              })
+            }}
+          />
 
           {/* Vote Buttons - moved to end of blog */}
           <div className="pt-6 border-t border-gray-200">

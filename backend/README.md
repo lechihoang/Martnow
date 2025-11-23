@@ -1,428 +1,549 @@
-# Foodee Backend API
+# MartNow Backend API
 
-Backend API cho ứng dụng Foodee được xây dựng với **NestJS**, **TypeORM**, và **PostgreSQL**.
+Backend API cho nền tảng MartNow, được xây dựng với NestJS framework.
 
-## 🏗 Kiến trúc
+## 🏗️ Kiến trúc
+
+Backend sử dụng kiến trúc modular với các modules độc lập:
 
 ```
 src/
-├── auth/                   # Authentication & Authorization
-│   ├── dto/               # Data Transfer Objects
-│   ├── guards/            # JWT & Role guards
-│   ├── strategies/        # Passport strategies
-│   └── auth.service.ts    # Auth logic
-├── user/                  # User management
-│   ├── entities/          # User, Buyer, Seller entities
-│   ├── dto/               # User DTOs
-│   └── user.service.ts
-├── product/               # Product management
-│   ├── entities/          # Product, ProductImage, Category
-│   ├── dto/               # Product DTOs
-│   └── product.service.ts
-├── order/                 # Order processing
-├── payment/               # VNPay integration
-├── review/                # Product reviews
-├── favorite/              # User favorites
-├── address/               # Address management
-└── common/                # Shared utilities
+├── account/          # Quản lý tài khoản
+│   ├── user/        # User entity & service
+│   ├── buyer/       # Buyer entity
+│   └── seller/      # Seller entity
+├── auth/            # Authentication & Authorization
+├── product/         # Quản lý sản phẩm
+├── order/           # Xử lý đơn hàng
+├── payment/         # Tích hợp thanh toán VNPay
+├── review/          # Đánh giá sản phẩm
+├── favorite/        # Sản phẩm yêu thích
+├── blog/            # Hệ thống blog
+├── media/           # Upload file (Cloudinary)
+├── seller-stats/    # Thống kê người bán
+├── lib/             # Shared utilities
+└── shared/          # Shared types & enums
 ```
 
-## 🚀 Cài đặt
+## 🔧 Tech Stack
 
-### 1. Cài đặt dependencies:
+- **Framework**: NestJS 11
+- **Database**: PostgreSQL
+- **ORM**: TypeORM 0.3
+- **Authentication**: Supabase Auth (JWT)
+- **Payment Gateway**: VNPay (nestjs-vnpay)
+- **File Storage**: Cloudinary (nestjs-cloudinary)
+- **Validation**: class-validator, class-transformer
+- **Caching**: cache-manager
+- **Rate Limiting**: @nestjs/throttler
+- **Scheduling**: @nestjs/schedule
+- **Testing**: Jest
+
+## 📦 Installation
+
 ```bash
+# Install dependencies
 npm install
-```
 
-### 2. Tạo file môi trường:
-```bash
+# Copy environment file
 cp .env.example .env
+
+# Edit .env with your configuration
 ```
 
-### 3. Cấu hình .env:
+## ⚙️ Configuration
+
+### Environment Variables
+
 ```env
 # Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=postgres
-DB_PASSWORD=your_password
-DB_DATABASE=foodee_db
+DATABASE_URL=postgresql://user:password@localhost:5432/martnow
 
-# JWT
-JWT_SECRET=your-super-secret-jwt-key
+# Supabase Authentication
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-# VNPay
-VNPAY_TMN_CODE=your_vnpay_tmn_code
-VNPAY_SECRET_KEY=your_vnpay_secret
-VNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-VNPAY_RETURN_URL=http://localhost:3000/payment/result
+# VNPay Payment Gateway
+VNPAY_TMN_CODE=your_terminal_code
+VNPAY_SECURE_SECRET=your_secure_secret
+VNPAY_RETURN_URL=http://localhost:3000/payment/vnpay-return
 
-# App
-PORT=3001
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Application
 NODE_ENV=development
+PORT=3001
+FRONTEND_URL=http://localhost:3000
 ```
 
-### 4. Seed dữ liệu mẫu (optional):
-```bash
-npm run seed
-```
+## 🚀 Running the app
 
-## 🏃‍♂️ Chạy ứng dụng
-
-### Development:
 ```bash
+# Development
 npm run start:dev
-```
 
-### Production:
-```bash
+# Production mode
 npm run build
 npm run start:prod
+
+# Debug mode
+npm run start:debug
 ```
 
-### Debug mode:
+## 🗄️ Database
+
+### Entities
+
+#### User Management
+- **User**: Thông tin người dùng cơ bản (id, email, name, role, avatar, address, phone)
+- **Buyer**: Thông tin người mua (extends User)
+- **Seller**: Thông tin người bán (extends User, có shopName, description)
+
+#### Product Management
+- **Product**: Sản phẩm (name, description, price, stock, category, images, ratings)
+- **Category**: Danh mục sản phẩm
+
+#### Order Management
+- **Order**: Đơn hàng (buyer, totalPrice, status, note, paymentReference)
+- **OrderItem**: Chi tiết đơn hàng (product, quantity, price)
+
+#### Review System
+- **Review**: Đánh giá sản phẩm (buyer, product, rating, comment, helpfulCount)
+
+#### Favorite System
+- **Favorite**: Sản phẩm yêu thích (buyer, product)
+
+#### Blog System
+- **Blog**: Bài viết blog (author, title, content, coverImage)
+- **BlogComment**: Bình luận (user, blog, content)
+- **BlogVote**: Vote bài viết (user, blog, voteType: UP/DOWN)
+
+#### Analytics
+- **SellerStats**: Thống kê người bán (totalRevenue, totalOrders, totalProducts)
+
+### Migrations
+
+TypeORM synchronize được bật trong development mode:
+
+```typescript
+synchronize: configService.get('NODE_ENV') === 'development'
+```
+
+Trong production, nên tắt synchronize và sử dụng migrations:
+
 ```bash
-npm run start:debug
+# Generate migration
+npm run typeorm migration:generate -- -n MigrationName
+
+# Run migrations
+npm run typeorm migration:run
+
+# Revert migration
+npm run typeorm migration:revert
+```
+
+### Seeding
+
+```bash
+# Seed database với dữ liệu mẫu
+npm run seed
 ```
 
 ## 📡 API Endpoints
 
 ### Authentication (`/auth`)
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/auth/register` | Đăng ký tài khoản mới | ❌ |
-| POST | `/auth/login` | Đăng nhập | ❌ |
-| POST | `/auth/logout` | Đăng xuất | ✅ |
-| POST | `/auth/profile` | Lấy thông tin user | ✅ |
-
-#### Register Request:
-```json
-{
-  "name": "John Doe",
-  "username": "johndoe",
-  "email": "john@example.com",
-  "password": "password123",
-  "role": "BUYER" // or "SELLER"
-}
+```
+POST   /auth/signup              # Đăng ký tài khoản mới
+POST   /auth/signin              # Đăng nhập
+POST   /auth/signout             # Đăng xuất
+GET    /auth/profile             # Lấy thông tin profile
+POST   /auth/refresh             # Refresh access token
+POST   /auth/forgot-password     # Quên mật khẩu
+POST   /auth/reset-password      # Reset mật khẩu
+POST   /auth/change-password     # Đổi mật khẩu
+POST   /auth/oauth/callback      # OAuth callback (Google)
+DELETE /auth/user/:id            # Xóa tài khoản
 ```
 
-#### Login Request:
-```json
-{
-  "username": "johndoe",
-  "password": "password123"
-}
+### Users (`/users`)
+
+```
+GET    /users/:id                # Lấy thông tin user
+PATCH  /users/:id                # Cập nhật thông tin user
 ```
 
-### Products (`/products`)
+### Products (`/product`)
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/products` | Lấy danh sách sản phẩm | ❌ |
-| GET | `/products/categories` | Lấy danh mục sản phẩm | ❌ |
-| GET | `/products/:id` | Lấy chi tiết sản phẩm | ❌ |
-| POST | `/products` | Tạo sản phẩm mới | ✅ (Seller) |
-| PATCH | `/products/:id` | Cập nhật sản phẩm | ✅ (Seller) |
-| DELETE | `/products/:id` | Xóa sản phẩm | ✅ (Seller) |
-
-#### Create Product Request:
-```json
-{
-  "name": "Cơm chiên dương châu",
-  "description": "Cơm chiên thơm ngon với tôm, xúc xích",
-  "price": 45000,
-  "stock": 100,
-  "categoryId": 1
-}
+```
+GET    /product                  # Lấy danh sách sản phẩm (có filter, sort, pagination)
+GET    /product/:id              # Lấy chi tiết sản phẩm
+POST   /product                  # Tạo sản phẩm mới (Seller only)
+PATCH  /product/:id              # Cập nhật sản phẩm (Seller only)
+DELETE /product/:id              # Xóa sản phẩm (Seller only)
+GET    /product/seller           # Lấy sản phẩm của seller hiện tại
+GET    /product/seller/:id       # Lấy sản phẩm của seller theo ID
+GET    /product/popular          # Lấy sản phẩm phổ biến
 ```
 
-### Orders (`/orders`)
+#### Query Parameters cho GET /product
+- `categoryName`: Lọc theo danh mục
+- `minPrice`, `maxPrice`: Lọc theo giá
+- `search`: Tìm kiếm theo tên/mô tả
+- `sortBy`: Sắp xếp (createdAt, price, averageRating, totalSold, viewCount)
+- `sortOrder`: ASC hoặc DESC
+- `page`: Trang hiện tại (default: 1)
+- `limit`: Số sản phẩm mỗi trang (default: 20)
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/orders` | Lấy danh sách đơn hàng | ✅ |
-| GET | `/orders/:id` | Chi tiết đơn hàng | ✅ |
-| POST | `/orders` | Tạo đơn hàng mới | ✅ (Buyer) |
-| GET | `/orders/pending` | Đơn hàng đang chờ | ✅ (Seller) |
+### Orders (`/order`)
 
-#### Create Order Request:
-```json
-{
-  "items": [
-    {
-      "productId": 1,
-      "quantity": 2,
-      "price": 45000
-    }
-  ],
-  "totalPrice": 90000,
-  "addressId": 1,
-  "note": "Giao hàng nhanh"
-}
+```
+POST   /order/checkout           # Checkout giỏ hàng
+GET    /order/:id                # Lấy chi tiết đơn hàng
+GET    /order/user/:userId       # Lấy đơn hàng của user
+DELETE /order/cancel/:id         # Hủy đơn hàng
+GET    /order/seller/:sellerId   # Lấy đơn hàng của seller
 ```
 
 ### Payment (`/payment`)
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/payment/create/:orderId` | Tạo link thanh toán VNPay | ✅ |
-| GET | `/payment/vnpay-return` | Xử lý callback VNPay | ❌ |
-| POST | `/payment/vnpay-ipn` | Webhook VNPay IPN | ❌ |
+```
+POST   /payment/create/:orderId  # Tạo payment URL
+GET    /payment/vnpay-return     # VNPay callback
+POST   /payment/vnpay-ipn        # VNPay IPN
+GET    /payment/banks            # Lấy danh sách ngân hàng
+```
 
 ### Reviews (`/reviews`)
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/reviews/product/:productId` | Đánh giá của sản phẩm | ❌ |
-| POST | `/reviews` | Tạo đánh giá mới | ✅ (Buyer) |
-| PATCH | `/reviews/:id` | Cập nhật đánh giá | ✅ |
-| DELETE | `/reviews/:id` | Xóa đánh giá | ✅ |
+```
+GET    /reviews/product/:id      # Lấy reviews của sản phẩm
+POST   /reviews                  # Tạo review mới
+PATCH  /reviews/:id              # Cập nhật review
+DELETE /reviews/:id              # Xóa review
+GET    /reviews/product/:id/stats # Lấy thống kê rating
+POST   /reviews/:id/helpful      # Đánh dấu review hữu ích
+```
+
+### Favorites (`/favorites`)
+
+```
+POST   /favorites/:productId/toggle  # Toggle favorite
+GET    /favorites                    # Lấy danh sách favorites
+GET    /favorites/:productId/check   # Kiểm tra favorite
+GET    /favorites/:productId/count   # Đếm số lượt favorite
+```
+
+### Blogs (`/blogs`)
+
+```
+GET    /blogs                    # Lấy danh sách blogs
+GET    /blogs/:id                # Lấy chi tiết blog
+POST   /blogs                    # Tạo blog mới
+PUT    /blogs/:id                # Cập nhật blog
+DELETE /blogs/:id                # Xóa blog
+GET    /blogs/:id/comments       # Lấy comments của blog
+POST   /blogs/:id/comments       # Tạo comment
+PUT    /blogs/comments/:id       # Cập nhật comment
+DELETE /blogs/comments/:id       # Xóa comment
+POST   /blogs/:id/vote           # Vote blog (up/down)
+DELETE /blogs/:id/vote           # Unvote blog
+```
+
+### Sellers (`/sellers`)
+
+```
+GET    /sellers/profile          # Lấy profile seller hiện tại
+PATCH  /sellers/profile          # Cập nhật profile seller
+GET    /sellers/stats            # Lấy thống kê seller
+GET    /sellers/orders           # Lấy đơn hàng của seller
+GET    /sellers/user/:userId     # Lấy seller theo userId
+GET    /sellers/:id/analytics    # Lấy analytics của seller
+GET    /sellers/:id/orders       # Lấy orders của seller theo ID
+```
+
+### Media (`/media`)
+
+```
+POST   /media/avatar             # Upload avatar
+POST   /media/products/:id       # Upload product images
+POST   /media/upload             # Upload file chung
+```
 
 ## 🔐 Authentication & Authorization
 
-### JWT Token:
-- Access token có thời hạn 1 giờ
-- Refresh token có thời hạn 7 ngày
-- Token được gửi qua Cookie (HTTP-only)
+### JWT Authentication
 
-### Role-based Access:
-- **BUYER**: Khách hàng có thể đặt hàng, đánh giá
-- **SELLER**: Người bán có thể quản lý sản phẩm, đơn hàng
+Backend sử dụng Supabase Auth để xác thực:
 
-### Guard Usage:
+1. Client gửi request với `Authorization: Bearer <access_token>`
+2. `SupabaseAuthGuard` verify token với Supabase
+3. User info được attach vào request: `req.user`
+
+### Guards
+
+- **SupabaseAuthGuard**: Verify JWT token
+- **RoleGuard**: Kiểm tra role (BUYER/SELLER)
+- **Public Decorator**: Bypass authentication cho public endpoints
+
+### Usage
+
 ```typescript
-@UseGuards(JwtAuthGuard, RolesGuard)
+// Protected endpoint
+@UseGuards(SupabaseAuthGuard)
+@Get('profile')
+getProfile(@Request() req) {
+  return req.user;
+}
+
+// Role-based access
+@UseGuards(SupabaseAuthGuard, RoleGuard)
 @Roles(UserRole.SELLER)
-@Post()
+@Post('product')
 createProduct(@Body() dto: CreateProductDto) {
   // Only sellers can access
 }
+
+// Public endpoint
+@Public()
+@Get('products')
+getProducts() {
+  // Anyone can access
+}
 ```
 
-## 🗄 Database Schema
+## 💳 Payment Integration
 
-### Core Entities:
+### VNPay Flow
 
-#### User:
-- `id` - Primary key
-- `name` - Tên người dùng
-- `username` - Tên đăng nhập (unique)
-- `email` - Email (unique)
-- `password` - Mật khẩu đã hash
-- `role` - BUYER hoặc SELLER
-- `avatar` - URL avatar
+1. **Create Payment URL**
+   ```typescript
+   POST /payment/create/:orderId
+   ```
+   - Tạo order với status PENDING
+   - Generate VNPay payment URL
+   - Return URL cho client
 
-#### Product:
-- `id` - Primary key
-- `name` - Tên sản phẩm
-- `description` - Mô tả
-- `price` - Giá
-- `stock` - Số lượng tồn kho
-- `sellerId` - ID người bán
-- `categoryId` - ID danh mục
-- `isAvailable` - Còn bán không
-- `averageRating` - Điểm đánh giá trung bình
-- `totalSold` - Đã bán
+2. **User Payment**
+   - User redirect đến VNPay
+   - Nhập thông tin thanh toán
+   - VNPay xử lý payment
 
+3. **Return URL**
+   ```typescript
+   GET /payment/vnpay-return?vnp_*
+   ```
+   - Verify payment signature
+   - Update order status thành PAID
+   - Trừ stock sản phẩm
+   - Redirect user về success page
 
-#### Order:
-- `id` - Primary key
-- `buyerId` - ID khách hàng
-- `totalPrice` - Tổng tiền
-- `status` - Trạng thái đơn hàng
-- `note` - Ghi chú
+4. **IPN (Instant Payment Notification)**
+   ```typescript
+   POST /payment/vnpay-ipn
+   ```
+   - Backup verification từ VNPay
+   - Đảm bảo payment được xử lý
 
-### Relationships:
+## 📤 File Upload
+
+### Cloudinary Integration
+
+```typescript
+// Upload avatar
+POST /media/avatar
+Content-Type: multipart/form-data
+Body: { file: File }
+
+// Upload product images
+POST /media/products/:productId
+Content-Type: multipart/form-data
+Body: { files: File[] }
 ```
-User 1:1 Buyer
-User 1:1 Seller
-Seller 1:n Products
-Product 1:n Reviews
-Buyer 1:n Orders
-Order 1:n OrderItems
+
+Files được upload lên Cloudinary với structure:
 ```
-
-## 🎯 Business Logic
-
-### Product Management:
-- Sellers có thể tạo/sửa/xóa sản phẩm của mình
-- Tự động tính toán điểm đánh giá trung bình
-
-### Order Processing:
-1. Buyer tạo đơn hàng
-2. Kiểm tra tồn kho
-3. Tạo payment link (VNPay)
-4. Callback xử lý kết quả thanh toán
-5. Cập nhật trạng thái đơn hàng
-
+foodee/
+├── users/
+│   └── {userId}/
+│       └── avatar/
+├── products/
+│   └── {productId}/
+└── general/
+```
 
 ## 🧪 Testing
 
-### Unit Tests:
 ```bash
-npm run test
-```
+# Unit tests
+npm test
 
-### E2E Tests:
-```bash
+# E2E tests
 npm run test:e2e
-```
 
-### Test Coverage:
-```bash
+# Test coverage
 npm run test:cov
+
+# Watch mode
+npm run test:watch
 ```
 
-### Testing Structure:
+### Test Structure
+
 ```
 src/
 ├── auth/
-│   ├── auth.service.spec.ts
-│   └── auth.controller.spec.ts
-├── product/
-│   ├── product.service.spec.ts
-│   └── product.controller.spec.ts
-└── test/
-    ├── app.e2e-spec.ts
-    └── fixtures/
+│   └── test/
+│       ├── auth.controller.spec.ts
+│       ├── auth.service.spec.ts
+│       └── guards.spec.ts
+├── order/
+│   └── test/
+│       └── order.service.spec.ts
+└── payment/
+    └── test/
+        └── payment.service.spec.ts
 ```
 
-## 🔧 Configuration
+## 📊 Logging
 
-### TypeORM Configuration:
+NestJS Logger được sử dụng trong các services:
+
 ```typescript
-@Module({
-  imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: +process.env.DB_PORT,
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-      synchronize: process.env.NODE_ENV === 'development',
-    }),
-  ],
-})
+private readonly logger = new Logger(ServiceName.name);
+
+this.logger.log('Info message');
+this.logger.warn('Warning message');
+this.logger.error('Error message');
+this.logger.debug('Debug message');
 ```
 
-### JWT Configuration:
-```typescript
-JwtModule.register({
-  secret: process.env.JWT_SECRET,
-  signOptions: { expiresIn: '1h' },
-})
-```
+## 🔄 Caching
 
-## 📊 Monitoring & Logging
+Cache manager được cấu hình cho các endpoints thường xuyên truy cập:
 
-### Request Logging:
 ```typescript
-// All requests are logged with timestamp
-[Nest] INFO [RouterExplorer] Mapped {/products, GET} route
-```
-
-### Error Handling:
-```typescript
-@Catch()
-export class AllExceptionsFilter implements ExceptionFilter {
-  catch(exception: unknown, host: ArgumentsHost) {
-    // Global error handling
-  }
+@UseInterceptors(CacheInterceptor)
+@CacheTTL(300) // 5 minutes
+@Get('popular')
+getPopularProducts() {
+  // Cached response
 }
 ```
 
-## 🚀 Performance Optimization
+## 🚦 Rate Limiting
 
-### Database Optimizations:
-- Indexes trên các trường thường query
-- Lazy loading cho relations
-- Query optimization với QueryBuilder
+Throttler được cấu hình để prevent abuse:
 
-### Caching (Future):
 ```typescript
-@CacheKey('products')
-@CacheTTL(300)
-@Get()
-findAll() {
-  return this.productService.findAll();
+@Throttle({ default: { limit: 10, ttl: 60000 } })
+@Post('login')
+login() {
+  // Max 10 requests per minute
 }
 ```
 
-## 📝 API Response Format
+## 📈 Performance Optimization
 
-### Success Response:
+- **Database Indexing**: Indexes trên các foreign keys và search fields
+- **Query Optimization**: Eager loading với relations
+- **Caching**: Cache cho popular products và stats
+- **Pagination**: Limit results với pagination
+- **Connection Pooling**: PostgreSQL connection pool (max: 20)
+
+## 🐛 Error Handling
+
+Global exception filter xử lý errors:
+
+```typescript
+throw new NotFoundException('Product not found');
+throw new BadRequestException('Invalid input');
+throw new UnauthorizedException('Invalid credentials');
+throw new ForbiddenException('Access denied');
+```
+
+Response format:
 ```json
 {
-  "status": "success",
-  "data": {
-    "id": 1,
-    "name": "Product name"
-  }
-}
-```
-
-### Error Response:
-```json
-{
-  "status": "error",
-  "message": "Validation failed",
-  "errors": [
-    {
-      "field": "email",
-      "message": "Email is required"
-    }
-  ]
+  "statusCode": 404,
+  "message": "Product not found",
+  "error": "Not Found"
 }
 ```
 
 ## 🔒 Security
 
-### Security Measures:
-- JWT Authentication
-- Password hashing với bcrypt
-- Rate limiting
-- CORS configuration
-- Input validation với class-validator
-- SQL injection protection (TypeORM)
+- **Helmet**: HTTP headers security
+- **CORS**: Configured cho frontend domain
+- **Rate Limiting**: Prevent brute force
+- **Input Validation**: class-validator pipes
+- **SQL Injection**: TypeORM parameterized queries
+- **XSS**: Input sanitization
+- **JWT**: Secure token-based auth
 
-### Environment Variables:
+## 📝 Code Style
+
 ```bash
-# Bảo mật secrets
-JWT_SECRET=complex-random-string
-DB_PASSWORD=strong-password
-VNPAY_SECRET_KEY=vnpay-secret
+# Format code
+npm run format
 
-# Không commit .env file
-echo ".env" >> .gitignore
+# Lint code
+npm run lint
+
+# Fix lint issues
+npm run lint -- --fix
 ```
 
-## 📈 Scaling Considerations
+## 🚀 Deployment
 
-### Horizontal Scaling:
-- Stateless API design
-- Database connection pooling
-- Load balancer ready
+### Production Build
 
-### Database Scaling:
-- Read replicas
-- Connection pooling
-- Query optimization
+```bash
+npm run build
+npm run start:prod
+```
 
----
+### Environment
+
+- Set `NODE_ENV=production`
+- Disable TypeORM synchronize
+- Use migrations for schema changes
+- Configure proper database connection pool
+- Set up monitoring and logging
+- Use process manager (PM2)
+
+### Docker (Optional)
+
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+CMD ["npm", "run", "start:prod"]
+```
+
+## 📚 Additional Resources
+
+- [NestJS Documentation](https://docs.nestjs.com)
+- [TypeORM Documentation](https://typeorm.io)
+- [Supabase Auth](https://supabase.com/docs/guides/auth)
+- [VNPay Integration](https://sandbox.vnpayment.vn/apis/)
+- [Cloudinary API](https://cloudinary.com/documentation)
 
 ## 🤝 Contributing
 
-1. Fork repository
-2. Tạo feature branch
-3. Viết tests cho code mới
-4. Đảm bảo tất cả tests pass
-5. Tạo Pull Request
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
-## 📞 Support
+## 📄 License
 
-- Issues: [GitHub Issues](https://github.com/yourrepo/foodee/issues)
-- Documentation: [API Docs](http://localhost:3001/api)
-- Email: dev@foodee.com
+MIT License

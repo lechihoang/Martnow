@@ -272,6 +272,24 @@ export class PaymentService {
   }
 
   /**
+   * Verify order ownership - ensure buyer owns the order
+   */
+  async verifyOrderOwnership(orderId: number, userId: string): Promise<void> {
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['buyer', 'buyer.user'],
+    });
+
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    if (order.buyer.user.id !== userId) {
+      throw new Error('Forbidden: You do not own this order');
+    }
+  }
+
+  /**
    * Format date theo yêu cầu VNPay (yyyyMMddHHmmss)
    */
   private formatDate(date: Date): string {

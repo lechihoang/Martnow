@@ -28,7 +28,8 @@ export function PaymentButton({
       onPaymentStart?.();
 
       // Gọi API tạo payment URL
-      const response = await fetch(`http://localhost:3001/payment/create/${orderId}`, {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE_URL}/payment/create/${orderId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

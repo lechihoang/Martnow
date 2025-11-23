@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CloudinaryService, IFile } from 'nestjs-cloudinary';
 import { User } from '../account/user/entities/user.entity';
+import { Product } from '../product/entities/product.entity';
 
 interface CloudinaryUploadResult {
   secure_url: string;
@@ -14,6 +15,8 @@ export class MediaService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Product)
+    private productRepository: Repository<Product>,
     private cloudinaryService: CloudinaryService,
   ) {}
 
@@ -87,6 +90,27 @@ export class MediaService {
     })) as CloudinaryUploadResult;
 
     return { secureUrl: result.secure_url };
+  }
+
+  /**
+   * Verify product ownership - ensure seller owns the product
+   */
+  async verifyProductOwnership(
+    productId: string,
+    userId: string,
+  ): Promise<void> {
+    const product = await this.productRepository.findOne({
+      where: { id: parseInt(productId) },
+      relations: ['seller', 'seller.user'],
+    });
+
+    if (!product) {
+      throw new ForbiddenException('Product not found');
+    }
+
+    if (product.seller.user.id !== userId) {
+      throw new ForbiddenException('You do not own this product');
+    }
   }
 
   /**

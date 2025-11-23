@@ -6,19 +6,43 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  UseGuards,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { PaymentCallbackDto } from './dto/payment.dto';
+import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
+import { RoleGuard } from '../auth/role.guard';
+import { Roles } from '../auth/role.decorator';
+import { Public } from '../auth/public.decorator';
+import { UserRole } from '../lib/supabase';
+
+interface RequestWithUser {
+  user: {
+    id: string;
+    role: UserRole;
+  };
+}
 
 @Controller('payment')
+@UseGuards(SupabaseAuthGuard, RoleGuard)
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   /**
    * Tạo URL thanh toán cho order
+   * Chỉ buyer owner của order mới được tạo payment
    */
   @Post('create/:orderId')
-  async createPayment(@Param('orderId', ParseIntPipe) orderId: number) {
+  @Roles(UserRole.BUYER)
+  async createPayment(
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @Req() req: RequestWithUser,
+  ) {
+    // Verify ownership: check if order belongs to the buyer
+    await this.paymentService.verifyOrderOwnership(orderId, req.user.id);
+
     // Không cần truyền amount, service sẽ tự lấy từ order
     const result = await this.paymentService.createPaymentUrl(orderId);
     return {
@@ -29,7 +53,9 @@ export class PaymentController {
 
   /**
    * Endpoint xử lý return URL từ VNPay (người dùng được chuyển về đây sau khi thanh toán)
+   * Public endpoint - VNPay redirects users here
    */
+  @Public()
   @Get('vnpay-return')
   async handleReturn(@Query() query: PaymentCallbackDto) {
     const result = await this.paymentService.verifyPayment(query);
@@ -51,7 +77,9 @@ export class PaymentController {
 
   /**
    * Endpoint xử lý IPN từ VNPay (VNPay gọi về server khi có thay đổi trạng thái)
+   * Public endpoint - VNPay server calls this
    */
+  @Public()
   @Post('vnpay-ipn')
   async handleIPN(@Body() query: PaymentCallbackDto) {
     const result = await this.paymentService.handleIPN(query);
@@ -66,7 +94,9 @@ export class PaymentController {
 
   /**
    * Lấy danh sách ngân hàng
+   * Public endpoint
    */
+  @Public()
   @Get('banks')
   async getBankList() {
     const banks = await this.paymentService.getBankList();
@@ -78,12 +108,15 @@ export class PaymentController {
 
   /**
    * Truy vấn kết quả thanh toán
+   * Requires authentication
    */
   @Get('query/:txnRef/:txnDate')
   async queryPayment(
     @Param('txnRef') txnRef: string,
     @Param('txnDate') txnDate: string,
+    @Req() req: RequestWithUser,
   ) {
+    // Only authenticated users can query payment status
     const result = await this.paymentService.queryPayment(txnRef, txnDate);
     return {
       message: 'Payment query completed',
@@ -93,11 +126,15 @@ export class PaymentController {
 
   /**
    * Hoàn tiền
+   * Chỉ SELLER mới có thể refund
    */
   @Post('refund')
+  @Roles(UserRole.SELLER)
   async refundPayment(
     @Body() body: { txnRef: string; amount: number; reason: string },
+    @Req() req: RequestWithUser,
   ) {
+    // Only sellers can issue refunds
     const result = await this.paymentService.refundPayment(
       body.txnRef,
       body.amount,
