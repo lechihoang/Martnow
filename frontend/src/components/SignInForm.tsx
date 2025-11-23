@@ -20,6 +20,7 @@ const loginSchema = z.object({
 
 export default function LoginForm() {
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { signin, signInWithGoogle } = useAuthContext();
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -53,18 +54,18 @@ export default function LoginForm() {
   };
 
   const handleGoogleSignIn = async () => {
-    setLoading(true);
+    setGoogleLoading(true);
     try {
       const result = await signInWithGoogle();
       if (result.error) {
         toast.error(result.error || "Đăng nhập Google thất bại!");
-        setLoading(false);
+        setGoogleLoading(false);
       }
       // Note: If successful, user will be redirected by Supabase, so no need to stop loading
     } catch (error) {
       console.error('Lỗi đăng nhập Google:', error);
       toast.error("Đăng nhập Google thất bại!");
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
@@ -186,10 +187,10 @@ export default function LoginForm() {
           <Button
             type="button"
             onClick={handleGoogleSignIn}
-            disabled={loading}
+            disabled={googleLoading}
             className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-medium py-3 transition-colors duration-200 flex items-center justify-center gap-3"
           >
-            {loading ? (
+            {googleLoading ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-gray-700 border-t-transparent rounded-full animate-spin"></div>
                 Đang đăng nhập...
