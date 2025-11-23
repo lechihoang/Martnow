@@ -176,15 +176,15 @@ export default function LoginForm() {
             </form>
           </Form>
 
-          {/* Divider */}
-          <div className="flex items-center my-6">
+          {/* Divider - Temporarily hidden */}
+          {/* <div className="flex items-center my-6">
             <div className="flex-grow h-px bg-gray-200" />
             <span className="mx-4 text-gray-400 text-sm font-medium">HOẶC</span>
             <div className="flex-grow h-px bg-gray-200" />
-          </div>
+          </div> */}
 
-          {/* Google Sign In */}
-          <Button
+          {/* Google Sign In - Temporarily hidden */}
+          {/* <Button
             type="button"
             onClick={handleGoogleSignIn}
             disabled={googleLoading}
@@ -218,7 +218,7 @@ export default function LoginForm() {
                 Đăng nhập với Google
               </>
             )}
-          </Button>
+          </Button> */}
 
           {/* Sign Up Link */}
           <p className="text-center text-sm text-gray-600 mt-6">
